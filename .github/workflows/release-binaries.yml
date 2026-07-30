@@ -46,6 +46,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
+          pip install .
           python build_binary.py
 
       - name: Upload binary
@@ -77,7 +78,7 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
+          attestations: false
           password: ${{ secrets.PYPI_API_KEY }}
           packages-dir: dist/
           skip-existing: true
@@ -94,6 +95,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+
+      - name: List downloaded artifacts
+        run: find artifacts/ -type f -ls
 
       - name: Create release
         uses: softprops/action-gh-release@v2

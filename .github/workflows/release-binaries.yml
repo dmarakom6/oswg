@@ -49,11 +49,14 @@ jobs:
           pip install .
           python build_binary.py
 
+      - name: Rename binary for platform
+        run: mv dist/${{ matrix.binary_name }} dist/${{ matrix.binary_name }}-${{ matrix.target }}
+
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/${{ matrix.binary_name }}
+          path: dist/${{ matrix.binary_name }}-${{ matrix.target }}
 
   publish-pypi:
     name: Publish to PyPI
@@ -103,9 +106,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/oswg-linux-x86_64/oswg
-            artifacts/oswg-macos-x86_64/oswg
-            artifacts/oswg-macos-arm64/oswg
+            artifacts/oswg-linux-x86_64/oswg-linux-x86_64
+            artifacts/oswg-macos-x86_64/oswg-macos-x86_64
+            artifacts/oswg-macos-arm64/oswg-macos-arm64
           generate_release_notes: true
           draft: false
           prerelease: false

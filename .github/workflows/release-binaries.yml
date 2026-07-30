@@ -63,12 +63,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download Linux binary
-        uses: actions/download-artifact@v4
-        with:
-          name: oswg-linux-x86_64
-          path: dist/
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -85,6 +79,8 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_KEY }}
+          packages-dir: dist/
+          skip-existing: true
 
   release:
     name: Create GitHub Release

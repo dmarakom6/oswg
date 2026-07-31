@@ -40,7 +40,7 @@ def build_frontend() -> None:
 
 
 def build_binary() -> None:
-    """Build the PyInstaller binary."""
+    """Build the PyInstaller binary (onedir mode)."""
     print("Building PyInstaller binary...")
     if DIST_DIR.exists():
         shutil.rmtree(DIST_DIR)
@@ -52,19 +52,23 @@ def build_binary() -> None:
     )
 
     system = platform.system().lower()
+    machine = platform.machine().lower()
 
-    if system in ("darwin", "linux"):
-        binary_name = "oswg"
+    if system == "darwin":
+        platform_tag = f"macos-{machine}"
+    elif system == "linux":
+        platform_tag = f"linux-{machine}"
     else:
-        binary_name = "oswg.exe"
+        platform_tag = f"windows-{machine}"
 
-    binary_path = DIST_DIR / binary_name
-    if binary_path.exists():
-        size_mb = binary_path.stat().st_size / (1024 * 1024)
-        print(f"Binary built: {binary_path} ({size_mb:.1f} MB)")
-    else:
-        print(f"ERROR: Binary not found at {binary_path}")
+    built_dir = DIST_DIR / "oswg-bin"
+    if not built_dir.exists():
+        print(f"ERROR: Built directory not found at {built_dir}")
         sys.exit(1)
+
+    size_mb = sum(f.stat().st_size for f in built_dir.rglob("*") if f.is_file()) / (1024 * 1024)
+    print(f"Binary bundle built: {built_dir} ({size_mb:.1f} MB, onedir mode)")
+    print(f"Platform tag: {platform_tag}")
 
 
 def main() -> None:

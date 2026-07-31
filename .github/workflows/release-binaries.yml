@@ -51,13 +51,16 @@ jobs:
           python build_binary.py binary
 
       - name: Rename binary for platform
-        run: mv dist/${{ matrix.binary_name }} dist/${{ matrix.binary_name }}-${{ matrix.target }}
+        run: mv dist/oswg-bin dist/${{ matrix.artifact_name }}
+
+      - name: Zip binary directory
+        run: cd dist && zip -r ${{ matrix.artifact_name }}.zip ${{ matrix.artifact_name }}/
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/${{ matrix.binary_name }}-${{ matrix.target }}
+          path: dist/${{ matrix.artifact_name }}.zip
 
   publish-pypi:
     name: Publish to PyPI
@@ -110,15 +113,15 @@ jobs:
           path: artifacts
 
       - name: List downloaded artifacts
-        run: find artifacts/ -type f -ls
+        run: find artifacts/ -type f -ls | head -20
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/oswg-linux-x86_64/oswg-linux-x86_64
-            artifacts/oswg-macos-x86_64/oswg-macos-x86_64
-            artifacts/oswg-macos-arm64/oswg-macos-arm64
+            artifacts/oswg-linux-x86_64.zip
+            artifacts/oswg-macos-x86_64.zip
+            artifacts/oswg-macos-arm64.zip
           generate_release_notes: true
           draft: false
           prerelease: false

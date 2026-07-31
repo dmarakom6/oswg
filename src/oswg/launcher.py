@@ -9,8 +9,6 @@ import time
 import webbrowser
 from pathlib import Path
 
-import uvicorn
-
 from oswg import __version__
 
 
@@ -43,7 +41,6 @@ def _create_app(static_path: Path):
 
     from fastapi import FastAPI, WebSocket, WebSocketDisconnect
     from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.staticfiles import StaticFiles
 
     from oswg.database import db
     from oswg.routers import generate, jobs, mutate, scrape
@@ -79,7 +76,20 @@ def _create_app(static_path: Path):
         return {"status": "healthy"}
 
     if (static_path / "index.html").exists():
-        app.mount("/", StaticFiles(directory=str(static_path), html=True), name="static")
+
+        class SafeStaticFiles:
+            """ASGI app that serves static files but passes through WebSocket/lifespan scopes."""
+
+            def __init__(self, directory: str, html: bool = False):
+                from fastapi.staticfiles import StaticFiles
+
+                self._app = StaticFiles(directory=directory, html=html)
+
+            async def __call__(self, scope, receive, send):
+                if scope["type"] == "http":
+                    return await self._app(scope, receive, send)
+
+        app.mount("/", SafeStaticFiles(directory=str(static_path), html=True), name="static")
     else:
         @app.get("/")
         async def serve_index():
@@ -131,6 +141,8 @@ def _wait_for_server(host: str, port: int, timeout: float = 10.0) -> bool:
 
 def start_server(host: str = "127.0.0.1", port: int = 8000, open_browser: bool = True) -> None:
     """Start the OSWG web dashboard."""
+    import uvicorn  # Lazy import: avoids hang on frozen app startup when not using UI
+
     actual_port = find_free_port(port)
 
     static_path = _get_static_path()

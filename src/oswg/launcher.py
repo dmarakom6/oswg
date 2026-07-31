@@ -74,11 +74,16 @@ def _create_app(static_path: Path):
     app.include_router(mutate.router, prefix="/api/v1", tags=["mutate"])
     app.include_router(jobs.router, prefix="/api/v1", tags=["jobs"])
 
-    app.mount("/assets", StaticFiles(directory=str(static_path / "assets")), name="static")
+    assets_path = static_path / "assets"
+    if assets_path.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_path)), name="static")
 
     @app.get("/")
     async def serve_index():
-        return FileResponse(str(static_path / "index.html"))
+        index_file = static_path / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+        return {"message": "OSWG API is running. Web UI not bundled in this install. Use the CLI: oswg --help"}
 
     @app.get("/health")
     async def health():

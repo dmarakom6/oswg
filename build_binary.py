@@ -68,8 +68,11 @@ def build_binary() -> None:
 
 
 def main() -> None:
-    build_frontend()
-    build_binary()
+    mode = sys.argv[1] if len(sys.argv) > 1 else "all"
+    if mode in ("all", "frontend"):
+        build_frontend()
+    if mode in ("all", "binary"):
+        build_binary()
     print("Build complete!")
 
 

@@ -72,10 +72,19 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build sdist and wheel
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build frontend into package
         run: |
           python -m pip install --upgrade pip
           pip install build
+          python build_binary.py frontend
+
+      - name: Build sdist and wheel
+        run: |
           python -m build
 
       - name: Publish to PyPI

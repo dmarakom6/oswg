@@ -40,14 +40,14 @@ def _get_static_path() -> Path:
 def _create_app(static_path: Path):
     """Create the FastAPI app with static file serving."""
     from contextlib import asynccontextmanager
+
     from fastapi import FastAPI, WebSocket, WebSocketDisconnect
     from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
 
     from oswg.database import db
-    from oswg.services.progress import progress_tracker
     from oswg.routers import generate, jobs, mutate, scrape
+    from oswg.services.progress import progress_tracker
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -74,20 +74,18 @@ def _create_app(static_path: Path):
     app.include_router(mutate.router, prefix="/api/v1", tags=["mutate"])
     app.include_router(jobs.router, prefix="/api/v1", tags=["jobs"])
 
-    assets_path = static_path / "assets"
-    if assets_path.exists():
-        app.mount("/assets", StaticFiles(directory=str(assets_path)), name="static")
-
-    @app.get("/")
-    async def serve_index():
-        index_file = static_path / "index.html"
-        if index_file.exists():
-            return FileResponse(str(index_file))
-        return {"message": "OSWG API is running. Web UI not bundled in this install. Use the CLI: oswg --help"}
-
     @app.get("/health")
     async def health():
         return {"status": "healthy"}
+
+    if (static_path / "index.html").exists():
+        app.mount("/", StaticFiles(directory=str(static_path), html=True), name="static")
+    else:
+        @app.get("/")
+        async def serve_index():
+            return {
+                "message": "OSWG API is running. Web UI not bundled in this install. Use the CLI: oswg --help"
+            }
 
     @app.websocket("/ws/jobs/{job_id}")
     async def websocket_endpoint(websocket: WebSocket, job_id: str):

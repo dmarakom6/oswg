@@ -39,18 +39,26 @@ def _get_static_path() -> Path:
 
 def _create_app(static_path: Path):
     """Create the FastAPI app with static file serving."""
+    from contextlib import asynccontextmanager
     from fastapi import FastAPI, WebSocket, WebSocketDisconnect
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
 
-    from oswg.progress import progress_tracker
+    from oswg.database import db
+    from oswg.services.progress import progress_tracker
     from oswg.routers import generate, jobs, mutate, scrape
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        await db.init()
+        yield
 
     app = FastAPI(
         title="OSWG API",
         version=__version__,
         description="API for generating targeted wordlists from website content",
+        lifespan=lifespan,
     )
 
     app.add_middleware(

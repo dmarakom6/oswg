@@ -33,6 +33,4 @@ jobs:
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          semantic-release version --noop
-          semantic-release publish
+        run: semantic-release version

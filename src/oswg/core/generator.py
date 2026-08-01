@@ -16,13 +16,24 @@ class WordlistGenerator:
         self,
         url: str,
         config: GenerationConfig | None = None,
+        urls: list[str] | None = None,
+        sitemap: bool = False,
     ) -> GenerationResult:
         """Generate a wordlist from a URL."""
         if config is None:
             config = GenerationConfig()
 
-        scraped = await self.scraper.scrape(url)
+        self.scraper.min_word_length = config.min_word_length
+        self.scraper.max_word_length = config.max_word_length
+
+        if urls:
+            scraped = await self.scraper.scrape_urls(urls, sitemap=sitemap)
+        else:
+            scraped = await self.scraper.scrape(url, sitemap=sitemap)
+
         words = self._filter_words(scraped, config)
+        base_words = list(words)
+
         mutations = self.mutation_engine.generate_all_mutations(
             words,
             config={
@@ -39,7 +50,18 @@ class WordlistGenerator:
         if config.deduplicate:
             mutations = list(dict.fromkeys(mutations))
 
+        if len(mutations) < config.target_size and base_words:
+            mutations = self._expand_to_target(mutations, base_words, config)
+
         mutations = mutations[: config.target_size]
+
+        if len(mutations) < config.target_size:
+            import sys
+            print(
+                f"Warning: produced {len(mutations)} words (target was {config.target_size}). "
+                f"Try increasing --max-pages or using --sitemap.",
+                file=sys.stderr,
+            )
 
         return GenerationResult(
             words=mutations,
@@ -48,6 +70,74 @@ class WordlistGenerator:
             unique_words=len(set(mutations)),
             config=config,
         )
+
+    def _expand_to_target(
+        self,
+        mutations: list[str],
+        base_words: list[str],
+        config: GenerationConfig,
+    ) -> list[str]:
+        """Apply additional mutation passes to reach target_size."""
+        seen = set(mutations)
+        expanded = list(mutations)
+        target = config.target_size
+        years = config.common_years
+        special = config.special_chars
+
+        if len(expanded) >= target:
+            return expanded
+
+        for word in base_words:
+            if len(expanded) >= target:
+                break
+
+            cap_year = f"{word.title()}{years[0]}"
+            if cap_year not in seen:
+                seen.add(cap_year)
+                expanded.append(cap_year)
+
+            low_year = f"{word.lower()}{years[0]}"
+            if low_year not in seen:
+                seen.add(low_year)
+                expanded.append(low_year)
+
+            cap = f"{word.title()}{special[0]}"
+            if cap not in seen:
+                seen.add(cap)
+                expanded.append(cap)
+
+            low_s = f"{word.lower()}{special[0]}"
+            if low_s not in seen:
+                seen.add(low_s)
+                expanded.append(low_s)
+
+        if len(expanded) >= target:
+            return expanded
+
+        for word in base_words:
+            if len(expanded) >= target:
+                break
+            leet_variations = self.mutation_engine._leet_speak(word, level=2)
+            for lv in leet_variations:
+                if lv not in seen and len(expanded) < target:
+                    seen.add(lv)
+                    expanded.append(lv)
+
+        if len(expanded) >= target:
+            return expanded
+
+        for i, w1 in enumerate(base_words):
+            if len(expanded) >= target:
+                break
+            for w2 in base_words[i + 1:]:
+                if len(expanded) >= target:
+                    break
+                combo = f"{w1}{w2}"
+                if combo not in seen and len(combo) <= config.max_word_length:
+                    seen.add(combo)
+                    expanded.append(combo)
+
+        return expanded
 
     def _filter_words(
         self, scraped: ScrapedContent, config: GenerationConfig

@@ -38,7 +38,8 @@ class ScrapedContent:
             words.extend(self.title.split())
         if self.meta_description:
             words.extend(self.meta_description.split())
-        words.extend(self.headings)
+        for heading in self.headings:
+            words.extend(heading.split())
         words.extend(self.body_text)
         words.extend(self.links_text)
         return words

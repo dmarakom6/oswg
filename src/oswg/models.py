@@ -31,6 +31,8 @@ class BaseRequest(BaseModel):
 
 class GenerateRequest(BaseRequest):
     url: str = Field(..., description="Target URL to scrape.")
+    urls: list[str] = Field(default=[], description="Additional URLs to scrape.", max_length=50)
+    sitemap: bool = Field(False, description="Use sitemap.xml for page discovery.")
     size: int = Field(10000, description="Target wordlist size.", ge=1, le=1000000)
     max_pages: int = Field(10, description="Maximum pages to scrape.", ge=1, le=100)
     min_length: int = Field(3, description="Minimum word length.", ge=1, le=32)
@@ -43,6 +45,8 @@ class GenerateRequest(BaseRequest):
 
 class ScrapeRequest(BaseRequest):
     url: str = Field(..., description="Target URL to scrape.")
+    urls: list[str] = Field(default=[], description="Additional URLs to scrape.", max_length=50)
+    sitemap: bool = Field(False, description="Use sitemap.xml for page discovery.")
     max_pages: int = Field(10, description="Maximum pages to scrape.", ge=1, le=100)
 
 

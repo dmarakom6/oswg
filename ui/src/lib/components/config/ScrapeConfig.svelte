@@ -1,6 +1,7 @@
 <script lang="ts">
 	import UrlInput from './UrlInput.svelte';
 	import NumberStepper from './NumberStepper.svelte';
+	import ToggleSwitch from './ToggleSwitch.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
 	import { isValidUrl } from '$lib/utils/validators';
 	import { endpoints } from '$lib/api/endpoints';
@@ -11,6 +12,7 @@
 	let url = $state('');
 	let maxPages = $state(DEFAULTS.maxPages);
 	let retentionSeconds = $state(DEFAULTS.retentionSeconds);
+	let useSitemap = $state(false);
 	let submitting = $state(false);
 
 	let urlError = $derived(url.length > 0 && !isValidUrl(url) ? 'Enter a valid URL including protocol (https://)' : '');
@@ -23,6 +25,7 @@
 		try {
 			const response = await endpoints.scrape({
 				url,
+				sitemap: useSitemap,
 				max_pages: maxPages,
 				retention_seconds: retentionSeconds
 			});
@@ -67,6 +70,12 @@
 	<div class="space-y-4">
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scope</h2>
 		<NumberStepper value={maxPages} onchange={(v) => (maxPages = v)} label="Pages to scrape" min={LIMITS.maxPages.min} max={LIMITS.maxPages.max} />
+		<div class="flex items-center gap-3">
+			<ToggleSwitch checked={useSitemap} onchange={(v) => (useSitemap = v)} label="Use sitemap.xml" />
+			{#if useSitemap}
+				<p class="text-xs text-muted-foreground">Discovers pages from sitemap instead of link following.</p>
+			{/if}
+		</div>
 	</div>
 
 	<div class="space-y-4">

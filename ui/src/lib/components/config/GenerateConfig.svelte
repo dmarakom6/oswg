@@ -20,6 +20,7 @@
 	let enableSpecial = $state(DEFAULTS.enableSpecial);
 	let leetLevel = $state<1 | 2>(DEFAULTS.leetLevel);
 	let retentionSeconds = $state(DEFAULTS.retentionSeconds);
+	let useSitemap = $state(false);
 	let submitting = $state(false);
 
 	let urlError = $derived(url.length > 0 && !isValidUrl(url) ? 'Enter a valid URL including protocol (https://)' : '');
@@ -32,6 +33,7 @@
 		try {
 			const response = await endpoints.generate({
 				url,
+				sitemap: useSitemap,
 				size,
 				max_pages: maxPages,
 				min_length: minLength,
@@ -85,6 +87,12 @@
 		<div class="grid grid-cols-2 gap-4">
 			<NumberStepper value={maxPages} onchange={(v) => (maxPages = v)} label="Pages to scrape" min={LIMITS.maxPages.min} max={LIMITS.maxPages.max} />
 			<NumberStepper value={size} onchange={(v) => (size = v)} label="Wordlist size" min={LIMITS.wordlistSize.min} max={LIMITS.wordlistSize.max} step={1000} />
+		</div>
+		<div class="flex items-center gap-3">
+			<ToggleSwitch checked={useSitemap} onchange={(v) => (useSitemap = v)} label="Use sitemap.xml" />
+			{#if useSitemap}
+				<p class="text-xs text-muted-foreground">Discovers pages from sitemap instead of link following.</p>
+			{/if}
 		</div>
 	</div>
 

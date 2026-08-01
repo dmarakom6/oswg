@@ -35,7 +35,13 @@ async def execute_scrape(job_id: str) -> dict:
 
     await job_manager.update_progress(job_id, 30.0, "Scraping website...")
 
-    content = await scraper.scrape(config_data["url"])
+    urls = config_data.get("urls") or None
+    sitemap = config_data.get("sitemap", False)
+
+    if urls:
+        content = await scraper.scrape_urls([config_data["url"]] + urls, sitemap=sitemap)
+    else:
+        content = await scraper.scrape(config_data["url"], sitemap=sitemap)
 
     await job_manager.update_progress(job_id, 70.0, "Processing keywords...")
 
@@ -71,6 +77,8 @@ async def scrape_keywords(
     try:
         config = {
             "url": request.url,
+            "urls": request.urls,
+            "sitemap": request.sitemap,
             "max_pages": request.max_pages,
         }
 

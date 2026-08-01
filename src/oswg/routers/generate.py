@@ -34,6 +34,8 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.max_pages = config_data.get(
         "max_pages", settings.max_pages_default
     )
+    generator.scraper.min_word_length = config_data.get("min_length", 3)
+    generator.scraper.max_word_length = config_data.get("max_length", 32)
 
     await job_manager.update_progress(job_id, 20.0, "Scraping website...")
 
@@ -49,7 +51,12 @@ async def execute_generate(job_id: str) -> dict:
 
     await job_manager.update_progress(job_id, 40.0, "Generating mutations...")
 
-    result = await generator.generate(config_data["url"], generation_config)
+    result = await generator.generate(
+        config_data["url"],
+        generation_config,
+        urls=config_data.get("urls") or None,
+        sitemap=config_data.get("sitemap", False),
+    )
 
     await job_manager.update_progress(job_id, 80.0, "Saving wordlist...")
 
@@ -80,6 +87,8 @@ async def generate_wordlist(
     try:
         config = {
             "url": request.url,
+            "urls": request.urls,
+            "sitemap": request.sitemap,
             "size": request.size,
             "max_pages": request.max_pages,
             "min_length": request.min_length,

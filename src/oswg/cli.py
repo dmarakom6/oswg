@@ -49,7 +49,7 @@ def main(
 
 @app.command()
 def generate(
-    url: str = typer.Argument(..., help="Target URL to scrape."),
+    url: list[str] = typer.Argument(..., help="Target URL(s) to scrape."),
     output: Path = typer.Option("wordlist.txt", "--output", "-o", help="Output file path."),
     size: int = typer.Option(10000, "--size", "-s", help="Target wordlist size.", min=1),
     max_pages: int = typer.Option(10, "--max-pages", "-p", help="Maximum pages to scrape.", min=1),
@@ -59,6 +59,7 @@ def generate(
     no_numbers: bool = typer.Option(False, "--no-numbers", help="Disable number suffix mutations."),
     special: bool = typer.Option(False, "--special", help="Enable special character mutations."),
     leet_level: int = typer.Option(1, "--leet-level", help="L33t speak intensity (1=basic, 2=advanced).", min=1, max=2),
+    sitemap: bool = typer.Option(False, "--sitemap", help="Use sitemap.xml for page discovery."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -77,8 +78,18 @@ def generate(
     generator = WordlistGenerator()
     generator.scraper.max_pages = max_pages
 
+    primary_url = url[0]
+    extra_urls = url[1:] if len(url) > 1 else []
+
     try:
-        result = asyncio.run(generator.generate(url, config))
+        result = asyncio.run(
+            generator.generate(
+                primary_url,
+                config,
+                urls=[primary_url] + extra_urls if extra_urls else None,
+                sitemap=sitemap,
+            )
+        )
     except Exception as e:
         print_error(str(e))
         raise typer.Exit(code=1) from e
@@ -98,8 +109,9 @@ def generate(
 
 @app.command()
 def scrape(
-    url: str = typer.Argument(..., help="Target URL to scrape."),
+    url: list[str] = typer.Argument(..., help="Target URL(s) to scrape."),
     max_pages: int = typer.Option(10, "--max-pages", "-p", help="Maximum pages to scrape.", min=1),
+    sitemap: bool = typer.Option(False, "--sitemap", help="Use sitemap.xml for page discovery."),
     output: Path = typer.Option(None, "--output", "-o", help="Save keywords to file."),
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all keywords (not just preview)."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
@@ -112,7 +124,10 @@ def scrape(
     scraper = Scraper(max_pages=max_pages)
 
     try:
-        content = asyncio.run(scraper.scrape(url))
+        if len(url) > 1:
+            content = asyncio.run(scraper.scrape_urls(url, sitemap=sitemap))
+        else:
+            content = asyncio.run(scraper.scrape(url[0], sitemap=sitemap))
     except Exception as e:
         print_error(str(e))
         raise typer.Exit(code=1) from e

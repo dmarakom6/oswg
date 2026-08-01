@@ -5,6 +5,8 @@ export type ActiveTab = 'generate' | 'scrape' | 'mutate';
 
 export interface GenerateRequest {
 	url: string;
+	urls?: string[];
+	sitemap?: boolean;
 	size: number;
 	max_pages: number;
 	min_length: number;
@@ -18,6 +20,8 @@ export interface GenerateRequest {
 
 export interface ScrapeRequest {
 	url: string;
+	urls?: string[];
+	sitemap?: boolean;
 	max_pages: number;
 	retention_seconds?: number;
 }

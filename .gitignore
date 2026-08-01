@@ -58,3 +58,4 @@ src/oswg/static/
 ui/build/
 ui/node_modules/
 ui/.svelte-kit/
+wordlist.txt

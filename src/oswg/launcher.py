@@ -75,6 +75,10 @@ def _create_app(static_path: Path):
     async def health():
         return {"status": "healthy"}
 
+    @app.get("/api/v1/info")
+    async def info():
+        return {"version": __version__}
+
     if (static_path / "index.html").exists():
 
         class SafeStaticFiles:

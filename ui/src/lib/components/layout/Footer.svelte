@@ -5,7 +5,7 @@
 
 	onMount(async () => {
 		try {
-			const res = await fetch('/');
+			const res = await fetch('/api/v1/info');
 			const data = await res.json();
 			version = data.version;
 		} catch {

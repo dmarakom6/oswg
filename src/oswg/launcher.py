@@ -88,6 +88,11 @@ def _create_app(static_path: Path):
             async def __call__(self, scope, receive, send):
                 if scope["type"] == "http":
                     return await self._app(scope, receive, send)
+                # For non-HTTP scopes, consume messages to complete the ASGI handshake
+                while True:
+                    message = await receive()
+                    if message.get("type") in ("lifespan.shutdown", "websocket.disconnect"):
+                        return
 
         app.mount("/", SafeStaticFiles(directory=str(static_path), html=True), name="static")
     else:
@@ -153,6 +158,8 @@ def start_server(host: str = "127.0.0.1", port: int = 8000, open_browser: bool =
 
     server_thread = threading.Thread(target=_run_server, daemon=True)
     server_thread.start()
+
+    _wait_for_server(host, actual_port)
 
     url = f"http://{host}:{actual_port}"
 

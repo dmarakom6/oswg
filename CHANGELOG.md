@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.2.2 (2026-08-01)
+
+### Bug Fixes
+
+- Add workflow_dispatch to release-binaries for manual tag builds
+  ([`8113a48`](https://github.com/dmarakom6/oswg/commit/8113a48616b7f44485845fb17771291e8a8b58dc))
+
+
 ## v0.2.1 (2026-08-01)
 
 ### Bug Fixes

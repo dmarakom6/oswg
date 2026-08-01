@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.2.1 (2026-08-01)
+
+### Bug Fixes
+
+- Add /api/v1/info endpoint so footer shows version
+  ([`7f70dd1`](https://github.com/dmarakom6/oswg/commit/7f70dd1874345c7242bd45cab1b2d09d9ece0f3e))
+
+
 ## v0.2.0 (2026-08-01)
 
 ### Bug Fixes

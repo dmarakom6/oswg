@@ -57,6 +57,7 @@ def generate(
     max_length: int = typer.Option(32, "--max-length", help="Maximum word length.", min=1),
     no_leet: bool = typer.Option(False, "--no-leet", help="Disable l33t speak mutations."),
     no_numbers: bool = typer.Option(False, "--no-numbers", help="Disable number suffix mutations."),
+    no_deduplicate: bool = typer.Option(False, "--no-deduplicate", help="Disable deduplication of words."),
     special: bool = typer.Option(False, "--special", help="Enable special character mutations."),
     leet_level: int = typer.Option(1, "--leet-level", help="L33t speak intensity (1=basic, 2=advanced).", min=1, max=2),
     sitemap: bool = typer.Option(False, "--sitemap", help="Use sitemap.xml for page discovery."),
@@ -73,6 +74,7 @@ def generate(
         enable_numbers=not no_numbers,
         enable_special=special,
         leet_level=leet_level,
+        deduplicate=not no_deduplicate,
     )
 
     generator = WordlistGenerator()

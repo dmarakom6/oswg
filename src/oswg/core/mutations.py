@@ -38,6 +38,7 @@ class MutationEngine:
         numbers: list[int] | None = None,
         special_chars: list[str] | None = None,
         leet_level: int = 1,
+        deduplicate: bool = True,
     ) -> list[str]:
         """Generate mutations for a word."""
         if mutation_types is None:
@@ -62,7 +63,9 @@ class MutationEngine:
                 else:
                     results.append(mutator(word))
 
-        return list(set(results))
+        if deduplicate:
+            return list(set(results))
+        return results
 
     def _lowercase(self, word: str) -> str:
         return word.lower()
@@ -158,6 +161,7 @@ class MutationEngine:
                 numbers=config.get("common_years", [2023, 2024, 2025, 2026]),
                 special_chars=config.get("special_chars", ["!", "@", "#", "$"]),
                 leet_level=config.get("leet_level", 1),
+                deduplicate=config.get("deduplicate", True),
             )
             all_mutations.extend(mutations)
 

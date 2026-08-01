@@ -44,6 +44,7 @@ class WordlistGenerator:
                 "leet_level": config.leet_level,
                 "common_years": config.common_years,
                 "special_chars": config.special_chars,
+                "deduplicate": config.deduplicate,
             },
         )
 

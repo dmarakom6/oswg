@@ -7,6 +7,8 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from oswg import __version__
+
 
 def _xdg_data_home() -> Path:
     """Get XDG data home directory (~/.local/share by default)."""
@@ -26,7 +28,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "OSWG"
-    app_version: str = "0.1.0"
+    app_version: str = __version__
     debug: bool = False
 
     api_prefix: str = "/api/v1"

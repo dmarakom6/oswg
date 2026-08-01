@@ -77,6 +77,8 @@ asyncio_mode = "auto"
 [tool.semantic_release]
 version_variables = [
     "src/oswg/__init__.py:__version__",
+]
+version_toml = [
     "pyproject.toml:version",
 ]
 branch = "master"
@@ -84,3 +86,4 @@ commit_message = "chore(release): {version}"
 commit_version_number = true
 tag_format = "v{version}"
 upload_to_release = false
+initial_version = "0.1.8"

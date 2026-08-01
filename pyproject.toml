@@ -86,4 +86,5 @@ commit_message = "chore(release): {version}"
 commit_version_number = true
 tag_format = "v{version}"
 upload_to_release = false
-initial_version = "0.1.8"
+allow_zero_version = true
+major_on_zero = false

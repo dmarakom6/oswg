@@ -41,6 +41,7 @@ class GenerateRequest(BaseRequest):
     enable_numbers: bool = Field(True, description="Enable number suffix mutations.")
     enable_special: bool = Field(False, description="Enable special character mutations.")
     leet_level: int = Field(1, description="L33t speak intensity (1=basic, 2=advanced).", ge=1, le=2)
+    deduplicate: bool = Field(True, description="Remove duplicate words from output.")
 
 
 class ScrapeRequest(BaseRequest):

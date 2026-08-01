@@ -78,9 +78,11 @@
 		</div>
 	</div>
 
-	<div class="space-y-4">
-		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Advanced</h2>
-		<div class="space-y-1.5">
+	<details class="space-y-4">
+		<summary class="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none hover:text-foreground transition-colors">
+			Advanced
+		</summary>
+		<div class="space-y-1.5 pl-1">
 			<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 			<select
 				id="retention"
@@ -92,7 +94,7 @@
 				{/each}
 			</select>
 		</div>
-	</div>
+	</details>
 
 	<button
 		type="submit"

@@ -21,6 +21,8 @@
 	let leetLevel = $state<1 | 2>(DEFAULTS.leetLevel);
 	let retentionSeconds = $state(DEFAULTS.retentionSeconds);
 	let useSitemap = $state(false);
+	let deduplicate = $state(true);
+	let advancedOpen = $state(false);
 	let submitting = $state(false);
 
 	let urlError = $derived(url.length > 0 && !isValidUrl(url) ? 'Enter a valid URL including protocol (https://)' : '');
@@ -42,6 +44,7 @@
 				enable_numbers: enableNumbers,
 				enable_special: enableSpecial,
 				leet_level: leetLevel,
+				deduplicate,
 				retention_seconds: retentionSeconds
 			});
 
@@ -127,21 +130,27 @@
 		</div>
 	</div>
 
-	<div class="space-y-4">
-		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Advanced</h2>
-		<div class="space-y-1.5">
-			<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
-			<select
-				id="retention"
-				bind:value={retentionSeconds}
-				class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-			>
-				{#each RETENTION_OPTIONS as opt}
-					<option value={opt.value}>{opt.label}</option>
-				{/each}
-			</select>
+	<details bind:open={advancedOpen} class="space-y-4">
+		<summary class="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none hover:text-foreground transition-colors">
+			Advanced
+		</summary>
+		<div class="space-y-3 pl-1">
+			<ToggleSwitch checked={deduplicate} onchange={(v) => (deduplicate = v)} label="Deduplicate" />
+			<p class="text-xs text-muted-foreground">Remove duplicate words from the output.</p>
+			<div class="space-y-1.5">
+				<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
+				<select
+					id="retention"
+					bind:value={retentionSeconds}
+					class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+				>
+					{#each RETENTION_OPTIONS as opt}
+						<option value={opt.value}>{opt.label}</option>
+					{/each}
+				</select>
+			</div>
 		</div>
-	</div>
+	</details>
 
 	<button
 		type="submit"

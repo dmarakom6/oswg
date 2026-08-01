@@ -47,6 +47,7 @@ async def execute_generate(job_id: str) -> dict:
         enable_numbers=config_data.get("enable_numbers", True),
         enable_special=config_data.get("enable_special", False),
         leet_level=config_data.get("leet_level", 1),
+        deduplicate=config_data.get("deduplicate", True),
     )
 
     await job_manager.update_progress(job_id, 40.0, "Generating mutations...")
@@ -97,6 +98,7 @@ async def generate_wordlist(
             "enable_numbers": request.enable_numbers,
             "enable_special": request.enable_special,
             "leet_level": request.leet_level,
+            "deduplicate": request.deduplicate,
         }
 
         job_id = await job_manager.create_job(

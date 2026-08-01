@@ -15,6 +15,7 @@ export interface GenerateRequest {
 	enable_numbers: boolean;
 	enable_special: boolean;
 	leet_level: 1 | 2;
+	deduplicate?: boolean;
 	retention_seconds?: number;
 }
 

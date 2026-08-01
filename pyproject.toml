@@ -79,7 +79,7 @@ version_variables = [
     "src/oswg/__init__.py:__version__",
     "pyproject.toml:version",
 ]
-branch = "main"
+branch = "master"
 commit_message = "chore(release): {version}"
 commit_version_number = true
 tag_format = "v{version}"

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "oswg"
-version = "0.2.3"
+version = "0.2.4"
 description = "Oddly Specific Wordlist Generator - Generate targeted wordlists from website content"
 readme = "README.md"
 requires-python = ">=3.10"

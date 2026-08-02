@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.2.4 (2026-08-02)
+
+### Bug Fixes
+
+- Disable duplicate release notes from softprops
+  ([`2749d19`](https://github.com/dmarakom6/oswg/commit/2749d197c4162ee79c00b5c2cb27a13de45d7616))
+
+
 ## v0.2.3 (2026-08-02)
 
 

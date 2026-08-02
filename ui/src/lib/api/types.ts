@@ -16,6 +16,9 @@ export interface GenerateRequest {
 	enable_special: boolean;
 	leet_level: 1 | 2;
 	deduplicate?: boolean;
+	filter_stopwords?: boolean;
+	stopword_threshold?: number;
+	extra_stopwords?: string[];
 	retention_seconds?: number;
 }
 

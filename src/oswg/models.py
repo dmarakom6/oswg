@@ -42,6 +42,20 @@ class GenerateRequest(BaseRequest):
     enable_special: bool = Field(False, description="Enable special character mutations.")
     leet_level: int = Field(1, description="L33t speak intensity (1=basic, 2=advanced).", ge=1, le=2)
     deduplicate: bool = Field(True, description="Remove duplicate words from output.")
+    filter_stopwords: bool = Field(
+        True, description="Filter common English and web boilerplate words."
+    )
+    stopword_threshold: float = Field(
+        0.5,
+        description="Exclude words appearing on >this fraction of pages.",
+        ge=0.0,
+        le=1.0,
+    )
+    extra_stopwords: list[str] = Field(
+        default=[],
+        description="Additional stopwords to exclude.",
+        max_length=10000,
+    )
 
 
 class ScrapeRequest(BaseRequest):

@@ -22,6 +22,9 @@
 	let retentionSeconds = $state(DEFAULTS.retentionSeconds);
 	let useSitemap = $state(false);
 	let deduplicate = $state(true);
+	let filterStopwords = $state(true);
+	let stopwordThreshold = $state(0.5);
+	let extraStopwords = $state('');
 	let advancedOpen = $state(false);
 	let submitting = $state(false);
 
@@ -45,6 +48,9 @@
 				enable_special: enableSpecial,
 				leet_level: leetLevel,
 				deduplicate,
+				filter_stopwords: filterStopwords,
+				stopword_threshold: stopwordThreshold,
+				extra_stopwords: extraStopwords.split(',').map(w => w.trim()).filter(Boolean),
 				retention_seconds: retentionSeconds
 			});
 
@@ -137,6 +143,36 @@
 		<div class="space-y-3 pl-1">
 			<ToggleSwitch checked={deduplicate} onchange={(v) => (deduplicate = v)} label="Deduplicate" />
 			<p class="text-xs text-muted-foreground">Remove duplicate words from the output.</p>
+			<ToggleSwitch checked={filterStopwords} onchange={(v) => (filterStopwords = v)} label="Filter common words" />
+			<p class="text-xs text-muted-foreground">Exclude common English words and web boilerplate (e.g. "page", "in", "the").</p>
+			{#if filterStopwords}
+				<div class="space-y-1.5 ml-12">
+					<label for="stopword-threshold" class="block text-sm font-medium text-foreground">
+						Exclude words on &gt;{Math.round(stopwordThreshold * 100)}% of pages
+					</label>
+					<input
+						id="stopword-threshold"
+						type="range"
+						min="0"
+						max="1"
+						step="0.05"
+						bind:value={stopwordThreshold}
+						class="w-full accent-primary"
+					/>
+					<p class="text-xs text-muted-foreground">Higher = less aggressive filtering. Set to 1.0 to disable frequency filtering.</p>
+				</div>
+				<div class="space-y-1.5">
+					<label for="extra-stopwords" class="block text-sm font-medium text-foreground">Extra stopwords</label>
+					<input
+						id="extra-stopwords"
+						type="text"
+						bind:value={extraStopwords}
+						placeholder="comma, separated, words"
+						class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+					/>
+					<p class="text-xs text-muted-foreground">Comma-separated extra words to exclude.</p>
+				</div>
+			{/if}
 			<div class="space-y-1.5">
 				<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 				<select

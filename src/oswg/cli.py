@@ -18,6 +18,7 @@ from oswg.cli_utils import (
 )
 from oswg.core import MutationEngine, WordlistGenerator
 from oswg.core.models import GenerationConfig
+from oswg.core.stopwords import load_stopwords_file
 
 app = typer.Typer(
     name="oswg",
@@ -61,10 +62,25 @@ def generate(
     special: bool = typer.Option(False, "--special", help="Enable special character mutations."),
     leet_level: int = typer.Option(1, "--leet-level", help="L33t speak intensity (1=basic, 2=advanced).", min=1, max=2),
     sitemap: bool = typer.Option(False, "--sitemap", help="Use sitemap.xml for page discovery."),
+    no_filter_stopwords: bool = typer.Option(False, "--no-filter-stopwords", help="Disable common word filtering."),
+    stopword_threshold: float = typer.Option(
+        0.5, "--stopword-threshold",
+        help="Exclude words appearing on >N fraction of pages.",
+        min=0.0, max=1.0,
+    ),
+    stopwords_file: Path = typer.Option(
+        None, "--stopwords-file",
+        help="Extra stopwords file (one per line, merged with built-in list).",
+    ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
     import asyncio
+
+    extra_stopwords: list[str] = []
+    if stopwords_file:
+        loaded = load_stopwords_file(stopwords_file)
+        extra_stopwords = sorted(loaded)
 
     config = GenerationConfig(
         target_size=size,
@@ -75,6 +91,9 @@ def generate(
         enable_special=special,
         leet_level=leet_level,
         deduplicate=not no_deduplicate,
+        filter_stopwords=not no_filter_stopwords,
+        stopword_threshold=stopword_threshold,
+        extra_stopwords=extra_stopwords,
     )
 
     generator = WordlistGenerator()

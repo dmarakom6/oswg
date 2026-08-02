@@ -59,6 +59,9 @@ class GenerationConfig:
     common_years: list[int] = field(default_factory=lambda: [2023, 2024, 2025, 2026])
     special_chars: list[str] = field(default_factory=lambda: ["!", "@", "#", "$"])
     deduplicate: bool = True
+    filter_stopwords: bool = True
+    stopword_threshold: float = 0.5
+    extra_stopwords: list[str] = field(default_factory=list)
 
 
 @dataclass

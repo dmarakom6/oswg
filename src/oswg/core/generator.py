@@ -3,6 +3,7 @@
 from oswg.core.models import GenerationConfig, GenerationResult, ScrapedContent
 from oswg.core.mutations import MutationEngine
 from oswg.core.scraper import Scraper
+from oswg.core.stopwords import STOPWORDS, filter_by_frequency
 
 
 class WordlistGenerator:
@@ -31,7 +32,7 @@ class WordlistGenerator:
         else:
             scraped = await self.scraper.scrape(url, sitemap=sitemap)
 
-        words = self._filter_words(scraped, config)
+        words = self._filter_words(scraped, config, self.scraper.page_word_sets)
         base_words = list(words)
 
         mutations = self.mutation_engine.generate_all_mutations(
@@ -141,7 +142,10 @@ class WordlistGenerator:
         return expanded
 
     def _filter_words(
-        self, scraped: ScrapedContent, config: GenerationConfig
+        self,
+        scraped: ScrapedContent,
+        config: GenerationConfig,
+        page_word_sets: list[set[str]] | None = None,
     ) -> list[str]:
         """Filter words based on configuration."""
         words = []
@@ -153,6 +157,16 @@ class WordlistGenerator:
                 and word_clean.isalpha()
             ):
                 words.append(word_clean)
+
+        if config.filter_stopwords:
+            stopwords = STOPWORDS | {w.lower() for w in config.extra_stopwords}
+            words = [w for w in words if w not in stopwords]
+
+        if page_word_sets and config.stopword_threshold < 1.0:
+            freq_excluded = filter_by_frequency(
+                words, page_word_sets, threshold=config.stopword_threshold
+            )
+            words = [w for w in words if w not in freq_excluded]
 
         seen = set()
         unique_words = []

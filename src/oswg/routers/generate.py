@@ -48,6 +48,9 @@ async def execute_generate(job_id: str) -> dict:
         enable_special=config_data.get("enable_special", False),
         leet_level=config_data.get("leet_level", 1),
         deduplicate=config_data.get("deduplicate", True),
+        filter_stopwords=config_data.get("filter_stopwords", True),
+        stopword_threshold=config_data.get("stopword_threshold", 0.5),
+        extra_stopwords=config_data.get("extra_stopwords", []),
     )
 
     await job_manager.update_progress(job_id, 40.0, "Generating mutations...")
@@ -99,6 +102,9 @@ async def generate_wordlist(
             "enable_special": request.enable_special,
             "leet_level": request.leet_level,
             "deduplicate": request.deduplicate,
+            "filter_stopwords": request.filter_stopwords,
+            "stopword_threshold": request.stopword_threshold,
+            "extra_stopwords": request.extra_stopwords,
         }
 
         job_id = await job_manager.create_job(

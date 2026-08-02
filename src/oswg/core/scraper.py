@@ -44,9 +44,11 @@ class Scraper:
         self.min_word_length = min_word_length
         self.max_word_length = max_word_length
         self.visited_urls: set[str] = set()
+        self.page_word_sets: list[set[str]] = []
 
     async def scrape(self, url: str, sitemap: bool = False) -> ScrapedContent:
         """Scrape a website and extract keywords."""
+        self.page_word_sets = []
         urls_to_scrape = [url]
 
         if sitemap:
@@ -66,12 +68,13 @@ class Scraper:
                     continue
 
                 try:
-                    page_content, discovered_links = await self._scrape_page(
+                    page_content, discovered_links, page_words = await self._scrape_page(
                         client, current_url
                     )
                     content.keywords.extend(page_content.keywords)
                     content.body_text.extend(page_content.body_text)
                     content.links_text.extend(page_content.links_text)
+                    self.page_word_sets.append(page_words)
                     if not content.title and page_content.title:
                         content.title = page_content.title
                     if not content.meta_description and page_content.meta_description:
@@ -92,6 +95,7 @@ class Scraper:
 
     async def scrape_urls(self, urls: list[str], sitemap: bool = False) -> ScrapedContent:
         """Scrape multiple seed URLs and merge results."""
+        self.page_word_sets = []
         all_content = ScrapedContent(url=urls[0] if urls else "")
         queue = list(urls)
 
@@ -102,12 +106,13 @@ class Scraper:
                     continue
 
                 try:
-                    page_content, discovered_links = await self._scrape_page(
+                    page_content, discovered_links, page_words = await self._scrape_page(
                         client, current_url
                     )
                     all_content.keywords.extend(page_content.keywords)
                     all_content.body_text.extend(page_content.body_text)
                     all_content.links_text.extend(page_content.links_text)
+                    self.page_word_sets.append(page_words)
                     if not all_content.title and page_content.title:
                         all_content.title = page_content.title
                     if not all_content.meta_description and page_content.meta_description:
@@ -128,8 +133,8 @@ class Scraper:
 
     async def _scrape_page(
         self, client: httpx.AsyncClient, url: str
-    ) -> tuple[ScrapedContent, list[str]]:
-        """Scrape a single page. Returns (content, discovered_links)."""
+    ) -> tuple[ScrapedContent, list[str], set[str]]:
+        """Scrape a single page. Returns (content, discovered_links, page_words)."""
         self.visited_urls.add(url)
         response = await client.get(url)
         response.raise_for_status()
@@ -137,6 +142,7 @@ class Scraper:
         soup = BeautifulSoup(response.text, "lxml")
 
         content = ScrapedContent(url=url)
+        page_words: set[str] = set()
 
         title_tag = soup.find("title")
         if title_tag:
@@ -157,7 +163,9 @@ class Scraper:
             text = heading.get_text(strip=True)
             if text:
                 content.headings.append(text)
-                content.keywords.extend(self._extract_words(text))
+                words = self._extract_words(text)
+                content.keywords.extend(words)
+                page_words.update(w.lower() for w in words)
 
         body = soup.find("body")
         if body:
@@ -167,15 +175,18 @@ class Scraper:
             text = body.get_text(separator=" ", strip=True)
             words = self._extract_words(text)
             content.body_text.extend(words)
+            page_words.update(w.lower() for w in words)
 
         for link in soup.find_all("a"):
             link_text = link.get_text(strip=True)
             if link_text:
-                content.links_text.extend(self._extract_words(link_text))
+                words = self._extract_words(link_text)
+                content.links_text.extend(words)
+                page_words.update(w.lower() for w in words)
 
         discovered_links = self._extract_links(soup, url)
 
-        return content, discovered_links
+        return content, discovered_links, page_words
 
     def _extract_links(self, soup: BeautifulSoup, base_url: str) -> list[str]:
         """Extract same-domain links from a parsed page, with filtering."""

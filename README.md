@@ -21,19 +21,19 @@ Download the latest release for your platform from the [Releases page](https://g
 # Linux
 wget https://github.com/yourusername/oswg/releases/latest/download/oswg-linux-x86_64
 chmod +x oswg-linux-x86_64
-./oswg-linux-x86_64 --ui
+./oswg-linux-x86_64 ui
 
 # macOS
 wget https://github.com/yourusername/oswg/releases/latest/download/oswg-macos-arm64
 chmod +x oswg-macos-arm64
-./oswg-macos-arm64 --ui
+./oswg-macos-arm64 ui
 ```
 
 ### Option 2: Install via pip
 
 ```bash
 pip install oswg
-oswg --ui
+oswg ui
 ```
 
 ## Usage
@@ -55,7 +55,7 @@ oswg mutate --file words.txt -o mutations.txt
 ### Web Dashboard
 
 ```bash
-oswg --ui
+oswg ui
 ```
 
 The dashboard will automatically open in your browser at `http://127.0.0.1:8000`. If port 8000 is busy, it will auto-increment to 8001, 8002, etc.
@@ -92,7 +92,7 @@ pip install -e ".[dev]"
 oswg generate https://example.com
 
 # Run web UI
-oswg --ui
+oswg ui
 
 # Build standalone binary
 python build.py

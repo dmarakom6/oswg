@@ -1,13 +1,17 @@
 """Website scraper for extracting keywords."""
 
+import inspect
 import re
 from collections import Counter
+from typing import Callable
 from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
 
 from oswg.core.models import ScrapedContent
+
+ProgressCallback = Callable[[str], None]
 
 SKIP_EXTENSIONS = frozenset({
     ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".ico",
@@ -46,7 +50,17 @@ class Scraper:
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
 
-    async def scrape(self, url: str, sitemap: bool = False) -> ScrapedContent:
+    async def _emit_progress(self, callback: ProgressCallback | None, message: str) -> None:
+        """Call a progress callback, awaiting it if it's a coroutine function."""
+        if callback is None:
+            return
+        result = callback(message)
+        if inspect.isawaitable(result):
+            await result
+
+    async def scrape(
+        self, url: str, sitemap: bool = False, on_progress: ProgressCallback | None = None
+    ) -> ScrapedContent:
         """Scrape a website and extract keywords."""
         self.page_word_sets = []
         urls_to_scrape = [url]
@@ -80,6 +94,15 @@ class Scraper:
                     if not content.meta_description and page_content.meta_description:
                         content.meta_description = page_content.meta_description
 
+                    if on_progress:
+                        scraped_count = len(self.visited_urls)
+                        total_count = max(len(self.visited_urls) + len(queue), len(self.visited_urls))
+                        await self._emit_progress(
+                            on_progress,
+                            f"Scraped page {scraped_count}/{total_count}: "
+                            f"{current_url} ({len(page_words)} words)",
+                        )
+
                     for link in discovered_links:
                         if (
                             link not in self.visited_urls
@@ -91,9 +114,17 @@ class Scraper:
                     continue
 
         content.keywords = self._deduplicate_and_rank(content.keywords)
+        if on_progress:
+            await self._emit_progress(
+                on_progress,
+                f"Scraping complete: {len(self.page_word_sets)} pages, "
+                f"{len(content.keywords)} unique words",
+            )
         return content
 
-    async def scrape_urls(self, urls: list[str], sitemap: bool = False) -> ScrapedContent:
+    async def scrape_urls(
+        self, urls: list[str], sitemap: bool = False, on_progress: ProgressCallback | None = None
+    ) -> ScrapedContent:
         """Scrape multiple seed URLs and merge results."""
         self.page_word_sets = []
         all_content = ScrapedContent(url=urls[0] if urls else "")
@@ -118,6 +149,15 @@ class Scraper:
                     if not all_content.meta_description and page_content.meta_description:
                         all_content.meta_description = page_content.meta_description
 
+                    if on_progress:
+                        scraped_count = len(self.visited_urls)
+                        total_count = max(len(self.visited_urls) + len(queue), len(self.visited_urls))
+                        await self._emit_progress(
+                            on_progress,
+                            f"Scraped page {scraped_count}/{total_count}: "
+                            f"{current_url} ({len(page_words)} words)",
+                        )
+
                     for link in discovered_links:
                         if (
                             link not in self.visited_urls
@@ -129,6 +169,12 @@ class Scraper:
                     continue
 
         all_content.keywords = self._deduplicate_and_rank(all_content.keywords)
+        if on_progress:
+            await self._emit_progress(
+                on_progress,
+                f"Scraping complete: {len(self.page_word_sets)} pages, "
+                f"{len(all_content.keywords)} unique words",
+            )
         return all_content
 
     async def _scrape_page(

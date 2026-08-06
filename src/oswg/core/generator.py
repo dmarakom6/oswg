@@ -1,9 +1,14 @@
 """Wordlist generator that combines scraping and mutations."""
 
+import inspect
+from typing import Callable
+
 from oswg.core.models import GenerationConfig, GenerationResult, ScrapedContent
 from oswg.core.mutations import MutationEngine
 from oswg.core.scraper import Scraper
 from oswg.core.stopwords import STOPWORDS, filter_by_frequency
+
+ProgressCallback = Callable[[str], None]
 
 
 class WordlistGenerator:
@@ -19,6 +24,7 @@ class WordlistGenerator:
         config: GenerationConfig | None = None,
         urls: list[str] | None = None,
         sitemap: bool = False,
+        on_progress: ProgressCallback | None = None,
     ) -> GenerationResult:
         """Generate a wordlist from a URL."""
         if config is None:
@@ -28,12 +34,29 @@ class WordlistGenerator:
         self.scraper.max_word_length = config.max_word_length
 
         if urls:
-            scraped = await self.scraper.scrape_urls(urls, sitemap=sitemap)
+            scraped = await self.scraper.scrape_urls(
+                urls, sitemap=sitemap, on_progress=on_progress
+            )
         else:
-            scraped = await self.scraper.scrape(url, sitemap=sitemap)
+            scraped = await self.scraper.scrape(
+                url, sitemap=sitemap, on_progress=on_progress
+            )
 
-        words = self._filter_words(scraped, config, self.scraper.page_word_sets)
+        words, filter_stats = self._filter_words(
+            scraped, config, self.scraper.page_word_sets
+        )
         base_words = list(words)
+
+        if on_progress:
+            result = on_progress(
+                f"Extracted {filter_stats['raw']} words; "
+                f"removed {filter_stats['stopwords']} stopwords, "
+                f"{filter_stats['freq']} high-frequency, "
+                f"{filter_stats['length']} length/format; "
+                f"{filter_stats['unique']} base words remaining"
+            )
+            if inspect.isawaitable(result):
+                await result
 
         mutations = self.mutation_engine.generate_all_mutations(
             words,
@@ -146,27 +169,46 @@ class WordlistGenerator:
         scraped: ScrapedContent,
         config: GenerationConfig,
         page_word_sets: list[set[str]] | None = None,
-    ) -> list[str]:
-        """Filter words based on configuration."""
+    ) -> tuple[list[str], dict[str, int]]:
+        """Filter words based on configuration. Returns (words, stats)."""
+        raw_count = 0
+        length_filtered = 0
         words = []
         for word in scraped.all_words:
             word_clean = word.lower().strip()
+            raw_count += 1
             if (
                 len(word_clean) >= config.min_word_length
                 and len(word_clean) <= config.max_word_length
                 and word_clean.isalpha()
             ):
                 words.append(word_clean)
+            else:
+                length_filtered += 1
 
+        stopword_filtered = 0
         if config.filter_stopwords:
             stopwords = STOPWORDS | {w.lower() for w in config.extra_stopwords}
-            words = [w for w in words if w not in stopwords]
+            filtered = []
+            for w in words:
+                if w in stopwords:
+                    stopword_filtered += 1
+                else:
+                    filtered.append(w)
+            words = filtered
 
+        freq_filtered = 0
         if page_word_sets and config.stopword_threshold < 1.0:
             freq_excluded = filter_by_frequency(
                 words, page_word_sets, threshold=config.stopword_threshold
             )
-            words = [w for w in words if w not in freq_excluded]
+            filtered = []
+            for w in words:
+                if w in freq_excluded:
+                    freq_filtered += 1
+                else:
+                    filtered.append(w)
+            words = filtered
 
         seen = set()
         unique_words = []
@@ -175,7 +217,15 @@ class WordlistGenerator:
                 seen.add(word)
                 unique_words.append(word)
 
-        return unique_words
+        stats = {
+            "raw": raw_count,
+            "length": length_filtered,
+            "stopwords": stopword_filtered,
+            "freq": freq_filtered,
+            "unique": len(unique_words),
+        }
+
+        return unique_words, stats
 
     def estimate_size(self, keywords: list[str], config: GenerationConfig) -> int:
         """Estimate wordlist size before generation."""

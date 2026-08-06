@@ -1,5 +1,7 @@
 """CLI output utilities - shared between CLI and UI launcher."""
 
+from typing import Callable
+
 from rich.console import Console
 from rich.progress import (
     BarColumn,
@@ -23,6 +25,14 @@ def get_progress() -> Progress:
         TimeElapsedColumn(),
         console=console,
     )
+
+
+def make_verbose_callback() -> Callable[[str], None]:
+    """Return a callback that prints detailed progress messages."""
+    def _on_progress(message: str) -> None:
+        console.print(f"[dim]▸[/dim] {message}")
+
+    return _on_progress
 
 
 def print_result_summary(source_keywords: int, total_mutations: int, unique_words: int, output_file: str) -> None:

@@ -9,6 +9,7 @@ import typer
 from oswg import __version__
 from oswg.cli_utils import (
     console,
+    make_verbose_callback,
     print_error,
     print_info,
     print_keywords_preview,
@@ -72,6 +73,7 @@ def generate(
         None, "--stopwords-file",
         help="Extra stopwords file (one per line, merged with built-in list).",
     ),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed scraping and filtering progress."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -102,6 +104,8 @@ def generate(
     primary_url = url[0]
     extra_urls = url[1:] if len(url) > 1 else []
 
+    on_progress = make_verbose_callback() if verbose else None
+
     try:
         result = asyncio.run(
             generator.generate(
@@ -109,6 +113,7 @@ def generate(
                 config,
                 urls=[primary_url] + extra_urls if extra_urls else None,
                 sitemap=sitemap,
+                on_progress=on_progress,
             )
         )
     except Exception as e:

@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v0.3.0 (2026-08-06)
+
+### Chores
+
+- Makefile & stopwords set
+  ([`65fb120`](https://github.com/dmarakom6/oswg/commit/65fb120d44895b5eacef5e93e479a021f4e6b92e))
+
+### Features
+
+- Add --verbose flag for detailed scraping progress
+  ([`bb6379f`](https://github.com/dmarakom6/oswg/commit/bb6379f6572e63219142487748452bd524e8e4f6))
+
+- Stopwords
+  ([`c8507de`](https://github.com/dmarakom6/oswg/commit/c8507de41100253e637f3ee9f94b1b0b0439fd4f))
+
+
 ## v0.2.4 (2026-08-02)
 
 ### Bug Fixes

@@ -2,7 +2,7 @@
 
 from itertools import product
 
-from oswg.core.models import MutationType
+from oswg.core.models import MutationType, default_years
 
 
 class MutationEngine:
@@ -158,7 +158,7 @@ class MutationEngine:
             mutations = self.mutate(
                 word,
                 mutation_types=mutation_types,
-                numbers=config.get("common_years", [2023, 2024, 2025, 2026]),
+                numbers=config.get("common_years", default_years()),
                 special_chars=config.get("special_chars", ["!", "@", "#", "$"]),
                 leet_level=config.get("leet_level", 1),
                 deduplicate=config.get("deduplicate", True),

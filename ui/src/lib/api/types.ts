@@ -19,6 +19,8 @@ export interface GenerateRequest {
 	filter_stopwords?: boolean;
 	stopword_threshold?: number;
 	extra_stopwords?: string[];
+	common_years?: number[];
+	special_chars?: string[];
 	retention_seconds?: number;
 }
 

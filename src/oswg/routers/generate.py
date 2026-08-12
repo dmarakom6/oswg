@@ -4,7 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from oswg.config import settings
 from oswg.core import WordlistGenerator
-from oswg.core.models import GenerationConfig
+from oswg.core.models import GenerationConfig, default_years
 from oswg.models import (
     ErrorResponse,
     GenerateRequest,
@@ -51,6 +51,8 @@ async def execute_generate(job_id: str) -> dict:
         filter_stopwords=config_data.get("filter_stopwords", True),
         stopword_threshold=config_data.get("stopword_threshold", 0.5),
         extra_stopwords=config_data.get("extra_stopwords", []),
+        common_years=config_data.get("common_years") or default_years(),
+        special_chars=config_data.get("special_chars") or ["!", "@", "#", "$"],
     )
 
     await job_manager.update_progress(job_id, 40.0, "Generating mutations...")
@@ -105,6 +107,8 @@ async def generate_wordlist(
             "filter_stopwords": request.filter_stopwords,
             "stopword_threshold": request.stopword_threshold,
             "extra_stopwords": request.extra_stopwords,
+            "common_years": request.common_years,
+            "special_chars": request.special_chars,
         }
 
         job_id = await job_manager.create_job(

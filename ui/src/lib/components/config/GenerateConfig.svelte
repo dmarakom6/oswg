@@ -25,11 +25,26 @@
 	let filterStopwords = $state(true);
 	let stopwordThreshold = $state(0.5);
 	let extraStopwords = $state('');
+	let years = $state('');
+	let specialChars = $state('!, @, #, $');
 	let advancedOpen = $state(false);
 	let submitting = $state(false);
 
 	let urlError = $derived(url.length > 0 && !isValidUrl(url) ? 'Enter a valid URL including protocol (https://)' : '');
 	let canSubmit = $derived(url.length > 0 && isValidUrl(url) && !submitting);
+	let commonYears = $derived(
+		years.split(',')
+			.map((y) => parseInt(y.trim(), 10))
+			.filter((y) => !Number.isNaN(y))
+	);
+	let parsedSpecialChars = $derived(
+		specialChars.split(',').map((c) => c.trim()).filter(Boolean)
+	);
+	let specialCharsError = $derived(
+		parsedSpecialChars.find((c) => c.length !== 1 || /[a-zA-Z0-9]/.test(c) || /\s/.test(c))
+			? 'Only single special characters allowed (no letters, numbers or spaces).'
+			: ''
+	);
 
 	async function handleSubmit() {
 		if (!canSubmit) return;
@@ -51,6 +66,8 @@
 				filter_stopwords: filterStopwords,
 				stopword_threshold: stopwordThreshold,
 				extra_stopwords: extraStopwords.split(',').map(w => w.trim()).filter(Boolean),
+				common_years: commonYears,
+				...((enableSpecial && parsedSpecialChars.length > 0 && !specialCharsError) ? { special_chars: parsedSpecialChars } : {}),
 				retention_seconds: retentionSeconds
 			});
 
@@ -171,6 +188,36 @@
 						class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 					/>
 					<p class="text-xs text-muted-foreground">Comma-separated extra words to exclude.</p>
+				</div>
+			{/if}
+			{#if enableNumbers}
+				<div class="space-y-1.5">
+					<label for="years" class="block text-sm font-medium text-foreground">Years</label>
+					<input
+						id="years"
+						type="text"
+						bind:value={years}
+						placeholder="2026, 2025, 2024"
+						class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+					/>
+					<p class="text-xs text-muted-foreground">Comma-separated years appended as suffixes. Empty = current year + previous 5.</p>
+				</div>
+			{/if}
+			{#if enableSpecial}
+				<div class="space-y-1.5">
+					<label for="special-chars" class="block text-sm font-medium text-foreground">Special characters</label>
+					<input
+						id="special-chars"
+						type="text"
+						bind:value={specialChars}
+						placeholder="!, @, #, $"
+						class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+					/>
+					{#if specialCharsError}
+						<p class="text-xs text-destructive">{specialCharsError}</p>
+					{:else}
+						<p class="text-xs text-muted-foreground">Comma-separated special characters appended to words. Empty = ! @ # $.</p>
+					{/if}
 				</div>
 			{/if}
 			<div class="space-y-1.5">

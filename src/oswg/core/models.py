@@ -1,6 +1,7 @@
 """Data models for OSWG Core."""
 
 from dataclasses import dataclass, field
+from datetime import date
 from enum import Enum
 from typing import Optional
 
@@ -45,6 +46,12 @@ class ScrapedContent:
         return words
 
 
+def default_years() -> list[int]:
+    """Current year and the five years before it, most recent first."""
+    year = date.today().year
+    return [year - i for i in range(6)]
+
+
 @dataclass
 class GenerationConfig:
     """Configuration for wordlist generation."""
@@ -56,7 +63,7 @@ class GenerationConfig:
     enable_numbers: bool = True
     enable_special: bool = False
     leet_level: int = 1
-    common_years: list[int] = field(default_factory=lambda: [2023, 2024, 2025, 2026])
+    common_years: list[int] = field(default_factory=default_years)
     special_chars: list[str] = field(default_factory=lambda: ["!", "@", "#", "$"])
     deduplicate: bool = True
     filter_stopwords: bool = True

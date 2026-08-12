@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class JobType(str, Enum):
@@ -56,6 +56,27 @@ class GenerateRequest(BaseRequest):
         description="Additional stopwords to exclude.",
         max_length=10000,
     )
+    common_years: list[int] = Field(
+        default=[],
+        description="Custom years for number suffix mutations. Empty = current year + previous 5.",
+        max_length=20,
+    )
+    special_chars: list[str] = Field(
+        default=[],
+        description="Custom special characters for mutations. Empty = ! @ # $.",
+        max_length=10,
+    )
+
+    @field_validator("special_chars")
+    @classmethod
+    def _validate_special_chars(cls, values: list[str]) -> list[str]:
+        for value in values:
+            if len(value) != 1 or value.isalnum() or value.isspace():
+                raise ValueError(
+                    f"'{value}' is not a special character "
+                    "(must be a single non-alphanumeric character)"
+                )
+        return values
 
 
 class ScrapeRequest(BaseRequest):

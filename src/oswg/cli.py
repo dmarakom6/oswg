@@ -18,7 +18,7 @@ from oswg.cli_utils import (
     print_success,
 )
 from oswg.core import MutationEngine, WordlistGenerator
-from oswg.core.models import GenerationConfig
+from oswg.core.models import GenerationConfig, default_years
 from oswg.core.stopwords import load_stopwords_file
 
 app = typer.Typer(
@@ -33,6 +33,17 @@ def version_callback(value: bool) -> None:
     if value:
         typer.echo(f"oswg {__version__}")
         raise typer.Exit()
+
+
+def validate_special_chars(values: list[str]) -> list[str]:
+    """Validate --special-chars values: each must be a single non-alphanumeric char."""
+    for value in values:
+        if len(value) != 1 or value.isalnum() or value.isspace():
+            raise typer.BadParameter(
+                f"'{value}' is not a special character "
+                "(must be a single non-alphanumeric character)"
+            )
+    return values
 
 
 @app.callback()
@@ -61,6 +72,12 @@ def generate(
     no_numbers: bool = typer.Option(False, "--no-numbers", help="Disable number suffix mutations."),
     no_deduplicate: bool = typer.Option(False, "--no-deduplicate", help="Disable deduplication of words."),
     special: bool = typer.Option(False, "--special", help="Enable special character mutations."),
+    special_chars: list[str] = typer.Option(
+        None, "--special-chars",
+        help="Custom special characters for mutations (default: ! @ # $). "
+        "Each value must be a single special character.",
+        callback=validate_special_chars,
+    ),
     leet_level: int = typer.Option(1, "--leet-level", help="L33t speak intensity (1=basic, 2=advanced).", min=1, max=2),
     sitemap: bool = typer.Option(False, "--sitemap", help="Use sitemap.xml for page discovery."),
     no_filter_stopwords: bool = typer.Option(False, "--no-filter-stopwords", help="Disable common word filtering."),
@@ -74,6 +91,10 @@ def generate(
         help="Extra stopwords file (one per line, merged with built-in list).",
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed scraping and filtering progress."),
+    years: list[int] = typer.Option(
+        None, "--years",
+        help="Custom years for number suffix mutations (default: current year + previous 5).",
+    ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -92,6 +113,8 @@ def generate(
         enable_numbers=not no_numbers,
         enable_special=special,
         leet_level=leet_level,
+        common_years=years or default_years(),
+        special_chars=special_chars or ["!", "@", "#", "$"],
         deduplicate=not no_deduplicate,
         filter_stopwords=not no_filter_stopwords,
         stopword_threshold=stopword_threshold,

@@ -35,6 +35,17 @@ def make_verbose_callback() -> Callable[[str], None]:
     return _on_progress
 
 
+def print_banner() -> None:
+    """Print the OSWG banner."""
+    banner = r"""[bold cyan]
+    ▗▄▖  ▗▄▄▖ ▗▄▄▖▗▖ ▗▖
+   ▐▌ ▐▌▐▌   ▐▌   ▐▌ ▐▌
+   ▐▌ ▐▌ ▝▀▚▖▐▌▝▜▌▐▌ ▐▌
+   ▝▚▄▞▘▗▄▄▞▘▝▚▄▞▘▐▙█▟▌
+[/bold cyan]"""
+    console.print(banner)
+
+
 def print_result_summary(source_keywords: int, total_mutations: int, unique_words: int, output_file: str) -> None:
     table = Table(title="Generation Results", show_header=False)
     table.add_column("Metric", style="bold cyan")

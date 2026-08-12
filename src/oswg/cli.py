@@ -10,6 +10,7 @@ from oswg import __version__
 from oswg.cli_utils import (
     console,
     make_verbose_callback,
+    print_banner,
     print_error,
     print_info,
     print_keywords_preview,
@@ -31,6 +32,7 @@ app = typer.Typer(
 
 def version_callback(value: bool) -> None:
     if value:
+        print_banner()
         typer.echo(f"oswg {__version__}")
         raise typer.Exit()
 

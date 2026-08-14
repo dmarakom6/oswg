@@ -39,6 +39,7 @@ class MutationEngine:
         special_chars: list[str] | None = None,
         leet_level: int = 1,
         deduplicate: bool = True,
+        enable_uppercase: bool = True,
     ) -> list[str]:
         """Generate mutations for a word."""
         if mutation_types is None:
@@ -55,9 +56,9 @@ class MutationEngine:
             if mut_type in self.mutations:
                 mutator = self.mutations[mut_type]
                 if mut_type == MutationType.ADD_NUMBERS:
-                    results.extend(mutator(word, numbers))
+                    results.extend(mutator(word, numbers, enable_uppercase))
                 elif mut_type == MutationType.ADD_SPECIAL:
-                    results.extend(mutator(word, special_chars))
+                    results.extend(mutator(word, special_chars, enable_uppercase))
                 elif mut_type == MutationType.LEET_SPEAK:
                     results.extend(mutator(word, leet_level))
                 else:
@@ -109,21 +110,27 @@ class MutationEngine:
 
         return variations
 
-    def _add_numbers(self, word: str, numbers: list[int]) -> list[str]:
+    def _add_numbers(
+        self, word: str, numbers: list[int], enable_uppercase: bool = True
+    ) -> list[str]:
         """Add numbers to word."""
         variations = []
         for num in numbers:
             variations.append(f"{word}{num}")
-            variations.append(f"{word.title()}{num}")
+            if enable_uppercase:
+                variations.append(f"{word.title()}{num}")
         return variations
 
-    def _add_special(self, word: str, special_chars: list[str]) -> list[str]:
+    def _add_special(
+        self, word: str, special_chars: list[str], enable_uppercase: bool = True
+    ) -> list[str]:
         """Add special characters to word."""
         variations = []
         for char in special_chars:
             variations.append(f"{word}{char}")
             variations.append(f"{char}{word}")
-            variations.append(f"{word.title()}{char}")
+            if enable_uppercase:
+                variations.append(f"{word.title()}{char}")
         return variations
 
     def generate_all_mutations(
@@ -162,6 +169,7 @@ class MutationEngine:
                 special_chars=config.get("special_chars", ["!", "@", "#", "$"]),
                 leet_level=config.get("leet_level", 1),
                 deduplicate=config.get("deduplicate", True),
+                enable_uppercase=config.get("enable_uppercase", True),
             )
             all_mutations.extend(mutations)
 

@@ -16,6 +16,7 @@
 	let minLength = $state(DEFAULTS.minLength);
 	let maxLength = $state(DEFAULTS.maxLength);
 	let enableLeet = $state(DEFAULTS.enableLeet);
+	let enableUppercase = $state(DEFAULTS.enableUppercase);
 	let enableNumbers = $state(DEFAULTS.enableNumbers);
 	let enableSpecial = $state(DEFAULTS.enableSpecial);
 	let leetLevel = $state<1 | 2>(DEFAULTS.leetLevel);
@@ -59,6 +60,7 @@
 				min_length: minLength,
 				max_length: maxLength,
 				enable_leet: enableLeet,
+				enable_uppercase: enableUppercase,
 				enable_numbers: enableNumbers,
 				enable_special: enableSpecial,
 				leet_level: leetLevel,
@@ -134,6 +136,7 @@
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mutations</h2>
 		<div class="space-y-3">
 			<ToggleSwitch checked={enableLeet} onchange={(v) => (enableLeet = v)} label="L33t speak" />
+			<ToggleSwitch checked={enableUppercase} onchange={(v) => (enableUppercase = v)} label="Uppercase" />
 			{#if enableLeet}
 				<div class="ml-12 space-y-1.5">
 					<SegmentedControl

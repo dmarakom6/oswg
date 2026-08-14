@@ -71,6 +71,7 @@ def generate(
     min_length: int = typer.Option(3, "--min-length", help="Minimum word length.", min=1),
     max_length: int = typer.Option(32, "--max-length", help="Maximum word length.", min=1),
     no_leet: bool = typer.Option(False, "--no-leet", help="Disable l33t speak mutations."),
+    no_uppercase: bool = typer.Option(False, "--no-uppercase", help="Disable uppercase/case mutations."),
     no_numbers: bool = typer.Option(False, "--no-numbers", help="Disable number suffix mutations."),
     no_deduplicate: bool = typer.Option(False, "--no-deduplicate", help="Disable deduplication of words."),
     special: bool = typer.Option(False, "--special", help="Enable special character mutations."),
@@ -112,6 +113,7 @@ def generate(
         min_word_length=min_length,
         max_word_length=max_length,
         enable_leet=not no_leet,
+        enable_uppercase=not no_uppercase,
         enable_numbers=not no_numbers,
         enable_special=special,
         leet_level=leet_level,
@@ -207,6 +209,7 @@ def mutate(
     words: list[str] = typer.Argument(None, help="Words to mutate."),
     output: Path = typer.Option(None, "--output", "-o", help="Save mutations to file."),
     no_leet: bool = typer.Option(False, "--no-leet", help="Disable l33t speak mutations."),
+    no_uppercase: bool = typer.Option(False, "--no-uppercase", help="Disable uppercase/case mutations."),
     no_numbers: bool = typer.Option(False, "--no-numbers", help="Disable number suffix mutations."),
     special: bool = typer.Option(False, "--special", help="Enable special character mutations."),
     leet_level: int = typer.Option(1, "--leet-level", help="L33t speak intensity (1=basic, 2=advanced).", min=1, max=2),
@@ -231,6 +234,7 @@ def mutate(
     engine = MutationEngine()
     config = {
         "enable_leet": not no_leet,
+        "enable_uppercase": not no_uppercase,
         "enable_numbers": not no_numbers,
         "enable_special": special,
         "leet_level": leet_level,

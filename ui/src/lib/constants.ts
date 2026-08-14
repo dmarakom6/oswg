@@ -5,6 +5,7 @@ export const DEFAULTS = {
 	maxLength: 32,
 	leetLevel: 1 as const,
 	enableLeet: true,
+	enableUppercase: true,
 	enableNumbers: true,
 	enableSpecial: false,
 	retentionSeconds: 3600

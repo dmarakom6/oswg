@@ -75,6 +75,7 @@ async def execute_generate(job_id: str) -> dict:
         "file_path": str(file_path),
         "words_count": result.unique_words,
         "source_keywords": result.source_keywords,
+        "truncated_count": result.truncated_count,
     }
 
 

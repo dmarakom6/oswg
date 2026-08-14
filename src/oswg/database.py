@@ -33,12 +33,17 @@ class Database:
                     completed_at TEXT,
                     config TEXT,
                     result_file TEXT,
+                    result_stats TEXT,
                     error_message TEXT,
                     retention_seconds INTEGER NOT NULL,
                     expires_at TEXT NOT NULL
                 )
                 """
             )
+            try:
+                await db.execute("ALTER TABLE jobs ADD COLUMN result_stats TEXT")
+            except Exception:
+                pass
             await db.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_jobs_expires_at
@@ -89,6 +94,7 @@ class Database:
         progress: float,
         error_message: Optional[str] = None,
         result_file: Optional[str] = None,
+        result_stats: Optional[str] = None,
     ) -> None:
         """Update job status and progress."""
         now = datetime.utcnow().isoformat()
@@ -103,7 +109,8 @@ class Database:
                 SET status = ?, progress = ?, updated_at = ?,
                     completed_at = COALESCE(?, completed_at),
                     error_message = COALESCE(?, error_message),
-                    result_file = COALESCE(?, result_file)
+                    result_file = COALESCE(?, result_file),
+                    result_stats = COALESCE(?, result_stats)
                 WHERE id = ?
                 """,
                 (
@@ -113,6 +120,7 @@ class Database:
                     completed_at,
                     error_message,
                     result_file,
+                    result_stats,
                     job_id,
                 ),
             )

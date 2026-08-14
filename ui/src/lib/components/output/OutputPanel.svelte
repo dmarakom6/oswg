@@ -34,7 +34,10 @@
 					progress: job.progress,
 					error_message: job.error_message,
 					result_file: job.result_file,
-					completed_at: job.completed_at
+					completed_at: job.completed_at,
+					words_count: job.words_count,
+					source_keywords: job.source_keywords,
+					truncated_count: job.truncated_count
 				});
 				if (job.status === 'completed') {
 					stopPolling();
@@ -214,6 +217,13 @@
 								{/each}
 							</div>
 						</div>
+					</div>
+				{/if}
+				{#if currentJob.truncated_count && currentJob.truncated_count > 0}
+					<div class="rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+						<p class="text-xs text-amber-700 dark:text-amber-400">
+							⚠ Truncated {currentJob.truncated_count.toLocaleString()} mutations to reach the target size.
+						</p>
 					</div>
 				{/if}
 				<button

@@ -79,3 +79,4 @@ class GenerationResult:
     total_mutations: int
     unique_words: int
     config: GenerationConfig
+    truncated_count: int = 0

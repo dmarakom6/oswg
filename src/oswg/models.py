@@ -112,6 +112,9 @@ class JobStatusResponse(BaseModel):
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
     result_file: Optional[str] = None
+    words_count: Optional[int] = None
+    source_keywords: Optional[int] = None
+    truncated_count: Optional[int] = None
 
 
 class JobListItem(BaseModel):

@@ -1,5 +1,6 @@
 """Jobs router - job status and download endpoints."""
 
+import json
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
@@ -71,6 +72,13 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
     if not job:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
+    stats = {}
+    if job.get("result_stats"):
+        try:
+            stats = json.loads(job["result_stats"])
+        except (ValueError, TypeError):
+            stats = {}
+
     return JobStatusResponse(
         job_id=job["id"],
         type=job["type"],
@@ -85,6 +93,9 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         ),
         error_message=job.get("error_message"),
         result_file=job.get("result_file"),
+        words_count=stats.get("words_count"),
+        source_keywords=stats.get("source_keywords"),
+        truncated_count=stats.get("truncated_count"),
     )
 
 

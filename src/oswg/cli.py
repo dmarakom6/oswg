@@ -17,6 +17,7 @@ from oswg.cli_utils import (
     print_mutations_preview,
     print_result_summary,
     print_success,
+    print_warning,
 )
 from oswg.core import MutationEngine, WordlistGenerator
 from oswg.core.models import GenerationConfig, default_years
@@ -159,6 +160,10 @@ def generate(
             unique_words=result.unique_words,
             output_file=str(output_path),
         )
+        if result.truncated_count > 0:
+            print_warning(
+                f"Truncated {result.truncated_count} mutations to reach target size ({size})."
+            )
         print_success(f"Wordlist saved to {output_path}")
 
 

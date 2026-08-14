@@ -1,5 +1,6 @@
 """Job manager service - handles background job execution."""
 
+import json
 import uuid
 from typing import Callable, Optional
 
@@ -49,11 +50,17 @@ class JobManager:
 
             result = await executor(job_id)
 
+            stats_keys = ("words_count", "source_keywords", "truncated_count")
+            result_stats = json.dumps(
+                {k: v for k, v in result.items() if k in stats_keys and v is not None}
+            ) if any(k in result for k in stats_keys) else None
+
             await db.update_job_status(
                 job_id=job_id,
                 status=JobStatus.COMPLETED,
                 progress=100.0,
                 result_file=result.get("file_path"),
+                result_stats=result_stats,
             )
 
             await progress_tracker.complete_job(job_id)

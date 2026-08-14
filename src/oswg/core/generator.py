@@ -78,6 +78,9 @@ class WordlistGenerator:
         if len(mutations) < config.target_size and base_words:
             mutations = self._expand_to_target(mutations, base_words, config)
 
+        truncated_count = 0
+        if len(mutations) > config.target_size:
+            truncated_count = len(mutations) - config.target_size
         mutations = mutations[: config.target_size]
 
         if len(mutations) < config.target_size:
@@ -93,6 +96,7 @@ class WordlistGenerator:
             source_keywords=len(words),
             total_mutations=len(mutations),
             unique_words=len(set(mutations)),
+            truncated_count=truncated_count,
             config=config,
         )
 

@@ -58,6 +58,9 @@ export interface Job {
 	completed_at: string | null;
 	error_message: string | null;
 	result_file: string | null;
+	words_count?: number | null;
+	source_keywords?: number | null;
+	truncated_count?: number | null;
 }
 
 export interface MutateResponse {

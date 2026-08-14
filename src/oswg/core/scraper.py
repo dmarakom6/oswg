@@ -49,6 +49,7 @@ class Scraper:
         self.max_word_length = max_word_length
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
+        self.failed_pages: list[tuple[str, str]] = []
 
     async def _emit_progress(self, callback: ProgressCallback | None, message: str) -> None:
         """Call a progress callback, awaiting it if it's a coroutine function."""
@@ -63,6 +64,7 @@ class Scraper:
     ) -> ScrapedContent:
         """Scrape a website and extract keywords."""
         self.page_word_sets = []
+        self.failed_pages = []
         urls_to_scrape = [url]
 
         if sitemap:
@@ -75,7 +77,7 @@ class Scraper:
         content = ScrapedContent(url=url)
         queue = list(urls_to_scrape)
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             while queue and len(self.visited_urls) < self.max_pages:
                 current_url = queue.pop(0)
                 if current_url in self.visited_urls:
@@ -110,7 +112,13 @@ class Scraper:
                             and len(self.visited_urls) + len(queue) < self.max_pages
                         ):
                             queue.append(link)
-                except Exception:
+                except Exception as e:
+                    self.failed_pages.append((current_url, str(e)))
+                    if on_progress:
+                        await self._emit_progress(
+                            on_progress,
+                            f"Skipped page: {current_url} ({str(e)})",
+                        )
                     continue
 
         content.keywords = self._deduplicate_and_rank(content.keywords)
@@ -120,6 +128,13 @@ class Scraper:
                 f"Scraping complete: {len(self.page_word_sets)} pages, "
                 f"{len(content.keywords)} unique words",
             )
+
+        if not self.page_word_sets and self.failed_pages:
+            url_failed, reason = self.failed_pages[0]
+            raise RuntimeError(
+                f"Failed to scrape {url_failed}: {reason} (0 pages scraped)"
+            )
+
         return content
 
     async def scrape_urls(
@@ -127,10 +142,11 @@ class Scraper:
     ) -> ScrapedContent:
         """Scrape multiple seed URLs and merge results."""
         self.page_word_sets = []
+        self.failed_pages = []
         all_content = ScrapedContent(url=urls[0] if urls else "")
         queue = list(urls)
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             while queue and len(self.visited_urls) < self.max_pages:
                 current_url = queue.pop(0)
                 if current_url in self.visited_urls:
@@ -165,7 +181,13 @@ class Scraper:
                             and len(self.visited_urls) + len(queue) < self.max_pages
                         ):
                             queue.append(link)
-                except Exception:
+                except Exception as e:
+                    self.failed_pages.append((current_url, str(e)))
+                    if on_progress:
+                        await self._emit_progress(
+                            on_progress,
+                            f"Skipped page: {current_url} ({str(e)})",
+                        )
                     continue
 
         all_content.keywords = self._deduplicate_and_rank(all_content.keywords)
@@ -175,6 +197,13 @@ class Scraper:
                 f"Scraping complete: {len(self.page_word_sets)} pages, "
                 f"{len(all_content.keywords)} unique words",
             )
+
+        if not self.page_word_sets and self.failed_pages:
+            url_failed, reason = self.failed_pages[0]
+            raise RuntimeError(
+                f"Failed to scrape {url_failed}: {reason} (0 pages scraped)"
+            )
+
         return all_content
 
     async def _scrape_page(

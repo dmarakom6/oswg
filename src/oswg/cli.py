@@ -37,8 +37,10 @@ def version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-def validate_special_chars(values: list[str]) -> list[str]:
+def validate_special_chars(values: list[str] | None) -> list[str] | None:
     """Validate --special-chars values: each must be a single non-alphanumeric char."""
+    if values is None:
+        return None
     for value in values:
         if len(value) != 1 or value.isalnum() or value.isspace():
             raise typer.BadParameter(

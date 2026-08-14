@@ -116,25 +116,29 @@ class WordlistGenerator:
             if len(expanded) >= target:
                 break
 
-            cap_year = f"{word.title()}{years[0]}"
-            if cap_year not in seen:
-                seen.add(cap_year)
-                expanded.append(cap_year)
+            if config.enable_uppercase and config.enable_numbers:
+                cap_year = f"{word.title()}{years[0]}"
+                if cap_year not in seen:
+                    seen.add(cap_year)
+                    expanded.append(cap_year)
 
-            low_year = f"{word.lower()}{years[0]}"
-            if low_year not in seen:
-                seen.add(low_year)
-                expanded.append(low_year)
+            if config.enable_numbers:
+                low_year = f"{word.lower()}{years[0]}"
+                if low_year not in seen:
+                    seen.add(low_year)
+                    expanded.append(low_year)
 
-            cap = f"{word.title()}{special[0]}"
-            if cap not in seen:
-                seen.add(cap)
-                expanded.append(cap)
+            if config.enable_uppercase and config.enable_special:
+                cap = f"{word.title()}{special[0]}"
+                if cap not in seen:
+                    seen.add(cap)
+                    expanded.append(cap)
 
-            low_s = f"{word.lower()}{special[0]}"
-            if low_s not in seen:
-                seen.add(low_s)
-                expanded.append(low_s)
+            if config.enable_special:
+                low_s = f"{word.lower()}{special[0]}"
+                if low_s not in seen:
+                    seen.add(low_s)
+                    expanded.append(low_s)
 
         if len(expanded) >= target:
             return expanded

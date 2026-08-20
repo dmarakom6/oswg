@@ -21,6 +21,7 @@
 	let enableSpecial = $state(DEFAULTS.enableSpecial);
 	let leetLevel = $state<1 | 2>(DEFAULTS.leetLevel);
 	let retentionSeconds = $state(DEFAULTS.retentionSeconds);
+	let timeout = $state(DEFAULTS.timeoutSeconds);
 	let useSitemap = $state(false);
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
@@ -70,6 +71,7 @@
 				extra_stopwords: extraStopwords.split(',').map(w => w.trim()).filter(Boolean),
 				common_years: commonYears,
 				...((enableSpecial && parsedSpecialChars.length > 0 && !specialCharsError) ? { special_chars: parsedSpecialChars } : {}),
+				timeout,
 				retention_seconds: retentionSeconds
 			});
 
@@ -223,6 +225,14 @@
 					{/if}
 				</div>
 			{/if}
+			<NumberStepper
+				value={timeout}
+				onchange={(v) => (timeout = v)}
+				label="Timeout (seconds)"
+				min={LIMITS.timeoutSeconds.min}
+				max={LIMITS.timeoutSeconds.max}
+				step={5}
+			/>
 			<div class="space-y-1.5">
 				<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 				<select

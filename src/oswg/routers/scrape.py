@@ -30,7 +30,8 @@ async def execute_scrape(job_id: str) -> dict:
     await job_manager.update_progress(job_id, 10.0, "Starting scraper...")
 
     scraper = Scraper(
-        max_pages=config_data.get("max_pages", settings.max_pages_default)
+        max_pages=config_data.get("max_pages", settings.max_pages_default),
+        timeout=config_data.get("timeout", 30.0),
     )
 
     await job_manager.update_progress(job_id, 30.0, "Scraping website...")
@@ -80,6 +81,7 @@ async def scrape_keywords(
             "urls": request.urls,
             "sitemap": request.sitemap,
             "max_pages": request.max_pages,
+            "timeout": request.timeout,
         }
 
         job_id = await job_manager.create_job(

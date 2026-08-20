@@ -67,6 +67,7 @@ class GenerateRequest(BaseRequest):
         description="Custom special characters for mutations. Empty = ! @ # $.",
         max_length=10,
     )
+    timeout: float = Field(30.0, description="HTTP request timeout in seconds.", ge=1.0, le=300.0)
 
     @field_validator("special_chars")
     @classmethod
@@ -85,6 +86,7 @@ class ScrapeRequest(BaseRequest):
     urls: list[str] = Field(default=[], description="Additional URLs to scrape.", max_length=50)
     sitemap: bool = Field(False, description="Use sitemap.xml for page discovery.")
     max_pages: int = Field(10, description="Maximum pages to scrape.", ge=1, le=100)
+    timeout: float = Field(30.0, description="HTTP request timeout in seconds.", ge=1.0, le=300.0)
 
 
 class MutateRequest(BaseModel):

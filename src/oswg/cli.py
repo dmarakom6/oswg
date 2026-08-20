@@ -101,6 +101,7 @@ def generate(
         None, "--years",
         help="Custom years for number suffix mutations (default: current year + previous 5).",
     ),
+    timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -130,6 +131,7 @@ def generate(
 
     generator = WordlistGenerator()
     generator.scraper.max_pages = max_pages
+    generator.scraper.timeout = timeout
 
     primary_url = url[0]
     extra_urls = url[1:] if len(url) > 1 else []
@@ -174,6 +176,7 @@ def scrape(
     sitemap: bool = typer.Option(False, "--sitemap", help="Use sitemap.xml for page discovery."),
     output: Path = typer.Option(None, "--output", "-o", help="Save keywords to file."),
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all keywords (not just preview)."),
+    timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Scrape keywords from a website URL."""
@@ -181,7 +184,7 @@ def scrape(
 
     from oswg.core.scraper import Scraper
 
-    scraper = Scraper(max_pages=max_pages)
+    scraper = Scraper(max_pages=max_pages, timeout=timeout)
 
     try:
         if len(url) > 1:

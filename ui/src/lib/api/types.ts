@@ -22,6 +22,7 @@ export interface GenerateRequest {
 	extra_stopwords?: string[];
 	common_years?: number[];
 	special_chars?: string[];
+	timeout?: number;
 	retention_seconds?: number;
 }
 
@@ -30,6 +31,7 @@ export interface ScrapeRequest {
 	urls?: string[];
 	sitemap?: boolean;
 	max_pages: number;
+	timeout?: number;
 	retention_seconds?: number;
 }
 

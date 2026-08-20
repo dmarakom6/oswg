@@ -12,6 +12,7 @@
 	let url = $state('');
 	let maxPages = $state(DEFAULTS.maxPages);
 	let retentionSeconds = $state(DEFAULTS.retentionSeconds);
+	let timeout = $state(DEFAULTS.timeoutSeconds);
 	let useSitemap = $state(false);
 	let submitting = $state(false);
 
@@ -27,6 +28,7 @@
 				url,
 				sitemap: useSitemap,
 				max_pages: maxPages,
+				timeout,
 				retention_seconds: retentionSeconds
 			});
 
@@ -83,6 +85,14 @@
 			Advanced
 		</summary>
 		<div class="space-y-1.5 pl-1">
+			<NumberStepper
+				value={timeout}
+				onchange={(v) => (timeout = v)}
+				label="Timeout (seconds)"
+				min={LIMITS.timeoutSeconds.min}
+				max={LIMITS.timeoutSeconds.max}
+				step={5}
+			/>
 			<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 			<select
 				id="retention"

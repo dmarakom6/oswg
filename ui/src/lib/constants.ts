@@ -8,7 +8,8 @@ export const DEFAULTS = {
 	enableUppercase: true,
 	enableNumbers: true,
 	enableSpecial: false,
-	retentionSeconds: 3600
+	retentionSeconds: 3600,
+	timeoutSeconds: 30
 };
 
 export const LIMITS = {
@@ -16,7 +17,8 @@ export const LIMITS = {
 	maxPages: { min: 1, max: 100 },
 	minLength: { min: 1, max: 32 },
 	maxLength: { min: 1, max: 128 },
-	retentionSeconds: { min: 60, max: 86400 }
+	retentionSeconds: { min: 60, max: 86400 },
+	timeoutSeconds: { min: 1, max: 300 }
 };
 
 export const RETENTION_OPTIONS = [

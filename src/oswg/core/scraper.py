@@ -5,10 +5,10 @@ import re
 from collections import Counter
 from typing import Callable
 from urllib.parse import urljoin, urlparse
-from urllib.robotparser import RobotFileParser
 
 import httpx
 from bs4 import BeautifulSoup
+from protego import Protego
 
 from oswg.core.models import ScrapedContent
 
@@ -55,7 +55,7 @@ class Scraper:
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
-        self._robots_cache: dict[str, RobotFileParser | None] = {}
+        self._robots_cache: dict[str, Protego | None] = {}
 
     async def _emit_progress(self, callback: ProgressCallback | None, message: str) -> None:
         """Call a progress callback, awaiting it if it's a coroutine function."""
@@ -65,7 +65,7 @@ class Scraper:
         if inspect.isawaitable(result):
             await result
 
-    async def _load_robots(self, netloc: str, scheme: str = "https") -> RobotFileParser | None:
+    async def _load_robots(self, netloc: str, scheme: str = "https") -> Protego | None:
         """Fetch and cache the robots.txt parser for a domain. None means allow-all."""
         if netloc in self._robots_cache:
             return self._robots_cache[netloc]
@@ -77,8 +77,7 @@ class Scraper:
             ) as client:
                 response = await client.get(robots_url)
                 response.raise_for_status()
-                parser = RobotFileParser()
-                parser.parse(response.text.splitlines())
+                parser = Protego.parse(response.text)
         except Exception:
             parser = None
 
@@ -93,7 +92,7 @@ class Scraper:
         parser = self._robots_cache.get(parsed.netloc, None)
         if parser is None:
             return True
-        return parser.can_fetch(ROBOTS_USER_AGENT, url)
+        return parser.can_fetch(url, ROBOTS_USER_AGENT)
 
     async def scrape(
         self, url: str, sitemap: bool = False, on_progress: ProgressCallback | None = None

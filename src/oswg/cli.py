@@ -180,6 +180,7 @@ def scrape(
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all keywords (not just preview)."),
     timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
     respect_robots: bool = typer.Option(False, "--respect-robots", help="Respect robots.txt rules."),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed scraping progress."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Scrape keywords from a website URL."""
@@ -188,12 +189,13 @@ def scrape(
     from oswg.core.scraper import Scraper
 
     scraper = Scraper(max_pages=max_pages, timeout=timeout, respect_robots=respect_robots)
+    on_progress = make_verbose_callback() if verbose else None
 
     try:
         if len(url) > 1:
-            content = asyncio.run(scraper.scrape_urls(url, sitemap=sitemap))
+            content = asyncio.run(scraper.scrape_urls(url, sitemap=sitemap, on_progress=on_progress))
         else:
-            content = asyncio.run(scraper.scrape(url[0], sitemap=sitemap))
+            content = asyncio.run(scraper.scrape(url[0], sitemap=sitemap, on_progress=on_progress))
     except Exception as e:
         print_error(str(e))
         raise typer.Exit(code=1) from e

@@ -5,6 +5,7 @@ import re
 from collections import Counter
 from typing import Callable
 from urllib.parse import urljoin, urlparse
+from urllib.robotparser import RobotFileParser
 
 import httpx
 from bs4 import BeautifulSoup
@@ -12,6 +13,8 @@ from bs4 import BeautifulSoup
 from oswg.core.models import ScrapedContent
 
 ProgressCallback = Callable[[str], None]
+
+ROBOTS_USER_AGENT = "oswg"
 
 SKIP_EXTENSIONS = frozenset({
     ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".ico",
@@ -42,14 +45,17 @@ class Scraper:
         timeout: float = 30.0,
         min_word_length: int = 3,
         max_word_length: int = 32,
+        respect_robots: bool = False,
     ):
         self.max_pages = max_pages
         self.timeout = timeout
         self.min_word_length = min_word_length
         self.max_word_length = max_word_length
+        self.respect_robots = respect_robots
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
+        self._robots_cache: dict[str, RobotFileParser | None] = {}
 
     async def _emit_progress(self, callback: ProgressCallback | None, message: str) -> None:
         """Call a progress callback, awaiting it if it's a coroutine function."""
@@ -58,6 +64,36 @@ class Scraper:
         result = callback(message)
         if inspect.isawaitable(result):
             await result
+
+    async def _load_robots(self, netloc: str, scheme: str = "https") -> RobotFileParser | None:
+        """Fetch and cache the robots.txt parser for a domain. None means allow-all."""
+        if netloc in self._robots_cache:
+            return self._robots_cache[netloc]
+
+        robots_url = f"{scheme}://{netloc}/robots.txt"
+        try:
+            async with httpx.AsyncClient(
+                timeout=min(self.timeout, 10.0), follow_redirects=True
+            ) as client:
+                response = await client.get(robots_url)
+                response.raise_for_status()
+                parser = RobotFileParser()
+                parser.parse(response.text.splitlines())
+        except Exception:
+            parser = None
+
+        self._robots_cache[netloc] = parser
+        return parser
+
+    def _can_fetch(self, url: str) -> bool:
+        """Check a URL against robots.txt rules for this domain."""
+        if not self.respect_robots:
+            return True
+        parsed = urlparse(url)
+        parser = self._robots_cache.get(parsed.netloc, None)
+        if parser is None:
+            return True
+        return parser.can_fetch(ROBOTS_USER_AGENT, url)
 
     async def scrape(
         self, url: str, sitemap: bool = False, on_progress: ProgressCallback | None = None
@@ -82,6 +118,18 @@ class Scraper:
                 current_url = queue.pop(0)
                 if current_url in self.visited_urls:
                     continue
+
+                if self.respect_robots:
+                    parsed_url = urlparse(current_url)
+                    await self._load_robots(parsed_url.netloc, parsed_url.scheme)
+                    if not self._can_fetch(current_url):
+                        self.failed_pages.append((current_url, "disallowed by robots.txt"))
+                        if on_progress:
+                            await self._emit_progress(
+                                on_progress,
+                                f"Skipped page: {current_url} (disallowed by robots.txt)",
+                            )
+                        continue
 
                 try:
                     page_content, discovered_links, page_words = await self._scrape_page(
@@ -151,6 +199,18 @@ class Scraper:
                 current_url = queue.pop(0)
                 if current_url in self.visited_urls:
                     continue
+
+                if self.respect_robots:
+                    parsed_url = urlparse(current_url)
+                    await self._load_robots(parsed_url.netloc, parsed_url.scheme)
+                    if not self._can_fetch(current_url):
+                        self.failed_pages.append((current_url, "disallowed by robots.txt"))
+                        if on_progress:
+                            await self._emit_progress(
+                                on_progress,
+                                f"Skipped page: {current_url} (disallowed by robots.txt)",
+                            )
+                        continue
 
                 try:
                     page_content, discovered_links, page_words = await self._scrape_page(
@@ -297,7 +357,7 @@ class Scraper:
             seen_paths.add(normalized_path)
 
             clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-            if clean_url not in self.visited_urls:
+            if clean_url not in self.visited_urls and self._can_fetch(clean_url):
                 links.append(clean_url)
 
         return links
@@ -306,6 +366,11 @@ class Scraper:
         """Fetch and parse sitemap.xml for URLs."""
         parsed = urlparse(base_url)
         sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
+
+        if self.respect_robots:
+            await self._load_robots(parsed.netloc, parsed.scheme)
+            if not self._can_fetch(sitemap_url):
+                return []
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:

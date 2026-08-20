@@ -13,6 +13,7 @@
 	let maxPages = $state(DEFAULTS.maxPages);
 	let retentionSeconds = $state(DEFAULTS.retentionSeconds);
 	let timeout = $state(DEFAULTS.timeoutSeconds);
+	let respectRobots = $state(false);
 	let useSitemap = $state(false);
 	let submitting = $state(false);
 
@@ -29,6 +30,7 @@
 				sitemap: useSitemap,
 				max_pages: maxPages,
 				timeout,
+				respect_robots: respectRobots,
 				retention_seconds: retentionSeconds
 			});
 
@@ -93,6 +95,8 @@
 				max={LIMITS.timeoutSeconds.max}
 				step={5}
 			/>
+			<ToggleSwitch checked={respectRobots} onchange={(v) => (respectRobots = v)} label="Respect robots.txt" />
+			<p class="text-xs text-muted-foreground">Skip pages disallowed by the site's robots.txt.</p>
 			<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 			<select
 				id="retention"

@@ -23,6 +23,7 @@ export interface GenerateRequest {
 	common_years?: number[];
 	special_chars?: string[];
 	timeout?: number;
+	respect_robots?: boolean;
 	retention_seconds?: number;
 }
 
@@ -32,6 +33,7 @@ export interface ScrapeRequest {
 	sitemap?: boolean;
 	max_pages: number;
 	timeout?: number;
+	respect_robots?: boolean;
 	retention_seconds?: number;
 }
 

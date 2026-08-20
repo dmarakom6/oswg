@@ -22,6 +22,7 @@
 	let leetLevel = $state<1 | 2>(DEFAULTS.leetLevel);
 	let retentionSeconds = $state(DEFAULTS.retentionSeconds);
 	let timeout = $state(DEFAULTS.timeoutSeconds);
+	let respectRobots = $state(false);
 	let useSitemap = $state(false);
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
@@ -72,6 +73,7 @@
 				common_years: commonYears,
 				...((enableSpecial && parsedSpecialChars.length > 0 && !specialCharsError) ? { special_chars: parsedSpecialChars } : {}),
 				timeout,
+				respect_robots: respectRobots,
 				retention_seconds: retentionSeconds
 			});
 
@@ -233,6 +235,8 @@
 				max={LIMITS.timeoutSeconds.max}
 				step={5}
 			/>
+			<ToggleSwitch checked={respectRobots} onchange={(v) => (respectRobots = v)} label="Respect robots.txt" />
+			<p class="text-xs text-muted-foreground">Skip pages disallowed by the site's robots.txt.</p>
 			<div class="space-y-1.5">
 				<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 				<select

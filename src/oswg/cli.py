@@ -103,6 +103,7 @@ def generate(
     ),
     timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
     respect_robots: bool = typer.Option(False, "--respect-robots", help="Respect robots.txt rules."),
+    user_agent: str = typer.Option(None, "--user-agent", help="Custom User-Agent header for requests."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -134,6 +135,7 @@ def generate(
     generator.scraper.max_pages = max_pages
     generator.scraper.timeout = timeout
     generator.scraper.respect_robots = respect_robots
+    generator.scraper.user_agent = user_agent
 
     primary_url = url[0]
     extra_urls = url[1:] if len(url) > 1 else []
@@ -180,6 +182,7 @@ def scrape(
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all keywords (not just preview)."),
     timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
     respect_robots: bool = typer.Option(False, "--respect-robots", help="Respect robots.txt rules."),
+    user_agent: str = typer.Option(None, "--user-agent", help="Custom User-Agent header for requests."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed scraping progress."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
@@ -188,7 +191,12 @@ def scrape(
 
     from oswg.core.scraper import Scraper
 
-    scraper = Scraper(max_pages=max_pages, timeout=timeout, respect_robots=respect_robots)
+    scraper = Scraper(
+        max_pages=max_pages,
+        timeout=timeout,
+        respect_robots=respect_robots,
+        user_agent=user_agent,
+    )
     on_progress = make_verbose_callback() if verbose else None
 
     try:

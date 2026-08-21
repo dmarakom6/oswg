@@ -24,6 +24,7 @@ export interface GenerateRequest {
 	special_chars?: string[];
 	timeout?: number;
 	respect_robots?: boolean;
+	user_agent?: string;
 	retention_seconds?: number;
 }
 
@@ -34,6 +35,7 @@ export interface ScrapeRequest {
 	max_pages: number;
 	timeout?: number;
 	respect_robots?: boolean;
+	user_agent?: string;
 	retention_seconds?: number;
 }
 

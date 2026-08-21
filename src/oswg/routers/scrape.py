@@ -33,6 +33,7 @@ async def execute_scrape(job_id: str) -> dict:
         max_pages=config_data.get("max_pages", settings.max_pages_default),
         timeout=config_data.get("timeout", 30.0),
         respect_robots=config_data.get("respect_robots", False),
+        user_agent=config_data.get("user_agent"),
     )
 
     await job_manager.update_progress(job_id, 30.0, "Scraping website...")
@@ -84,6 +85,7 @@ async def scrape_keywords(
             "max_pages": request.max_pages,
             "timeout": request.timeout,
             "respect_robots": request.respect_robots,
+            "user_agent": request.user_agent,
         }
 
         job_id = await job_manager.create_job(

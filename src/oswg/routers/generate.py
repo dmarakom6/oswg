@@ -38,6 +38,7 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.max_word_length = config_data.get("max_length", 32)
     generator.scraper.timeout = config_data.get("timeout", 30.0)
     generator.scraper.respect_robots = config_data.get("respect_robots", False)
+    generator.scraper.user_agent = config_data.get("user_agent")
 
     await job_manager.update_progress(job_id, 20.0, "Scraping website...")
 
@@ -116,6 +117,7 @@ async def generate_wordlist(
             "special_chars": request.special_chars,
             "timeout": request.timeout,
             "respect_robots": request.respect_robots,
+            "user_agent": request.user_agent,
         }
 
         job_id = await job_manager.create_job(

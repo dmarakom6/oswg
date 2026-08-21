@@ -46,16 +46,25 @@ class Scraper:
         min_word_length: int = 3,
         max_word_length: int = 32,
         respect_robots: bool = False,
+        user_agent: str | None = None,
     ):
         self.max_pages = max_pages
         self.timeout = timeout
         self.min_word_length = min_word_length
         self.max_word_length = max_word_length
         self.respect_robots = respect_robots
+        self.user_agent = user_agent
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
         self._robots_cache: dict[str, Protego | None] = {}
+
+    @property
+    def _headers(self) -> dict[str, str] | None:
+        """Request headers, derived from the current user_agent (dynamic)."""
+        if self.user_agent:
+            return {"User-Agent": self.user_agent}
+        return None
 
     async def _emit_progress(self, callback: ProgressCallback | None, message: str) -> None:
         """Call a progress callback, awaiting it if it's a coroutine function."""
@@ -73,7 +82,9 @@ class Scraper:
         robots_url = f"{scheme}://{netloc}/robots.txt"
         try:
             async with httpx.AsyncClient(
-                timeout=min(self.timeout, 10.0), follow_redirects=True
+                timeout=min(self.timeout, 10.0),
+                follow_redirects=True,
+                headers=self._headers,
             ) as client:
                 response = await client.get(robots_url)
                 response.raise_for_status()
@@ -92,7 +103,7 @@ class Scraper:
         parser = self._robots_cache.get(parsed.netloc, None)
         if parser is None:
             return True
-        return parser.can_fetch(url, ROBOTS_USER_AGENT)
+        return parser.can_fetch(url, self.user_agent or ROBOTS_USER_AGENT)
 
     async def scrape(
         self, url: str, sitemap: bool = False, on_progress: ProgressCallback | None = None
@@ -112,7 +123,9 @@ class Scraper:
         content = ScrapedContent(url=url)
         queue = list(urls_to_scrape)
 
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout, follow_redirects=True, headers=self._headers
+        ) as client:
             while queue and len(self.visited_urls) < self.max_pages:
                 current_url = queue.pop(0)
                 if current_url in self.visited_urls:
@@ -193,7 +206,9 @@ class Scraper:
         all_content = ScrapedContent(url=urls[0] if urls else "")
         queue = list(urls)
 
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout, follow_redirects=True, headers=self._headers
+        ) as client:
             while queue and len(self.visited_urls) < self.max_pages:
                 current_url = queue.pop(0)
                 if current_url in self.visited_urls:
@@ -372,7 +387,7 @@ class Scraper:
                 return []
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
+            async with httpx.AsyncClient(timeout=self.timeout, headers=self._headers) as client:
                 response = await client.get(sitemap_url)
                 response.raise_for_status()
 

@@ -23,6 +23,7 @@
 	let retentionSeconds = $state(DEFAULTS.retentionSeconds);
 	let timeout = $state(DEFAULTS.timeoutSeconds);
 	let respectRobots = $state(false);
+	let userAgent = $state('');
 	let useSitemap = $state(false);
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
@@ -74,6 +75,7 @@
 				...((enableSpecial && parsedSpecialChars.length > 0 && !specialCharsError) ? { special_chars: parsedSpecialChars } : {}),
 				timeout,
 				respect_robots: respectRobots,
+				...((userAgent.trim().length > 0) ? { user_agent: userAgent.trim() } : {}),
 				retention_seconds: retentionSeconds
 			});
 
@@ -237,6 +239,17 @@
 			/>
 			<ToggleSwitch checked={respectRobots} onchange={(v) => (respectRobots = v)} label="Respect robots.txt" />
 			<p class="text-xs text-muted-foreground">Skip pages disallowed by the site's robots.txt.</p>
+			<div class="space-y-1.5">
+				<label for="user-agent" class="block text-sm font-medium text-foreground">User-Agent</label>
+				<input
+					id="user-agent"
+					type="text"
+					bind:value={userAgent}
+					placeholder="Empty = httpx default"
+					class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+				/>
+				<p class="text-xs text-muted-foreground">Custom User-Agent header sent with all requests.</p>
+			</div>
 			<div class="space-y-1.5">
 				<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 				<select

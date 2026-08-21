@@ -69,6 +69,7 @@ class GenerateRequest(BaseRequest):
     )
     timeout: float = Field(30.0, description="HTTP request timeout in seconds.", ge=1.0, le=300.0)
     respect_robots: bool = Field(False, description="Respect robots.txt rules.")
+    user_agent: Optional[str] = Field(None, description="Custom User-Agent header for requests.", max_length=200)
 
     @field_validator("special_chars")
     @classmethod
@@ -89,6 +90,7 @@ class ScrapeRequest(BaseRequest):
     max_pages: int = Field(10, description="Maximum pages to scrape.", ge=1, le=100)
     timeout: float = Field(30.0, description="HTTP request timeout in seconds.", ge=1.0, le=300.0)
     respect_robots: bool = Field(False, description="Respect robots.txt rules.")
+    user_agent: Optional[str] = Field(None, description="Custom User-Agent header for requests.", max_length=200)
 
 
 class MutateRequest(BaseModel):

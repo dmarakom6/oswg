@@ -104,6 +104,8 @@ def generate(
     timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
     respect_robots: bool = typer.Option(False, "--respect-robots", help="Respect robots.txt rules."),
     user_agent: str = typer.Option(None, "--user-agent", help="Custom User-Agent header for requests."),
+    rate_limit: float = typer.Option(0.0, "--rate-limit", help="Delay between requests in seconds.", min=0.0),
+    jitter: bool = typer.Option(False, "--jitter", help="Randomize delay by ±50%% (with --rate-limit)."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -136,6 +138,8 @@ def generate(
     generator.scraper.timeout = timeout
     generator.scraper.respect_robots = respect_robots
     generator.scraper.user_agent = user_agent
+    generator.scraper.rate_limit = rate_limit
+    generator.scraper.jitter = jitter
 
     primary_url = url[0]
     extra_urls = url[1:] if len(url) > 1 else []
@@ -183,6 +187,8 @@ def scrape(
     timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
     respect_robots: bool = typer.Option(False, "--respect-robots", help="Respect robots.txt rules."),
     user_agent: str = typer.Option(None, "--user-agent", help="Custom User-Agent header for requests."),
+    rate_limit: float = typer.Option(0.0, "--rate-limit", help="Delay between requests in seconds.", min=0.0),
+    jitter: bool = typer.Option(False, "--jitter", help="Randomize delay by ±50%% (with --rate-limit)."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed scraping progress."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
@@ -196,6 +202,8 @@ def scrape(
         timeout=timeout,
         respect_robots=respect_robots,
         user_agent=user_agent,
+        rate_limit=rate_limit,
+        jitter=jitter,
     )
     on_progress = make_verbose_callback() if verbose else None
 

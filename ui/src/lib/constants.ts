@@ -9,7 +9,8 @@ export const DEFAULTS = {
 	enableNumbers: true,
 	enableSpecial: false,
 	retentionSeconds: 3600,
-	timeoutSeconds: 30
+	timeoutSeconds: 30,
+	rateLimit: 0
 };
 
 export const LIMITS = {
@@ -18,7 +19,8 @@ export const LIMITS = {
 	minLength: { min: 1, max: 32 },
 	maxLength: { min: 1, max: 128 },
 	retentionSeconds: { min: 60, max: 86400 },
-	timeoutSeconds: { min: 1, max: 300 }
+	timeoutSeconds: { min: 1, max: 300 },
+	rateLimit: { min: 0, max: 60 }
 };
 
 export const RETENTION_OPTIONS = [

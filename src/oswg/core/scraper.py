@@ -1,6 +1,8 @@
 """Website scraper for extracting keywords."""
 
+import asyncio
 import inspect
+import random
 import re
 from collections import Counter
 from typing import Callable
@@ -47,6 +49,8 @@ class Scraper:
         max_word_length: int = 32,
         respect_robots: bool = False,
         user_agent: str | None = None,
+        rate_limit: float = 0.0,
+        jitter: bool = False,
     ):
         self.max_pages = max_pages
         self.timeout = timeout
@@ -54,6 +58,8 @@ class Scraper:
         self.max_word_length = max_word_length
         self.respect_robots = respect_robots
         self.user_agent = user_agent
+        self.rate_limit = rate_limit
+        self.jitter = jitter
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
@@ -73,6 +79,21 @@ class Scraper:
         result = callback(message)
         if inspect.isawaitable(result):
             await result
+
+    async def _rate_limit_sleep(
+        self, first_request: bool, on_progress: ProgressCallback | None
+    ) -> None:
+        """Sleep between requests to respect a rate limit (skips the first request)."""
+        if self.rate_limit <= 0 or first_request:
+            return
+        delay = self.rate_limit
+        if self.jitter:
+            delay = self.rate_limit * random.uniform(0.5, 1.5)
+        if on_progress:
+            await self._emit_progress(
+                on_progress, f"Rate limit: waiting {delay:.1f}s..."
+            )
+        await asyncio.sleep(delay)
 
     async def _load_robots(self, netloc: str, scheme: str = "https") -> Protego | None:
         """Fetch and cache the robots.txt parser for a domain. None means allow-all."""
@@ -126,6 +147,7 @@ class Scraper:
         async with httpx.AsyncClient(
             timeout=self.timeout, follow_redirects=True, headers=self._headers
         ) as client:
+            first_request = True
             while queue and len(self.visited_urls) < self.max_pages:
                 current_url = queue.pop(0)
                 if current_url in self.visited_urls:
@@ -142,6 +164,9 @@ class Scraper:
                                 f"Skipped page: {current_url} (disallowed by robots.txt)",
                             )
                         continue
+
+                await self._rate_limit_sleep(first_request, on_progress)
+                first_request = False
 
                 try:
                     page_content, discovered_links, page_words = await self._scrape_page(
@@ -209,6 +234,7 @@ class Scraper:
         async with httpx.AsyncClient(
             timeout=self.timeout, follow_redirects=True, headers=self._headers
         ) as client:
+            first_request = True
             while queue and len(self.visited_urls) < self.max_pages:
                 current_url = queue.pop(0)
                 if current_url in self.visited_urls:
@@ -225,6 +251,9 @@ class Scraper:
                                 f"Skipped page: {current_url} (disallowed by robots.txt)",
                             )
                         continue
+
+                await self._rate_limit_sleep(first_request, on_progress)
+                first_request = False
 
                 try:
                     page_content, discovered_links, page_words = await self._scrape_page(

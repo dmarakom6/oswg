@@ -15,6 +15,8 @@
 	let timeout = $state(DEFAULTS.timeoutSeconds);
 	let respectRobots = $state(false);
 	let userAgent = $state('');
+	let rateLimit = $state(DEFAULTS.rateLimit);
+	let jitter = $state(false);
 	let useSitemap = $state(false);
 	let submitting = $state(false);
 
@@ -33,6 +35,8 @@
 				timeout,
 				respect_robots: respectRobots,
 				...((userAgent.trim().length > 0) ? { user_agent: userAgent.trim() } : {}),
+				rate_limit: rateLimit,
+				jitter,
 				retention_seconds: retentionSeconds
 			});
 
@@ -109,6 +113,22 @@
 					class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 				/>
 				<p class="text-xs text-muted-foreground">Custom User-Agent header sent with all requests.</p>
+			</div>
+			<div class="space-y-1.5">
+				<NumberStepper
+					value={rateLimit}
+					onchange={(v) => (rateLimit = v)}
+					label="Delay between requests (s)"
+					min={LIMITS.rateLimit.min}
+					max={LIMITS.rateLimit.max}
+					step={0.5}
+				/>
+				<div class="flex items-center gap-3">
+					<ToggleSwitch checked={jitter} onchange={(v) => (jitter = v)} label="Jitter" />
+					{#if jitter}
+						<p class="text-xs text-muted-foreground">Randomize delay ±50% (requires a delay &gt; 0).</p>
+					{/if}
+				</div>
 			</div>
 			<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 			<select

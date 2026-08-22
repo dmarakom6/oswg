@@ -25,6 +25,8 @@ export interface GenerateRequest {
 	timeout?: number;
 	respect_robots?: boolean;
 	user_agent?: string;
+	rate_limit?: number;
+	jitter?: boolean;
 	retention_seconds?: number;
 }
 
@@ -36,6 +38,8 @@ export interface ScrapeRequest {
 	timeout?: number;
 	respect_robots?: boolean;
 	user_agent?: string;
+	rate_limit?: number;
+	jitter?: boolean;
 	retention_seconds?: number;
 }
 

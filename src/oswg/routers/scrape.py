@@ -34,6 +34,8 @@ async def execute_scrape(job_id: str) -> dict:
         timeout=config_data.get("timeout", 30.0),
         respect_robots=config_data.get("respect_robots", False),
         user_agent=config_data.get("user_agent"),
+        rate_limit=config_data.get("rate_limit", 0.0),
+        jitter=config_data.get("jitter", False),
     )
 
     await job_manager.update_progress(job_id, 30.0, "Scraping website...")
@@ -86,6 +88,8 @@ async def scrape_keywords(
             "timeout": request.timeout,
             "respect_robots": request.respect_robots,
             "user_agent": request.user_agent,
+            "rate_limit": request.rate_limit,
+            "jitter": request.jitter,
         }
 
         job_id = await job_manager.create_job(

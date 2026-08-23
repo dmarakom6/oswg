@@ -72,6 +72,8 @@ class GenerateRequest(BaseRequest):
     user_agent: Optional[str] = Field(None, description="Custom User-Agent header for requests.", max_length=200)
     rate_limit: float = Field(0.0, description="Delay between requests in seconds.", ge=0.0, le=60.0)
     jitter: bool = Field(False, description="Randomize delay by ±50% (with rate_limit).")
+    headers: dict[str, str] = Field(default={}, description="Custom request headers.")
+    cookies: dict[str, str] = Field(default={}, description="Custom request cookies.")
 
     @field_validator("special_chars")
     @classmethod
@@ -95,6 +97,8 @@ class ScrapeRequest(BaseRequest):
     user_agent: Optional[str] = Field(None, description="Custom User-Agent header for requests.", max_length=200)
     rate_limit: float = Field(0.0, description="Delay between requests in seconds.", ge=0.0, le=60.0)
     jitter: bool = Field(False, description="Randomize delay by ±50% (with rate_limit).")
+    headers: dict[str, str] = Field(default={}, description="Custom request headers.")
+    cookies: dict[str, str] = Field(default={}, description="Custom request cookies.")
 
 
 class MutateRequest(BaseModel):

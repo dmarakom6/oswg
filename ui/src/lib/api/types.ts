@@ -27,6 +27,8 @@ export interface GenerateRequest {
 	user_agent?: string;
 	rate_limit?: number;
 	jitter?: boolean;
+	headers?: Record<string, string>;
+	cookies?: Record<string, string>;
 	retention_seconds?: number;
 }
 
@@ -40,6 +42,8 @@ export interface ScrapeRequest {
 	user_agent?: string;
 	rate_limit?: number;
 	jitter?: boolean;
+	headers?: Record<string, string>;
+	cookies?: Record<string, string>;
 	retention_seconds?: number;
 }
 

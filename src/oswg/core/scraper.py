@@ -51,6 +51,8 @@ class Scraper:
         user_agent: str | None = None,
         rate_limit: float = 0.0,
         jitter: bool = False,
+        cookies: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
     ):
         self.max_pages = max_pages
         self.timeout = timeout
@@ -60,6 +62,8 @@ class Scraper:
         self.user_agent = user_agent
         self.rate_limit = rate_limit
         self.jitter = jitter
+        self.cookies = cookies
+        self.headers = headers
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
@@ -67,10 +71,16 @@ class Scraper:
 
     @property
     def _headers(self) -> dict[str, str] | None:
-        """Request headers, derived from the current user_agent (dynamic)."""
-        if self.user_agent:
-            return {"User-Agent": self.user_agent}
-        return None
+        """Request headers: custom headers merged with User-Agent (custom wins)."""
+        merged: dict[str, str] = dict(self.headers or {})
+        if self.user_agent and "User-Agent" not in merged:
+            merged["User-Agent"] = self.user_agent
+        return merged or None
+
+    @property
+    def _cookies(self) -> dict[str, str] | None:
+        """Request cookies, or None when none are set."""
+        return self.cookies or None
 
     async def _emit_progress(self, callback: ProgressCallback | None, message: str) -> None:
         """Call a progress callback, awaiting it if it's a coroutine function."""
@@ -106,6 +116,7 @@ class Scraper:
                 timeout=min(self.timeout, 10.0),
                 follow_redirects=True,
                 headers=self._headers,
+                cookies=self._cookies,
             ) as client:
                 response = await client.get(robots_url)
                 response.raise_for_status()
@@ -145,7 +156,10 @@ class Scraper:
         queue = list(urls_to_scrape)
 
         async with httpx.AsyncClient(
-            timeout=self.timeout, follow_redirects=True, headers=self._headers
+            timeout=self.timeout,
+            follow_redirects=True,
+            headers=self._headers,
+            cookies=self._cookies,
         ) as client:
             first_request = True
             while queue and len(self.visited_urls) < self.max_pages:
@@ -232,7 +246,10 @@ class Scraper:
         queue = list(urls)
 
         async with httpx.AsyncClient(
-            timeout=self.timeout, follow_redirects=True, headers=self._headers
+            timeout=self.timeout,
+            follow_redirects=True,
+            headers=self._headers,
+            cookies=self._cookies,
         ) as client:
             first_request = True
             while queue and len(self.visited_urls) < self.max_pages:
@@ -416,7 +433,9 @@ class Scraper:
                 return []
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout, headers=self._headers) as client:
+            async with httpx.AsyncClient(
+                timeout=self.timeout, headers=self._headers, cookies=self._cookies
+            ) as client:
                 response = await client.get(sitemap_url)
                 response.raise_for_status()
 

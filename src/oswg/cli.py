@@ -51,6 +51,36 @@ def validate_special_chars(values: list[str] | None) -> list[str] | None:
     return values
 
 
+def parse_headers(values: list[str] | None) -> dict[str, str] | None:
+    """Parse repeatable 'Name: value' flags into a headers dict."""
+    if not values:
+        return None
+    headers: dict[str, str] = {}
+    for value in values:
+        if ":" not in value:
+            raise typer.BadParameter(
+                f"Invalid header '{value}' (expected 'Name: value')"
+            )
+        name, header_value = value.split(":", 1)
+        headers[name.strip()] = header_value.strip()
+    return headers
+
+
+def parse_cookies(values: list[str] | None) -> dict[str, str] | None:
+    """Parse repeatable 'name=value' flags into a cookies dict."""
+    if not values:
+        return None
+    cookies: dict[str, str] = {}
+    for value in values:
+        if "=" not in value:
+            raise typer.BadParameter(
+                f"Invalid cookie '{value}' (expected 'name=value')"
+            )
+        name, cookie_value = value.split("=", 1)
+        cookies[name.strip()] = cookie_value.strip()
+    return cookies
+
+
 @app.callback()
 def main(
     version: bool = typer.Option(
@@ -107,6 +137,8 @@ def generate(
     rate_limit: float = typer.Option(0.0, "--rate-limit", help="Delay between requests in seconds.", min=0.0),
     jitter: bool = typer.Option(False, "--jitter", help="Randomize delay by ±50%% (with --rate-limit)."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview the generated wordlist without writing a file."),
+    header: list[str] = typer.Option(None, "--header", help="Custom header, repeatable (e.g. --header 'X-Foo: bar')."),
+    cookie: list[str] = typer.Option(None, "--cookie", help="Custom cookie, repeatable (e.g. --cookie 'session=abc')."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -141,6 +173,8 @@ def generate(
     generator.scraper.user_agent = user_agent
     generator.scraper.rate_limit = rate_limit
     generator.scraper.jitter = jitter
+    generator.scraper.headers = parse_headers(header)
+    generator.scraper.cookies = parse_cookies(cookie)
 
     primary_url = url[0]
     extra_urls = url[1:] if len(url) > 1 else []
@@ -205,6 +239,8 @@ def scrape(
     user_agent: str = typer.Option(None, "--user-agent", help="Custom User-Agent header for requests."),
     rate_limit: float = typer.Option(0.0, "--rate-limit", help="Delay between requests in seconds.", min=0.0),
     jitter: bool = typer.Option(False, "--jitter", help="Randomize delay by ±50%% (with --rate-limit)."),
+    header: list[str] = typer.Option(None, "--header", help="Custom header, repeatable (e.g. --header 'X-Foo: bar')."),
+    cookie: list[str] = typer.Option(None, "--cookie", help="Custom cookie, repeatable (e.g. --cookie 'session=abc')."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed scraping progress."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
@@ -220,6 +256,8 @@ def scrape(
         user_agent=user_agent,
         rate_limit=rate_limit,
         jitter=jitter,
+        headers=parse_headers(header),
+        cookies=parse_cookies(cookie),
     )
     on_progress = make_verbose_callback() if verbose else None
 

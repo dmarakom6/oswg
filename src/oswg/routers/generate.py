@@ -41,6 +41,8 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.user_agent = config_data.get("user_agent")
     generator.scraper.rate_limit = config_data.get("rate_limit", 0.0)
     generator.scraper.jitter = config_data.get("jitter", False)
+    generator.scraper.headers = config_data.get("headers") or None
+    generator.scraper.cookies = config_data.get("cookies") or None
 
     await job_manager.update_progress(job_id, 20.0, "Scraping website...")
 
@@ -122,6 +124,8 @@ async def generate_wordlist(
             "user_agent": request.user_agent,
             "rate_limit": request.rate_limit,
             "jitter": request.jitter,
+            "headers": request.headers,
+            "cookies": request.cookies,
         }
 
         job_id = await job_manager.create_job(

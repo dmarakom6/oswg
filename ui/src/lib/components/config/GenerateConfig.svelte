@@ -4,7 +4,7 @@
 	import ToggleSwitch from './ToggleSwitch.svelte';
 	import SegmentedControl from './SegmentedControl.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
-	import { isValidUrl } from '$lib/utils/validators';
+	import { isValidUrl, parseCookiesInput, parseHeadersInput } from '$lib/utils/validators';
 	import { endpoints } from '$lib/api/endpoints';
 	import { jobsStore } from '$lib/stores/jobs';
 	import { connectJobWs } from '$lib/websocket/job-ws';
@@ -26,6 +26,8 @@
 	let userAgent = $state('');
 	let rateLimit = $state(DEFAULTS.rateLimit);
 	let jitter = $state(false);
+	let headersText = $state('');
+	let cookiesText = $state('');
 	let useSitemap = $state(false);
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
@@ -80,6 +82,8 @@
 				...((userAgent.trim().length > 0) ? { user_agent: userAgent.trim() } : {}),
 				rate_limit: rateLimit,
 				jitter,
+				headers: parseHeadersInput(headersText),
+				cookies: parseCookiesInput(cookiesText),
 				retention_seconds: retentionSeconds
 			});
 
@@ -269,6 +273,28 @@
 						<p class="text-xs text-muted-foreground">Randomize delay ±50% (requires a delay &gt; 0).</p>
 					{/if}
 				</div>
+			</div>
+			<div class="space-y-1.5">
+				<label for="headers" class="block text-sm font-medium text-foreground">Headers</label>
+				<textarea
+					id="headers"
+					bind:value={headersText}
+					placeholder="X-Foo: bar&#10;Authorization: Bearer token"
+					rows="3"
+					class="w-full resize-y rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+				></textarea>
+				<p class="text-xs text-muted-foreground">One &quot;Name: value&quot; per line.</p>
+			</div>
+			<div class="space-y-1.5">
+				<label for="cookies" class="block text-sm font-medium text-foreground">Cookies</label>
+				<textarea
+					id="cookies"
+					bind:value={cookiesText}
+					placeholder="session=abc123&#10;theme=dark"
+					rows="2"
+					class="w-full resize-y rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+				></textarea>
+				<p class="text-xs text-muted-foreground">One &quot;name=value&quot; per line.</p>
 			</div>
 			<div class="space-y-1.5">
 				<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>

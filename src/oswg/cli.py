@@ -106,6 +106,7 @@ def generate(
     user_agent: str = typer.Option(None, "--user-agent", help="Custom User-Agent header for requests."),
     rate_limit: float = typer.Option(0.0, "--rate-limit", help="Delay between requests in seconds.", min=0.0),
     jitter: bool = typer.Option(False, "--jitter", help="Randomize delay by ±50%% (with --rate-limit)."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview the generated wordlist without writing a file."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -160,10 +161,25 @@ def generate(
         print_error(str(e))
         raise typer.Exit(code=1) from e
 
-    output_path = output.resolve()
-    generator.export_to_file(result, str(output_path))
-
     if not quiet:
+        if dry_run:
+            print_mutations_preview(result.words, limit=len(result.words))
+            print_result_summary(
+                source_keywords=result.source_keywords,
+                total_mutations=result.total_mutations,
+                unique_words=result.unique_words,
+                output_file="(dry run — no file written)",
+            )
+            if result.truncated_count > 0:
+                print_warning(
+                    f"Truncated {result.truncated_count} mutations to reach target size ({size})."
+                )
+            print_info("Dry run — no file written")
+            return
+
+        output_path = output.resolve()
+        generator.export_to_file(result, str(output_path))
+
         print_result_summary(
             source_keywords=result.source_keywords,
             total_mutations=result.total_mutations,

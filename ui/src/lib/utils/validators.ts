@@ -18,32 +18,6 @@ export function parseWordsInput(input: string): string[] {
 		.filter((w) => w.length > 0);
 }
 
-export function parseHeadersInput(input: string): Record<string, string> {
-	const headers: Record<string, string> = {};
-	for (const line of input.split('\n')) {
-		const trimmed = line.trim();
-		if (!trimmed) continue;
-		const idx = trimmed.indexOf(':');
-		if (idx > 0) {
-			headers[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-		}
-	}
-	return headers;
-}
-
-export function parseCookiesInput(input: string): Record<string, string> {
-	const cookies: Record<string, string> = {};
-	for (const line of input.split('\n')) {
-		const trimmed = line.trim();
-		if (!trimmed) continue;
-		const idx = trimmed.indexOf('=');
-		if (idx > 0) {
-			cookies[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-		}
-	}
-	return cookies;
-}
-
 export function formatNumber(n: number): string {
 	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
 	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;

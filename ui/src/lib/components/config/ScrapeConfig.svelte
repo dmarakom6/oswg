@@ -2,8 +2,9 @@
 	import UrlInput from './UrlInput.svelte';
 	import NumberStepper from './NumberStepper.svelte';
 	import ToggleSwitch from './ToggleSwitch.svelte';
+	import KeyValueList from './KeyValueList.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
-	import { isValidUrl, parseCookiesInput, parseHeadersInput } from '$lib/utils/validators';
+	import { isValidUrl } from '$lib/utils/validators';
 	import { endpoints } from '$lib/api/endpoints';
 	import { jobsStore } from '$lib/stores/jobs';
 	import { connectJobWs } from '$lib/websocket/job-ws';
@@ -17,8 +18,8 @@
 	let userAgent = $state('');
 	let rateLimit = $state(DEFAULTS.rateLimit);
 	let jitter = $state(false);
-	let headersText = $state('');
-	let cookiesText = $state('');
+	let headers = $state<{ name: string; value: string }[]>([]);
+	let cookies = $state<{ name: string; value: string }[]>([]);
 	let useSitemap = $state(false);
 	let submitting = $state(false);
 
@@ -39,8 +40,8 @@
 				...((userAgent.trim().length > 0) ? { user_agent: userAgent.trim() } : {}),
 				rate_limit: rateLimit,
 				jitter,
-				headers: parseHeadersInput(headersText),
-				cookies: parseCookiesInput(cookiesText),
+				headers: Object.fromEntries(headers.filter(h => h.name.trim()).map(h => [h.name.trim(), h.value])),
+				cookies: Object.fromEntries(cookies.filter(c => c.name.trim()).map(c => [c.name.trim(), c.value])),
 				retention_seconds: retentionSeconds
 			});
 
@@ -134,28 +135,8 @@
 					{/if}
 				</div>
 			</div>
-			<div class="space-y-1.5">
-				<label for="headers" class="block text-sm font-medium text-foreground">Headers</label>
-				<textarea
-					id="headers"
-					bind:value={headersText}
-					placeholder="X-Foo: bar&#10;Authorization: Bearer token"
-					rows="3"
-					class="w-full resize-y rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-				></textarea>
-				<p class="text-xs text-muted-foreground">One &quot;Name: value&quot; per line.</p>
-			</div>
-			<div class="space-y-1.5">
-				<label for="cookies" class="block text-sm font-medium text-foreground">Cookies</label>
-				<textarea
-					id="cookies"
-					bind:value={cookiesText}
-					placeholder="session=abc123&#10;theme=dark"
-					rows="2"
-					class="w-full resize-y rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-				></textarea>
-				<p class="text-xs text-muted-foreground">One &quot;name=value&quot; per line.</p>
-			</div>
+			<KeyValueList kind="header" items={headers} onchange={(v) => (headers = v)} />
+			<KeyValueList kind="cookie" items={cookies} onchange={(v) => (cookies = v)} />
 			<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 			<select
 				id="retention"

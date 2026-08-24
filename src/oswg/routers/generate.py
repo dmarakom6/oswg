@@ -43,6 +43,7 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.jitter = config_data.get("jitter", False)
     generator.scraper.headers = config_data.get("headers") or None
     generator.scraper.cookies = config_data.get("cookies") or None
+    generator.scraper.proxy = config_data.get("proxy")
 
     await job_manager.update_progress(job_id, 20.0, "Scraping website...")
 
@@ -126,6 +127,7 @@ async def generate_wordlist(
             "jitter": request.jitter,
             "headers": request.headers,
             "cookies": request.cookies,
+            "proxy": request.proxy,
         }
 
         job_id = await job_manager.create_job(

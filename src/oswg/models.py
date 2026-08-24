@@ -74,6 +74,7 @@ class GenerateRequest(BaseRequest):
     jitter: bool = Field(False, description="Randomize delay by ±50% (with rate_limit).")
     headers: dict[str, str] = Field(default={}, description="Custom request headers.")
     cookies: dict[str, str] = Field(default={}, description="Custom request cookies.")
+    proxy: Optional[str] = Field(None, description="Proxy for requests (http/https/socks5).", max_length=200)
 
     @field_validator("special_chars")
     @classmethod
@@ -99,6 +100,7 @@ class ScrapeRequest(BaseRequest):
     jitter: bool = Field(False, description="Randomize delay by ±50% (with rate_limit).")
     headers: dict[str, str] = Field(default={}, description="Custom request headers.")
     cookies: dict[str, str] = Field(default={}, description="Custom request cookies.")
+    proxy: Optional[str] = Field(None, description="Proxy for requests (http/https/socks5).", max_length=200)
 
 
 class MutateRequest(BaseModel):

@@ -38,6 +38,7 @@ async def execute_scrape(job_id: str) -> dict:
         jitter=config_data.get("jitter", False),
         headers=config_data.get("headers") or None,
         cookies=config_data.get("cookies") or None,
+        proxy=config_data.get("proxy"),
     )
 
     await job_manager.update_progress(job_id, 30.0, "Scraping website...")
@@ -94,6 +95,7 @@ async def scrape_keywords(
             "jitter": request.jitter,
             "headers": request.headers,
             "cookies": request.cookies,
+            "proxy": request.proxy,
         }
 
         job_id = await job_manager.create_job(

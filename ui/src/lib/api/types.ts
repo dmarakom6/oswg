@@ -29,6 +29,7 @@ export interface GenerateRequest {
 	jitter?: boolean;
 	headers?: Record<string, string>;
 	cookies?: Record<string, string>;
+	proxy?: string;
 	retention_seconds?: number;
 }
 
@@ -44,6 +45,7 @@ export interface ScrapeRequest {
 	jitter?: boolean;
 	headers?: Record<string, string>;
 	cookies?: Record<string, string>;
+	proxy?: string;
 	retention_seconds?: number;
 }
 

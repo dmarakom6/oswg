@@ -139,6 +139,7 @@ def generate(
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview the generated wordlist without writing a file."),
     header: list[str] = typer.Option(None, "--header", help="Custom header, repeatable (e.g. --header 'X-Foo: bar')."),
     cookie: list[str] = typer.Option(None, "--cookie", help="Custom cookie, repeatable (e.g. --cookie 'session=abc')."),
+    proxy: str = typer.Option(None, "--proxy", help="Proxy for requests (e.g. http://127.0.0.1:8080 or socks5://127.0.0.1:9050)."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -175,6 +176,7 @@ def generate(
     generator.scraper.jitter = jitter
     generator.scraper.headers = parse_headers(header)
     generator.scraper.cookies = parse_cookies(cookie)
+    generator.scraper.proxy = proxy
 
     primary_url = url[0]
     extra_urls = url[1:] if len(url) > 1 else []
@@ -241,6 +243,7 @@ def scrape(
     jitter: bool = typer.Option(False, "--jitter", help="Randomize delay by ±50%% (with --rate-limit)."),
     header: list[str] = typer.Option(None, "--header", help="Custom header, repeatable (e.g. --header 'X-Foo: bar')."),
     cookie: list[str] = typer.Option(None, "--cookie", help="Custom cookie, repeatable (e.g. --cookie 'session=abc')."),
+    proxy: str = typer.Option(None, "--proxy", help="Proxy for requests (e.g. http://127.0.0.1:8080 or socks5://127.0.0.1:9050)."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed scraping progress."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
@@ -258,6 +261,7 @@ def scrape(
         jitter=jitter,
         headers=parse_headers(header),
         cookies=parse_cookies(cookie),
+        proxy=proxy,
     )
     on_progress = make_verbose_callback() if verbose else None
 

@@ -20,6 +20,7 @@
 	let jitter = $state(false);
 	let headers = $state<{ name: string; value: string }[]>([]);
 	let cookies = $state<{ name: string; value: string }[]>([]);
+	let proxy = $state('');
 	let useSitemap = $state(false);
 	let submitting = $state(false);
 
@@ -42,6 +43,7 @@
 				jitter,
 				headers: Object.fromEntries(headers.filter(h => h.name.trim()).map(h => [h.name.trim(), h.value])),
 				cookies: Object.fromEntries(cookies.filter(c => c.name.trim()).map(c => [c.name.trim(), c.value])),
+				...((proxy.trim().length > 0) ? { proxy: proxy.trim() } : {}),
 				retention_seconds: retentionSeconds
 			});
 
@@ -137,6 +139,27 @@
 			</div>
 			<KeyValueList kind="header" items={headers} onchange={(v) => (headers = v)} />
 			<KeyValueList kind="cookie" items={cookies} onchange={(v) => (cookies = v)} />
+			<div class="space-y-1.5">
+				<label for="proxy" class="block text-sm font-medium text-foreground">Proxy</label>
+				<input
+					id="proxy"
+					type="text"
+					bind:value={proxy}
+					placeholder="http://127.0.0.1:8080"
+					class="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+				/>
+				{#if proxy.trim().length > 0}
+					<div class="space-y-1.5 rounded-md border border-border bg-muted/30 px-3 py-2">
+						<p class="text-xs font-medium text-foreground">Why route through a proxy?</p>
+						<ul class="list-inside list-disc space-y-1 text-xs text-muted-foreground">
+							<li><span class="font-mono text-foreground">http://127.0.0.1:8080</span> — intercept and inspect live requests in Burp Suite before they hit the target.</li>
+							<li><span class="font-mono text-foreground">socks5://127.0.0.1:9050</span> — route through Tor to hide your origin and IP.</li>
+							<li>Bypass IP-based rate limits and geo-restrictions with rotating residential proxies.</li>
+							<li>Works with http, https and socks5 schemes.</li>
+						</ul>
+					</div>
+				{/if}
+			</div>
 			<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 			<select
 				id="retention"

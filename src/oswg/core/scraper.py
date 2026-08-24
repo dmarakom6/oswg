@@ -53,6 +53,7 @@ class Scraper:
         jitter: bool = False,
         cookies: dict[str, str] | None = None,
         headers: dict[str, str] | None = None,
+        proxy: str | None = None,
     ):
         self.max_pages = max_pages
         self.timeout = timeout
@@ -64,6 +65,7 @@ class Scraper:
         self.jitter = jitter
         self.cookies = cookies
         self.headers = headers
+        self.proxy = proxy
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
@@ -117,6 +119,7 @@ class Scraper:
                 follow_redirects=True,
                 headers=self._headers,
                 cookies=self._cookies,
+                proxy=self.proxy,
             ) as client:
                 response = await client.get(robots_url)
                 response.raise_for_status()
@@ -160,6 +163,7 @@ class Scraper:
             follow_redirects=True,
             headers=self._headers,
             cookies=self._cookies,
+            proxy=self.proxy,
         ) as client:
             first_request = True
             while queue and len(self.visited_urls) < self.max_pages:
@@ -250,6 +254,7 @@ class Scraper:
             follow_redirects=True,
             headers=self._headers,
             cookies=self._cookies,
+            proxy=self.proxy,
         ) as client:
             first_request = True
             while queue and len(self.visited_urls) < self.max_pages:
@@ -434,7 +439,10 @@ class Scraper:
 
         try:
             async with httpx.AsyncClient(
-                timeout=self.timeout, headers=self._headers, cookies=self._cookies
+                timeout=self.timeout,
+                headers=self._headers,
+                cookies=self._cookies,
+                proxy=self.proxy,
             ) as client:
                 response = await client.get(sitemap_url)
                 response.raise_for_status()

@@ -58,7 +58,7 @@ class WordlistGenerator:
             if inspect.isawaitable(result):
                 await result
 
-        mutations = self.mutation_engine.generate_all_mutations(
+        groups = self.mutation_engine.generate_all_mutations(
             words,
             config={
                 "enable_leet": config.enable_leet,
@@ -70,18 +70,24 @@ class WordlistGenerator:
                 "special_chars": config.special_chars,
                 "deduplicate": config.deduplicate,
             },
+            grouped=True,
         )
 
-        if config.deduplicate:
-            mutations = list(dict.fromkeys(mutations))
+        flat = [m for group in groups for m in group]
 
-        if len(mutations) < config.target_size and base_words:
-            mutations = self._expand_to_target(mutations, base_words, config)
-
-        truncated_count = 0
-        if len(mutations) > config.target_size:
-            truncated_count = len(mutations) - config.target_size
-        mutations = mutations[: config.target_size]
+        if len(flat) > config.target_size:
+            truncated_count = len(flat) - config.target_size
+            mutations = self._round_robin(
+                groups, config.target_size, deduplicate=config.deduplicate
+            )
+        else:
+            truncated_count = 0
+            mutations = flat
+            if config.deduplicate:
+                mutations = list(dict.fromkeys(mutations))
+            if len(mutations) < config.target_size and base_words:
+                mutations = self._expand_to_target(mutations, base_words, config)
+            mutations = mutations[: config.target_size]
 
         if len(mutations) < config.target_size:
             import sys
@@ -99,6 +105,41 @@ class WordlistGenerator:
             truncated_count=truncated_count,
             config=config,
         )
+
+    def _round_robin(
+        self,
+        groups: list[list[str]],
+        target: int,
+        deduplicate: bool = True,
+    ) -> list[str]:
+        """Select up to ``target`` words by cycling over every word's variants.
+
+        Iterates variant index 0, 1, 2, ... taking groups[j][i] for each
+        word j in order, so every base word's plainest form appears before
+        any word's second variant. Words with fewer variants drop out of
+        the rotation naturally. With ``deduplicate``, cross-word duplicates
+        are skipped via a seen-set while preserving order.
+        """
+        seen: set[str] = set()
+        selected: list[str] = []
+        max_variants = max((len(g) for g in groups), default=0)
+
+        for i in range(max_variants):
+            if len(selected) >= target:
+                break
+            for group in groups:
+                if len(selected) >= target:
+                    break
+                if i >= len(group):
+                    continue
+                word = group[i]
+                if deduplicate:
+                    if word in seen:
+                        continue
+                    seen.add(word)
+                selected.append(word)
+
+        return selected
 
     def _expand_to_target(
         self,

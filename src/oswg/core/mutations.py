@@ -65,7 +65,7 @@ class MutationEngine:
                     results.append(mutator(word))
 
         if deduplicate:
-            return list(set(results))
+            return list(dict.fromkeys(results))
         return results
 
     def _lowercase(self, word: str) -> str:
@@ -137,12 +137,18 @@ class MutationEngine:
         self,
         words: list[str],
         config: dict | None = None,
-    ) -> list[str]:
-        """Generate all mutations for a list of words."""
+        grouped: bool = False,
+    ) -> list[str] | list[list[str]]:
+        """Generate all mutations for a list of words.
+
+        Returns a flat list by default, or per-word groups when
+        ``grouped=True`` (each inner list is one word's mutations).
+        """
         if config is None:
             config = {}
 
         all_mutations = []
+        groups: list[list[str]] = []
         mutation_types = []
 
         if config.get("enable_uppercase", True):
@@ -172,5 +178,7 @@ class MutationEngine:
                 enable_uppercase=config.get("enable_uppercase", True),
             )
             all_mutations.extend(mutations)
+            if grouped:
+                groups.append(mutations)
 
-        return all_mutations
+        return groups if grouped else all_mutations

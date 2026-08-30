@@ -47,6 +47,10 @@ class WordlistGenerator:
         )
         base_words = list(words)
 
+        merged_count = 0
+        if config.merge_words:
+            merged_count = self._merge_external_words(base_words, config)
+
         if on_progress:
             result = on_progress(
                 f"Extracted {filter_stats['raw']} words; "
@@ -54,12 +58,13 @@ class WordlistGenerator:
                 f"{filter_stats['freq']} high-frequency, "
                 f"{filter_stats['length']} length/format; "
                 f"{filter_stats['unique']} base words remaining"
+                + (f"; merged {merged_count} external words" if merged_count else "")
             )
             if inspect.isawaitable(result):
                 await result
 
         groups = self.mutation_engine.generate_all_mutations(
-            words,
+            base_words,
             config={
                 "enable_leet": config.enable_leet,
                 "enable_uppercase": config.enable_uppercase,
@@ -105,6 +110,32 @@ class WordlistGenerator:
             truncated_count=truncated_count,
             config=config,
         )
+
+    def _merge_external_words(
+        self, base_words: list[str], config: GenerationConfig
+    ) -> int:
+        """Merge external wordlist words into base_words (length-filtered, capped).
+
+        Only min/max length is enforced - stopword filtering and alpha-only
+        checks are skipped so known passwords (which often contain digits or
+        symbols) are never stripped. Appends in order up to merge_max.
+        Returns the number of words actually merged.
+        """
+        merged = 0
+        for word in config.merge_words:
+            if merged >= config.merge_max:
+                break
+            clean = word.strip().lower()
+            if (
+                len(clean) < config.min_word_length
+                or len(clean) > config.max_word_length
+            ):
+                continue
+            if clean in base_words:
+                continue
+            base_words.append(clean)
+            merged += 1
+        return merged
 
     def _round_robin(
         self,

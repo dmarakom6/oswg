@@ -30,6 +30,10 @@ export interface GenerateRequest {
 	headers?: Record<string, string>;
 	cookies?: Record<string, string>;
 	proxy?: string;
+	merge_words?: string[];
+	merge_max?: number;
+	merge_builtin?: boolean;
+	merge_rockyou?: boolean;
 	retention_seconds?: number;
 }
 

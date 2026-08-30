@@ -69,6 +69,8 @@ class GenerationConfig:
     filter_stopwords: bool = True
     stopword_threshold: float = 0.5
     extra_stopwords: list[str] = field(default_factory=list)
+    merge_words: list[str] = field(default_factory=list)
+    merge_max: int = 5000
 
 
 @dataclass

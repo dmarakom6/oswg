@@ -18,6 +18,20 @@ from oswg.services.job_manager import job_manager
 router = APIRouter()
 
 
+def _resolve_merge_words(request: GenerateRequest) -> list[str]:
+    """Combine uploaded words with bundled/rockyou lists for merging."""
+    from oswg.core.wordlists import detect_rockyou, iter_builtin, iter_wordlist
+
+    words = list(request.merge_words)
+    if request.merge_builtin:
+        words.extend(iter_builtin())
+    if request.merge_rockyou:
+        rockyou = detect_rockyou()
+        if rockyou is not None:
+            words.extend(iter_wordlist(rockyou))
+    return words
+
+
 async def execute_generate(job_id: str) -> dict:
     """Execute wordlist generation job."""
     job = await job_manager.get_job_status(job_id)
@@ -62,6 +76,8 @@ async def execute_generate(job_id: str) -> dict:
         extra_stopwords=config_data.get("extra_stopwords", []),
         common_years=config_data.get("common_years") or default_years(),
         special_chars=config_data.get("special_chars") or ["!", "@", "#", "$"],
+        merge_words=config_data.get("merge_words", []),
+        merge_max=config_data.get("merge_max", 5000),
     )
 
     await job_manager.update_progress(job_id, 40.0, "Generating mutations...")
@@ -128,6 +144,8 @@ async def generate_wordlist(
             "headers": request.headers,
             "cookies": request.cookies,
             "proxy": request.proxy,
+            "merge_words": _resolve_merge_words(request),
+            "merge_max": request.merge_max,
         }
 
         job_id = await job_manager.create_job(

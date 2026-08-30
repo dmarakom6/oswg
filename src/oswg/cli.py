@@ -81,6 +81,35 @@ def parse_cookies(values: list[str] | None) -> dict[str, str] | None:
     return cookies
 
 
+def collect_merge_words(
+    merge_files: list[Path] | None,
+    merge_builtin: bool,
+    merge_rockyou: bool,
+) -> list[str]:
+    """Collect external words from --merge files, builtin, and rockyou."""
+    from oswg.core.wordlists import detect_rockyou, iter_builtin, iter_wordlist
+
+    words: list[str] = []
+
+    if merge_builtin:
+        words.extend(iter_builtin())
+
+    for path in merge_files or []:
+        if not path.exists():
+            print_error(f"Merge file not found: {path}")
+            raise typer.Exit(code=1)
+        words.extend(iter_wordlist(path))
+
+    if merge_rockyou:
+        rockyou = detect_rockyou()
+        if rockyou is None:
+            print_error("rockyou.txt not found (looked in /usr/share/wordlists/).")
+            raise typer.Exit(code=1)
+        words.extend(iter_wordlist(rockyou))
+
+    return words
+
+
 @app.callback()
 def main(
     version: bool = typer.Option(
@@ -140,6 +169,16 @@ def generate(
     header: list[str] = typer.Option(None, "--header", help="Custom header, repeatable (e.g. --header 'X-Foo: bar')."),
     cookie: list[str] = typer.Option(None, "--cookie", help="Custom cookie, repeatable (e.g. --cookie 'session=abc')."),
     proxy: str = typer.Option(None, "--proxy", help="Proxy for requests (e.g. http://127.0.0.1:8080 or socks5://127.0.0.1:9050)."),
+    merge: list[Path] = typer.Option(
+        None, "--merge",
+        help="Wordlist file(s) to merge, repeatable (one word per line).",
+    ),
+    merge_max: int = typer.Option(5000, "--merge-max", help="Total cap on merged words.", min=1),
+    merge_builtin: bool = typer.Option(False, "--merge-builtin", help="Merge bundled bundled common passwords."),
+    merge_rockyou: bool = typer.Option(
+        False, "--merge-rockyou",
+        help="Merge /usr/share/wordlists/rockyou.txt(.gz) if present.",
+    ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -165,6 +204,8 @@ def generate(
         filter_stopwords=not no_filter_stopwords,
         stopword_threshold=stopword_threshold,
         extra_stopwords=extra_stopwords,
+        merge_words=collect_merge_words(merge, merge_builtin, merge_rockyou),
+        merge_max=merge_max,
     )
 
     generator = WordlistGenerator()

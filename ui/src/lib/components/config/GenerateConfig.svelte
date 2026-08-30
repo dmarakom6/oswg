@@ -4,6 +4,7 @@
 	import ToggleSwitch from './ToggleSwitch.svelte';
 	import SegmentedControl from './SegmentedControl.svelte';
 	import KeyValueList from './KeyValueList.svelte';
+	import MergeConfig from './MergeConfig.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
 	import { isValidUrl } from '$lib/utils/validators';
 	import { endpoints } from '$lib/api/endpoints';
@@ -30,6 +31,7 @@
 	let headers = $state<{ name: string; value: string }[]>([]);
 	let cookies = $state<{ name: string; value: string }[]>([]);
 	let proxy = $state('');
+	let merge = $state({ merge_words: [] as string[], merge_max: DEFAULTS.mergeMax, merge_builtin: false, merge_rockyou: false });
 	let useSitemap = $state(false);
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
@@ -87,6 +89,10 @@
 				headers: Object.fromEntries(headers.filter(h => h.name.trim()).map(h => [h.name.trim(), h.value])),
 				cookies: Object.fromEntries(cookies.filter(c => c.name.trim()).map(c => [c.name.trim(), c.value])),
 				...((proxy.trim().length > 0) ? { proxy: proxy.trim() } : {}),
+				merge_words: merge.merge_words,
+				merge_max: merge.merge_max,
+				merge_builtin: merge.merge_builtin,
+				merge_rockyou: merge.merge_rockyou,
 				retention_seconds: retentionSeconds
 			});
 
@@ -300,6 +306,7 @@
 					</div>
 				{/if}
 			</div>
+			<MergeConfig value={merge} onchange={(v) => (merge = v)} />
 			<div class="space-y-1.5">
 				<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 				<select

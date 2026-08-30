@@ -10,7 +10,8 @@ export const DEFAULTS = {
 	enableSpecial: false,
 	retentionSeconds: 3600,
 	timeoutSeconds: 30,
-	rateLimit: 0
+	rateLimit: 0,
+	mergeMax: 5000
 };
 
 export const LIMITS = {
@@ -20,7 +21,8 @@ export const LIMITS = {
 	maxLength: { min: 1, max: 128 },
 	retentionSeconds: { min: 60, max: 86400 },
 	timeoutSeconds: { min: 1, max: 300 },
-	rateLimit: { min: 0, max: 60 }
+	rateLimit: { min: 0, max: 60 },
+	mergeMax: { min: 1, max: 1000000 }
 };
 
 export const RETENTION_OPTIONS = [

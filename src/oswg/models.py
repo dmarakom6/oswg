@@ -75,6 +75,10 @@ class GenerateRequest(BaseRequest):
     headers: dict[str, str] = Field(default={}, description="Custom request headers.")
     cookies: dict[str, str] = Field(default={}, description="Custom request cookies.")
     proxy: Optional[str] = Field(None, description="Proxy for requests (http/https/socks5).", max_length=200)
+    merge_words: list[str] = Field(default=[], description="External words to merge and mutate.", max_length=100000)
+    merge_max: int = Field(5000, description="Total cap on merged words.", ge=1, le=1000000)
+    merge_builtin: bool = Field(False, description="Merge bundled bundled common passwords.")
+    merge_rockyou: bool = Field(False, description="Merge /usr/share/wordlists/rockyou.txt if present.")
 
     @field_validator("special_chars")
     @classmethod

@@ -6,6 +6,7 @@ export const DEFAULTS = {
 	leetLevel: 1 as const,
 	enableLeet: true,
 	enableUppercase: true,
+	enableReverseLeet: false,
 	enableNumbers: true,
 	enableSpecial: false,
 	retentionSeconds: 3600,

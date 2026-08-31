@@ -24,6 +24,7 @@ async def mutate_words(request: MutateRequest) -> MutateResponse:
         config = {
             "enable_leet": request.enable_leet,
             "enable_uppercase": request.enable_uppercase,
+            "enable_reverse_leet": request.enable_reverse_leet,
             "enable_numbers": request.enable_numbers,
             "enable_special": request.enable_special,
             "leet_level": request.leet_level,

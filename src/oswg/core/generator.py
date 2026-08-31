@@ -68,6 +68,7 @@ class WordlistGenerator:
             config={
                 "enable_leet": config.enable_leet,
                 "enable_uppercase": config.enable_uppercase,
+                "enable_reverse_leet": config.enable_reverse_leet,
                 "enable_numbers": config.enable_numbers,
                 "enable_special": config.enable_special,
                 "leet_level": config.leet_level,

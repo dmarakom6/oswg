@@ -13,6 +13,7 @@ export interface GenerateRequest {
 	max_length: number;
 	enable_leet: boolean;
 	enable_uppercase?: boolean;
+	enable_reverse_leet?: boolean;
 	enable_numbers: boolean;
 	enable_special: boolean;
 	leet_level: 1 | 2;
@@ -57,6 +58,7 @@ export interface MutateRequest {
 	words: string[];
 	enable_leet: boolean;
 	enable_uppercase?: boolean;
+	enable_reverse_leet?: boolean;
 	enable_numbers: boolean;
 	enable_special: boolean;
 	leet_level: 1 | 2;

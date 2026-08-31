@@ -20,6 +20,11 @@ class MutationEngine:
         "b": ["8"],
     }
 
+    REVERSE_LEET_MAP = {
+        "4": "a", "@": "a", "3": "e", "1": "i", "!": "i",
+        "0": "o", "5": "s", "$": "s", "7": "t", "9": "g", "8": "b",
+    }
+
     def __init__(self):
         self.mutations = {
             MutationType.LOWERCASE: self._lowercase,
@@ -27,6 +32,7 @@ class MutationEngine:
             MutationType.CAPITALIZE: self._capitalize,
             MutationType.TITLE_CASE: self._title_case,
             MutationType.LEET_SPEAK: self._leet_speak,
+            MutationType.REVERSE_LEET: self._reverse_leet,
             MutationType.ADD_NUMBERS: self._add_numbers,
             MutationType.ADD_SPECIAL: self._add_special,
         }
@@ -59,8 +65,8 @@ class MutationEngine:
                     results.extend(mutator(word, numbers, enable_uppercase))
                 elif mut_type == MutationType.ADD_SPECIAL:
                     results.extend(mutator(word, special_chars, enable_uppercase))
-                elif mut_type == MutationType.LEET_SPEAK:
-                    results.extend(mutator(word, leet_level))
+                elif mut_type in (MutationType.LEET_SPEAK, MutationType.REVERSE_LEET):
+                    results.extend(mutator(word))
                 else:
                     results.append(mutator(word))
 
@@ -108,6 +114,17 @@ class MutationEngine:
                     if leet_word != word_lower:
                         variations.append(leet_word)
 
+        return variations
+
+    def _reverse_leet(self, word: str) -> list[str]:
+        """Convert l33t characters back to letters (e.g. p@ssw0rd -> password)."""
+        word_lower = word.lower()
+        reversed_word = word_lower
+        for leet_char, letter in self.REVERSE_LEET_MAP.items():
+            reversed_word = reversed_word.replace(leet_char, letter)
+        variations = [word_lower]
+        if reversed_word != word_lower:
+            variations.append(reversed_word)
         return variations
 
     def _add_numbers(
@@ -160,6 +177,9 @@ class MutationEngine:
 
         if config.get("enable_leet", True):
             mutation_types.append(MutationType.LEET_SPEAK)
+
+        if config.get("enable_reverse_leet", False):
+            mutation_types.append(MutationType.REVERSE_LEET)
 
         if config.get("enable_numbers", True):
             mutation_types.append(MutationType.ADD_NUMBERS)

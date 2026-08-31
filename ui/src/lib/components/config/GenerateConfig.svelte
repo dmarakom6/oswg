@@ -19,6 +19,7 @@
 	let maxLength = $state(DEFAULTS.maxLength);
 	let enableLeet = $state(DEFAULTS.enableLeet);
 	let enableUppercase = $state(DEFAULTS.enableUppercase);
+	let enableReverseLeet = $state(DEFAULTS.enableReverseLeet);
 	let enableNumbers = $state(DEFAULTS.enableNumbers);
 	let enableSpecial = $state(DEFAULTS.enableSpecial);
 	let leetLevel = $state<1 | 2>(DEFAULTS.leetLevel);
@@ -72,6 +73,7 @@
 				max_length: maxLength,
 				enable_leet: enableLeet,
 				enable_uppercase: enableUppercase,
+				enable_reverse_leet: enableReverseLeet,
 				enable_numbers: enableNumbers,
 				enable_special: enableSpecial,
 				leet_level: leetLevel,
@@ -160,6 +162,7 @@
 		<div class="space-y-3">
 			<ToggleSwitch checked={enableLeet} onchange={(v) => (enableLeet = v)} label="L33t speak" />
 			<ToggleSwitch checked={enableUppercase} onchange={(v) => (enableUppercase = v)} label="Uppercase" />
+			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => (enableReverseLeet = v)} label="Reverse leet" />
 			{#if enableLeet}
 				<div class="ml-12 space-y-1.5">
 					<SegmentedControl

@@ -60,6 +60,7 @@ class GenerationConfig:
     max_word_length: int = 32
     enable_leet: bool = True
     enable_uppercase: bool = True
+    enable_reverse_leet: bool = False
     enable_numbers: bool = True
     enable_special: bool = False
     leet_level: int = 1

@@ -25,6 +25,25 @@ class MutationEngine:
         "0": "o", "5": "s", "$": "s", "7": "t", "9": "g", "8": "b",
     }
 
+    COMMON_SUBS_MAP = {
+        "password": ["passwd", "pwd"],
+        "admin": ["adm", "root"],
+        "administrator": ["admin"],
+        "user": ["usr"],
+        "username": ["uname", "user"],
+        "account": ["acct"],
+        "login": ["logon", "signin"],
+        "authentication": ["auth"],
+        "application": ["app"],
+        "information": ["info"],
+        "configuration": ["config"],
+        "documentation": ["docs"],
+        "welcome": ["wlcm"],
+        "access": ["acc"],
+        "network": ["net"],
+        "computer": ["comp"],
+    }
+
     def __init__(self):
         self.mutations = {
             MutationType.LOWERCASE: self._lowercase,
@@ -33,6 +52,7 @@ class MutationEngine:
             MutationType.TITLE_CASE: self._title_case,
             MutationType.LEET_SPEAK: self._leet_speak,
             MutationType.REVERSE_LEET: self._reverse_leet,
+            MutationType.COMMON_SUBSTITUTIONS: self._common_substitutions,
             MutationType.ADD_NUMBERS: self._add_numbers,
             MutationType.ADD_SPECIAL: self._add_special,
         }
@@ -65,7 +85,11 @@ class MutationEngine:
                     results.extend(mutator(word, numbers, enable_uppercase))
                 elif mut_type == MutationType.ADD_SPECIAL:
                     results.extend(mutator(word, special_chars, enable_uppercase))
-                elif mut_type in (MutationType.LEET_SPEAK, MutationType.REVERSE_LEET):
+                elif mut_type in (
+                    MutationType.LEET_SPEAK,
+                    MutationType.REVERSE_LEET,
+                    MutationType.COMMON_SUBSTITUTIONS,
+                ):
                     results.extend(mutator(word))
                 else:
                     results.append(mutator(word))
@@ -127,6 +151,17 @@ class MutationEngine:
             variations.append(reversed_word)
         return variations
 
+    def _common_substitutions(self, word: str) -> list[str]:
+        """Substitute whole-word aliases (e.g. password -> passwd, pwd)."""
+        word_lower = word.lower()
+        variations = [word_lower]
+        aliases = self.COMMON_SUBS_MAP.get(word_lower)
+        if aliases:
+            for alias in aliases:
+                variations.append(alias)
+                variations.append(alias.title())
+        return variations
+
     def _add_numbers(
         self, word: str, numbers: list[int], enable_uppercase: bool = True
     ) -> list[str]:
@@ -180,6 +215,9 @@ class MutationEngine:
 
         if config.get("enable_reverse_leet", False):
             mutation_types.append(MutationType.REVERSE_LEET)
+
+        if config.get("enable_common_subs", False):
+            mutation_types.append(MutationType.COMMON_SUBSTITUTIONS)
 
         if config.get("enable_numbers", True):
             mutation_types.append(MutationType.ADD_NUMBERS)

@@ -113,6 +113,7 @@ class MutateRequest(BaseModel):
     enable_leet: bool = Field(True, description="Enable l33t speak mutations.")
     enable_uppercase: bool = Field(True, description="Enable uppercase/case mutations.")
     enable_reverse_leet: bool = Field(False, description="Convert l33t chars back to letters.")
+    enable_common_subs: bool = Field(False, description="Substitute common aliases (e.g. password -> passwd).")
     enable_numbers: bool = Field(True, description="Enable number suffix mutations.")
     enable_special: bool = Field(False, description="Enable special character mutations.")
     leet_level: int = Field(1, description="L33t speak intensity (1=basic, 2=advanced).", ge=1, le=2)

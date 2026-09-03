@@ -12,6 +12,7 @@
 	let enableLeet = $state(DEFAULTS.enableLeet);
 	let enableUppercase = $state(DEFAULTS.enableUppercase);
 	let enableReverseLeet = $state(DEFAULTS.enableReverseLeet);
+	let enableCommonSubs = $state(DEFAULTS.enableCommonSubs);
 	let enableNumbers = $state(DEFAULTS.enableNumbers);
 	let enableSpecial = $state(DEFAULTS.enableSpecial);
 	let leetLevel = $state<1 | 2>(DEFAULTS.leetLevel);
@@ -56,6 +57,7 @@
 				enable_leet: enableLeet,
 				enable_uppercase: enableUppercase,
 				enable_reverse_leet: enableReverseLeet,
+				enable_common_subs: enableCommonSubs,
 				enable_numbers: enableNumbers,
 				enable_special: enableSpecial,
 				leet_level: leetLevel
@@ -120,6 +122,7 @@
 			<ToggleSwitch checked={enableLeet} onchange={(v) => (enableLeet = v)} label="L33t speak" />
 			<ToggleSwitch checked={enableUppercase} onchange={(v) => (enableUppercase = v)} label="Uppercase" />
 			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => (enableReverseLeet = v)} label="Reverse leet" />
+			<ToggleSwitch checked={enableCommonSubs} onchange={(v) => (enableCommonSubs = v)} label="Common substitutions" />
 			{#if enableLeet}
 				<div class="ml-12 space-y-1.5">
 					<SegmentedControl

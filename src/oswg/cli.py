@@ -342,6 +342,10 @@ def mutate(
     output: Path = typer.Option(None, "--output", "-o", help="Save mutations to file."),
     no_leet: bool = typer.Option(False, "--no-leet", help="Disable l33t speak mutations."),
     reverse_leet: bool = typer.Option(False, "--reverse-leet", help="Convert l33t chars back to letters."),
+    common_subs: bool = typer.Option(
+        False, "--common-subs",
+        help="Substitute common aliases (e.g. password -> passwd).",
+    ),
     no_uppercase: bool = typer.Option(False, "--no-uppercase", help="Disable uppercase/case mutations."),
     no_numbers: bool = typer.Option(False, "--no-numbers", help="Disable number suffix mutations."),
     special: bool = typer.Option(False, "--special", help="Enable special character mutations."),
@@ -369,6 +373,7 @@ def mutate(
         "enable_leet": not no_leet,
         "enable_uppercase": not no_uppercase,
         "enable_reverse_leet": reverse_leet,
+        "enable_common_subs": common_subs,
         "enable_numbers": not no_numbers,
         "enable_special": special,
         "leet_level": leet_level,

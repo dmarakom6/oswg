@@ -7,6 +7,7 @@ export const DEFAULTS = {
 	enableLeet: true,
 	enableUppercase: true,
 	enableReverseLeet: false,
+	enableCommonSubs: false,
 	enableNumbers: true,
 	enableSpecial: false,
 	retentionSeconds: 3600,

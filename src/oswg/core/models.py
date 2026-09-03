@@ -17,6 +17,8 @@ class MutationType(Enum):
     ADD_NUMBERS = "add_numbers"
     ADD_SPECIAL = "add_special"
     COMMON_SUBSTITUTIONS = "common_substitutions"
+    PREPEND = "prepend"
+    APPEND = "append"
 
 
 @dataclass

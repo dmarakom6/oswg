@@ -117,6 +117,8 @@ class MutateRequest(BaseModel):
     enable_numbers: bool = Field(True, description="Enable number suffix mutations.")
     enable_special: bool = Field(False, description="Enable special character mutations.")
     leet_level: int = Field(1, description="L33t speak intensity (1=basic, 2=advanced).", ge=1, le=2)
+    prepend: Optional[str] = Field(None, description="Prepend this string to every word.", max_length=50)
+    append: Optional[str] = Field(None, description="Append this string to every word.", max_length=50)
 
 
 class JobResponse(BaseModel):

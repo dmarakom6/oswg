@@ -55,6 +55,8 @@ class MutationEngine:
             MutationType.COMMON_SUBSTITUTIONS: self._common_substitutions,
             MutationType.ADD_NUMBERS: self._add_numbers,
             MutationType.ADD_SPECIAL: self._add_special,
+            MutationType.PREPEND: self._prepend,
+            MutationType.APPEND: self._append,
         }
 
     def mutate(
@@ -66,6 +68,8 @@ class MutationEngine:
         leet_level: int = 1,
         deduplicate: bool = True,
         enable_uppercase: bool = True,
+        prefix: str = "",
+        suffix: str = "",
     ) -> list[str]:
         """Generate mutations for a word."""
         if mutation_types is None:
@@ -85,6 +89,10 @@ class MutationEngine:
                     results.extend(mutator(word, numbers, enable_uppercase))
                 elif mut_type == MutationType.ADD_SPECIAL:
                     results.extend(mutator(word, special_chars, enable_uppercase))
+                elif mut_type == MutationType.PREPEND:
+                    results.append(mutator(word, prefix))
+                elif mut_type == MutationType.APPEND:
+                    results.append(mutator(word, suffix))
                 elif mut_type in (
                     MutationType.LEET_SPEAK,
                     MutationType.REVERSE_LEET,
@@ -162,6 +170,18 @@ class MutationEngine:
                 variations.append(alias.title())
         return variations
 
+    def _prepend(self, word: str, prefix: str) -> str:
+        """Prepend a string to a word."""
+        if not prefix:
+            return word
+        return f"{prefix}{word}"
+
+    def _append(self, word: str, suffix: str) -> str:
+        """Append a string to a word."""
+        if not suffix:
+            return word
+        return f"{word}{suffix}"
+
     def _add_numbers(
         self, word: str, numbers: list[int], enable_uppercase: bool = True
     ) -> list[str]:
@@ -225,6 +245,13 @@ class MutationEngine:
         if config.get("enable_special", False):
             mutation_types.append(MutationType.ADD_SPECIAL)
 
+        prefix = config.get("prefix", "")
+        suffix = config.get("suffix", "")
+        if prefix:
+            mutation_types.append(MutationType.PREPEND)
+        if suffix:
+            mutation_types.append(MutationType.APPEND)
+
         for word in words:
             mutations = self.mutate(
                 word,
@@ -234,6 +261,8 @@ class MutationEngine:
                 leet_level=config.get("leet_level", 1),
                 deduplicate=config.get("deduplicate", True),
                 enable_uppercase=config.get("enable_uppercase", True),
+                prefix=prefix,
+                suffix=suffix,
             )
             all_mutations.extend(mutations)
             if grouped:

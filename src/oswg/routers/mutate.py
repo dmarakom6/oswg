@@ -29,6 +29,8 @@ async def mutate_words(request: MutateRequest) -> MutateResponse:
             "enable_numbers": request.enable_numbers,
             "enable_special": request.enable_special,
             "leet_level": request.leet_level,
+            "prefix": request.prepend or "",
+            "suffix": request.append or "",
         }
 
         mutations = engine.generate_all_mutations(request.words, config=config)

@@ -350,6 +350,8 @@ def mutate(
     no_numbers: bool = typer.Option(False, "--no-numbers", help="Disable number suffix mutations."),
     special: bool = typer.Option(False, "--special", help="Enable special character mutations."),
     leet_level: int = typer.Option(1, "--leet-level", help="L33t speak intensity (1=basic, 2=advanced).", min=1, max=2),
+    prepend: str = typer.Option(None, "--prepend", help="Prepend this string to every word."),
+    append: str = typer.Option(None, "--append", help="Append this string to every word."),
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all mutations (not just preview)."),
     from_file: Path = typer.Option(None, "--file", "-f", help="Read words from a file (one per line)."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
@@ -377,6 +379,8 @@ def mutate(
         "enable_numbers": not no_numbers,
         "enable_special": special,
         "leet_level": leet_level,
+        "prefix": prepend or "",
+        "suffix": append or "",
     }
 
     mutations = engine.generate_all_mutations(input_words, config=config)

@@ -16,6 +16,8 @@
 	let enableNumbers = $state(DEFAULTS.enableNumbers);
 	let enableSpecial = $state(DEFAULTS.enableSpecial);
 	let leetLevel = $state<1 | 2>(DEFAULTS.leetLevel);
+	let prepend = $state('');
+	let append = $state('');
 	let submitting = $state(false);
 	let fileName = $state<string | null>(null);
 
@@ -60,7 +62,9 @@
 				enable_common_subs: enableCommonSubs,
 				enable_numbers: enableNumbers,
 				enable_special: enableSpecial,
-				leet_level: leetLevel
+				leet_level: leetLevel,
+				...((prepend.trim().length > 0) ? { prepend: prepend.trim() } : {}),
+				...((append.trim().length > 0) ? { append: append.trim() } : {}),
 			});
 
 			onResult(result);
@@ -139,6 +143,21 @@
 			{/if}
 			<ToggleSwitch checked={enableNumbers} onchange={(v) => (enableNumbers = v)} label="Numbers" />
 			<ToggleSwitch checked={enableSpecial} onchange={(v) => (enableSpecial = v)} label="Special chars" />
+			<div class="grid grid-cols-2 gap-2">
+				<input
+					type="text"
+					bind:value={prepend}
+					placeholder="Prepend"
+					class="w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+				/>
+				<input
+					type="text"
+					bind:value={append}
+					placeholder="Append"
+					class="w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+				/>
+			</div>
+			<p class="text-xs text-muted-foreground">Prefix/suffix added to every word (e.g. prepend <span class="font-mono">2024</span> → <span class="font-mono">2024word</span>).</p>
 		</div>
 	</div>
 

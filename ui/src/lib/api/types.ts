@@ -63,6 +63,8 @@ export interface MutateRequest {
 	enable_numbers: boolean;
 	enable_special: boolean;
 	leet_level: 1 | 2;
+	prepend?: string;
+	append?: string;
 }
 
 export interface JobResponse {

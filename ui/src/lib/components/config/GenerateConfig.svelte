@@ -161,8 +161,6 @@
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mutations</h2>
 		<div class="space-y-3">
 			<ToggleSwitch checked={enableLeet} onchange={(v) => (enableLeet = v)} label="L33t speak" />
-			<ToggleSwitch checked={enableUppercase} onchange={(v) => (enableUppercase = v)} label="Uppercase" />
-			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => (enableReverseLeet = v)} label="Reverse leet" />
 			{#if enableLeet}
 				<div class="ml-12 space-y-1.5">
 					<SegmentedControl
@@ -177,6 +175,8 @@
 					{/if}
 				</div>
 			{/if}
+			<ToggleSwitch checked={enableUppercase} onchange={(v) => (enableUppercase = v)} label="Uppercase" />
+			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => (enableReverseLeet = v)} label="Reverse leet" />
 			<ToggleSwitch checked={enableNumbers} onchange={(v) => (enableNumbers = v)} label="Numbers" />
 			<ToggleSwitch checked={enableSpecial} onchange={(v) => (enableSpecial = v)} label="Special chars" />
 		</div>

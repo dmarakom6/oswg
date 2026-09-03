@@ -1,7 +1,8 @@
 <script lang="ts">
 	import ToggleSwitch from './ToggleSwitch.svelte';
 	import SegmentedControl from './SegmentedControl.svelte';
-	import { DEFAULTS } from '$lib/constants';
+	import NumberStepper from './NumberStepper.svelte';
+	import { DEFAULTS, LIMITS } from '$lib/constants';
 	import { parseWordsInput } from '$lib/utils/validators';
 	import { endpoints } from '$lib/api/endpoints';
 	import { notifications } from '$lib/stores/notifications';
@@ -13,6 +14,8 @@
 	let enableUppercase = $state(DEFAULTS.enableUppercase);
 	let enableReverseLeet = $state(DEFAULTS.enableReverseLeet);
 	let enableCommonSubs = $state(DEFAULTS.enableCommonSubs);
+	let enableCasePerms = $state(DEFAULTS.enableCasePerms);
+	let casePermMax = $state(DEFAULTS.casePermMax);
 	let enableNumbers = $state(DEFAULTS.enableNumbers);
 	let enableSpecial = $state(DEFAULTS.enableSpecial);
 	let leetLevel = $state<1 | 2>(DEFAULTS.leetLevel);
@@ -65,6 +68,8 @@
 				leet_level: leetLevel,
 				...((prepend.trim().length > 0) ? { prepend: prepend.trim() } : {}),
 				...((append.trim().length > 0) ? { append: append.trim() } : {}),
+				enable_case_perms: enableCasePerms,
+				case_perm_max: casePermMax,
 			});
 
 			onResult(result);
@@ -141,6 +146,19 @@
 			<ToggleSwitch checked={enableUppercase} onchange={(v) => (enableUppercase = v)} label="Uppercase" />
 			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => (enableReverseLeet = v)} label="Reverse leet" />
 			<ToggleSwitch checked={enableCommonSubs} onchange={(v) => (enableCommonSubs = v)} label="Common substitutions" />
+			<ToggleSwitch checked={enableCasePerms} onchange={(v) => (enableCasePerms = v)} label="Case permutations" />
+			{#if enableCasePerms}
+				<div class="ml-12 space-y-1.5">
+					<NumberStepper
+						value={casePermMax}
+						onchange={(v) => (casePermMax = v)}
+						label="Max word length"
+						min={LIMITS.casePermMax.min}
+						max={LIMITS.casePermMax.max}
+					/>
+					<p class="text-xs text-muted-foreground">Words longer than this are skipped (2^length variants per word).</p>
+				</div>
+			{/if}
 			<ToggleSwitch checked={enableNumbers} onchange={(v) => (enableNumbers = v)} label="Numbers" />
 			<ToggleSwitch checked={enableSpecial} onchange={(v) => (enableSpecial = v)} label="Special chars" />
 			<div class="grid grid-cols-2 gap-2">

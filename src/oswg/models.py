@@ -119,6 +119,8 @@ class MutateRequest(BaseModel):
     leet_level: int = Field(1, description="L33t speak intensity (1=basic, 2=advanced).", ge=1, le=2)
     prepend: Optional[str] = Field(None, description="Prepend this string to every word.", max_length=50)
     append: Optional[str] = Field(None, description="Append this string to every word.", max_length=50)
+    enable_case_perms: bool = Field(False, description="Generate all case permutations of each word.")
+    case_perm_max: int = Field(8, description="Max word length for case permutations (2^n variants).", ge=2, le=16)
 
 
 class JobResponse(BaseModel):

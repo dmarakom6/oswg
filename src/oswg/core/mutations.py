@@ -57,6 +57,7 @@ class MutationEngine:
             MutationType.ADD_SPECIAL: self._add_special,
             MutationType.PREPEND: self._prepend,
             MutationType.APPEND: self._append,
+            MutationType.CASE_PERMUTATIONS: self._case_permutations,
         }
 
     def mutate(
@@ -70,6 +71,7 @@ class MutationEngine:
         enable_uppercase: bool = True,
         prefix: str = "",
         suffix: str = "",
+        case_perm_max: int = 8,
     ) -> list[str]:
         """Generate mutations for a word."""
         if mutation_types is None:
@@ -93,6 +95,8 @@ class MutationEngine:
                     results.append(mutator(word, prefix))
                 elif mut_type == MutationType.APPEND:
                     results.append(mutator(word, suffix))
+                elif mut_type == MutationType.CASE_PERMUTATIONS:
+                    results.extend(mutator(word, case_perm_max))
                 elif mut_type in (
                     MutationType.LEET_SPEAK,
                     MutationType.REVERSE_LEET,
@@ -182,6 +186,20 @@ class MutationEngine:
             return word
         return f"{word}{suffix}"
 
+    def _case_permutations(self, word: str, max_len: int = 8) -> list[str]:
+        """Generate all 2^n case combinations. Skipped for words longer than max_len."""
+        word_lower = word.lower()
+        if len(word_lower) > max_len:
+            return [word_lower]
+
+        variations = []
+        for bits in product(range(2), repeat=len(word_lower)):
+            variant = "".join(
+                c.upper() if bit else c for c, bit in zip(word_lower, bits)
+            )
+            variations.append(variant)
+        return variations
+
     def _add_numbers(
         self, word: str, numbers: list[int], enable_uppercase: bool = True
     ) -> list[str]:
@@ -252,6 +270,9 @@ class MutationEngine:
         if suffix:
             mutation_types.append(MutationType.APPEND)
 
+        if config.get("enable_case_perms", False):
+            mutation_types.append(MutationType.CASE_PERMUTATIONS)
+
         for word in words:
             mutations = self.mutate(
                 word,
@@ -263,6 +284,7 @@ class MutationEngine:
                 enable_uppercase=config.get("enable_uppercase", True),
                 prefix=prefix,
                 suffix=suffix,
+                case_perm_max=config.get("case_perm_max", 8),
             )
             all_mutations.extend(mutations)
             if grouped:

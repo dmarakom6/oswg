@@ -8,6 +8,8 @@ export const DEFAULTS = {
 	enableUppercase: true,
 	enableReverseLeet: false,
 	enableCommonSubs: false,
+	enableCasePerms: false,
+	casePermMax: 8,
 	enableNumbers: true,
 	enableSpecial: false,
 	retentionSeconds: 3600,
@@ -24,7 +26,8 @@ export const LIMITS = {
 	retentionSeconds: { min: 60, max: 86400 },
 	timeoutSeconds: { min: 1, max: 300 },
 	rateLimit: { min: 0, max: 60 },
-	mergeMax: { min: 1, max: 1000000 }
+	mergeMax: { min: 1, max: 1000000 },
+	casePermMax: { min: 2, max: 16 }
 };
 
 export const RETENTION_OPTIONS = [

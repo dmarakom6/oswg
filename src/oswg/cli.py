@@ -352,6 +352,15 @@ def mutate(
     leet_level: int = typer.Option(1, "--leet-level", help="L33t speak intensity (1=basic, 2=advanced).", min=1, max=2),
     prepend: str = typer.Option(None, "--prepend", help="Prepend this string to every word."),
     append: str = typer.Option(None, "--append", help="Append this string to every word."),
+    case_permutations: bool = typer.Option(
+        False, "--case-permutations",
+        help="Generate all case permutations of each word.",
+    ),
+    case_perm_max: int = typer.Option(
+        8, "--case-perm-max",
+        help="Max word length for case permutations (2^n variants).",
+        min=2, max=16,
+    ),
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all mutations (not just preview)."),
     from_file: Path = typer.Option(None, "--file", "-f", help="Read words from a file (one per line)."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
@@ -381,6 +390,8 @@ def mutate(
         "leet_level": leet_level,
         "prefix": prepend or "",
         "suffix": append or "",
+        "enable_case_perms": case_permutations,
+        "case_perm_max": case_perm_max,
     }
 
     mutations = engine.generate_all_mutations(input_words, config=config)

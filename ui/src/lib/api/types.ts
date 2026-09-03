@@ -65,6 +65,8 @@ export interface MutateRequest {
 	leet_level: 1 | 2;
 	prepend?: string;
 	append?: string;
+	enable_case_perms?: boolean;
+	case_perm_max?: number;
 }
 
 export interface JobResponse {

@@ -19,6 +19,7 @@ class MutationType(Enum):
     COMMON_SUBSTITUTIONS = "common_substitutions"
     PREPEND = "prepend"
     APPEND = "append"
+    CASE_PERMUTATIONS = "case_permutations"
 
 
 @dataclass

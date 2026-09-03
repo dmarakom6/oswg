@@ -2,6 +2,84 @@
 
 <!-- version list -->
 
+## v0.4.0 (2026-09-03)
+
+### Bug Fixes
+
+- Expander leaks disabled mutation variants
+  ([`1acd94f`](https://github.com/dmarakom6/oswg/commit/1acd94fdb309f370c3f25a814cdb4ee1a6056a35))
+
+- Follow redirects and report failed page scraping
+  ([`448136a`](https://github.com/dmarakom6/oswg/commit/448136abd54307f022465e5d9cc351bc9b294a90))
+
+- Keep leet basic/advanced control adjacent to its toggle
+  ([`937e13a`](https://github.com/dmarakom6/oswg/commit/937e13a84d3873eab2e4d771918281f0babff180))
+
+- Use protego robots parser; add -v to scrape
+  ([`ccdd3ea`](https://github.com/dmarakom6/oswg/commit/ccdd3ea2d00991c39664ce611f5c2f7db0a3adb7))
+
+### Chores
+
+- Restyle URL input and header/cookie fields
+  ([`51bd76f`](https://github.com/dmarakom6/oswg/commit/51bd76f75f2b029e36d8ece7fab48b8b84f8f155))
+
+### Features
+
+- --timeout option that defaults to 30sec
+  ([`59e52d6`](https://github.com/dmarakom6/oswg/commit/59e52d6aa5705f9a1a73ec29c06d7174857406fc))
+
+- Add --case-permutations to the mutate command
+  ([`2dbe355`](https://github.com/dmarakom6/oswg/commit/2dbe35507421bb661cb6c0d16d6d1d38ae656789))
+
+- Add --common-subs for whole-word alias substitution (mutator)
+  ([`f5e7b3c`](https://github.com/dmarakom6/oswg/commit/f5e7b3c27629ad5843d621459984360ca1d86cbb))
+
+- Add --dry-run to preview wordlist without writing a file
+  ([`65f7959`](https://github.com/dmarakom6/oswg/commit/65f7959d1cb914c02ff5a2b80c81ea10b76cd92a))
+
+- Add --header and --cookie for custom request headers
+  ([`5c927da`](https://github.com/dmarakom6/oswg/commit/5c927dafe5ac463e3898d0c8d8826738aabe83cd))
+
+- Add --no-uppercase option to disable case mutations
+  ([`23d744a`](https://github.com/dmarakom6/oswg/commit/23d744a33ec21ab7c610e91ed5903b05d79f85cc))
+
+- Add --prepend and --append to the mutate command
+  ([`7c51c4c`](https://github.com/dmarakom6/oswg/commit/7c51c4c90f759cf6959c648a5d06832b5d93b304))
+
+- Add --proxy to route requests through a proxy
+  ([`319176a`](https://github.com/dmarakom6/oswg/commit/319176a85afd7af7a4846ba87de33bec53f000f6))
+
+- Add --rate-limit and --jitter for request pacing
+  ([`a1df40f`](https://github.com/dmarakom6/oswg/commit/a1df40f968ccc76c93c9fc8f2309ed7eea4f6a4d))
+
+- Add --respect-robots to obey robots.txt rules
+  ([`10d8772`](https://github.com/dmarakom6/oswg/commit/10d87726b3d090b6d408cca55207b4dd78fad5d3))
+
+- Add --reverse-leet to convert l33t back to letters
+  ([`b522b31`](https://github.com/dmarakom6/oswg/commit/b522b31226b55267121df2e5fcb034e5b09232b0))
+
+- Add --user-agent for custom request headers
+  ([`8101f80`](https://github.com/dmarakom6/oswg/commit/8101f802eec7c02bad51422e68df1aed5b13088c))
+
+- Add --years and --special-chars config options
+  ([`e4f11be`](https://github.com/dmarakom6/oswg/commit/e4f11be25eb20f7bcf4c6525bc829c57030e7ac7))
+
+- Merge external wordlists (rockyou/custom) into generation
+  ([`c0215b5`](https://github.com/dmarakom6/oswg/commit/c0215b55741cd96ad4f88ef3ee35e4ad26ba629a))
+
+- Print OSWG banner on --version
+  ([`a51006d`](https://github.com/dmarakom6/oswg/commit/a51006d614bba9d8af75e4443578dd790f0262fe))
+
+- Round-robin sampling instead of head-slice truncation
+  ([`bae974f`](https://github.com/dmarakom6/oswg/commit/bae974f7153e01ecda80c139bafc7bd317d529db))
+
+- UI Tab persistence & draggable divider
+  ([`c840bb5`](https://github.com/dmarakom6/oswg/commit/c840bb53a1b82fda02966db59554161ec8bc96d1))
+
+- Warn when wordlist is truncated to target size
+  ([`19c65ba`](https://github.com/dmarakom6/oswg/commit/19c65ba22a4b5579c662096201a5b4ba7fb62fc4))
+
+
 ## v0.3.0 (2026-08-06)
 
 ### Chores

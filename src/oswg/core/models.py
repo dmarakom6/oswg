@@ -20,6 +20,7 @@ class MutationType(Enum):
     PREPEND = "prepend"
     APPEND = "append"
     CASE_PERMUTATIONS = "case_permutations"
+    RANDOM_COMBINE = "random_combine"
 
 
 @dataclass
@@ -75,6 +76,9 @@ class GenerationConfig:
     extra_stopwords: list[str] = field(default_factory=list)
     merge_words: list[str] = field(default_factory=list)
     merge_max: int = 5000
+    enable_random_combine: bool = False
+    random_combine_count: int = 1000
+    random_combine_seed: Optional[int] = None
 
 
 @dataclass

@@ -180,6 +180,20 @@ def generate(
         False, "--merge-rockyou",
         help="Merge /usr/share/wordlists/rockyou.txt(.gz) if present.",
     ),
+    random_combine: bool = typer.Option(
+        False, "--random-combine",
+        help="Bind random pairs of base words in random case/l33t forms "
+        "(e.g. nutella + cream -> NutellaCream2024, cr4amnut3ll4).",
+    ),
+    combine_count: int = typer.Option(
+        1000, "--combine-count",
+        help="Number of random pair combinations to generate.",
+        min=1,
+    ),
+    combine_seed: int = typer.Option(
+        None, "--combine-seed",
+        help="Seed for reproducible random combinations (same seed = same output).",
+    ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -208,6 +222,9 @@ def generate(
         extra_stopwords=extra_stopwords,
         merge_words=collect_merge_words(merge, merge_builtin, merge_rockyou),
         merge_max=merge_max,
+        enable_random_combine=random_combine,
+        random_combine_count=combine_count,
+        random_combine_seed=combine_seed,
     )
 
     generator = WordlistGenerator()
@@ -361,6 +378,20 @@ def mutate(
         help="Max word length for case permutations (2^n variants).",
         min=2, max=16,
     ),
+    random_combine: bool = typer.Option(
+        False, "--random-combine",
+        help="Bind random pairs of words in random case/l33t forms "
+        "(e.g. nutella + cream -> NutellaCream2024, cr4amnut3ll4).",
+    ),
+    combine_count: int = typer.Option(
+        1000, "--combine-count",
+        help="Number of random pair combinations to generate.",
+        min=1,
+    ),
+    combine_seed: int = typer.Option(
+        None, "--combine-seed",
+        help="Seed for reproducible random combinations (same seed = same output).",
+    ),
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all mutations (not just preview)."),
     from_file: Path = typer.Option(None, "--file", "-f", help="Read words from a file (one per line)."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
@@ -396,6 +427,15 @@ def mutate(
 
     mutations = engine.generate_all_mutations(input_words, config=config)
     mutations = list(dict.fromkeys(mutations))
+
+    if random_combine:
+        combos = engine.random_combine(
+            input_words,
+            count=combine_count,
+            seed=combine_seed,
+            deduplicate=True,
+        )
+        mutations = list(dict.fromkeys([*mutations, *combos]))
 
     if output:
         output_path = output.resolve()

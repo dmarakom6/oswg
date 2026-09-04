@@ -1,5 +1,6 @@
 """Mutation engine for word transformations."""
 
+import random
 from itertools import product
 
 from oswg.core.models import MutationType, default_years
@@ -199,6 +200,100 @@ class MutationEngine:
             )
             variations.append(variant)
         return variations
+
+    # ------------------------------------------------------------------
+    # Random combination (pairs of base words)
+    # ------------------------------------------------------------------
+
+    _CASE_STYLES = ("lower", "title", "upper", "mixed")
+    _COMBINE_JOINERS = ("", "-", "_", ".", " ")
+
+    def random_combine(
+        self,
+        words: list[str],
+        count: int = 1000,
+        years: list[int] | None = None,
+        seed: int | None = None,
+        max_word_length: int = 32,
+        deduplicate: bool = True,
+    ) -> list[str]:
+        """Bind random pairs of words in random case/l33t forms.
+
+        Unlike the per-word mutators, this operates on the whole word list:
+        it draws up to ``count`` random ordered pairs of *distinct* base
+        words (so "a+b" and "b+a" are both possible) and styles each pair
+        with a random case per word, a random joiner (``""``, ``"-"``,
+        ``"_"``, ``"."`` or ``" "``), a ~50% chance of l33t per word and a
+        ~50% chance of a year suffix — e.g. ``["nutella", "cream"]`` may
+        yield ``NutellaCream2024``, ``cr4amnut3ll4`` or ``nUtELLa-cream``.
+
+        Pass ``seed`` to make the output reproducible across runs (the same
+        seed and input always produce the same combinations). Results honor
+        ``max_word_length`` and are deduplicated by default.
+        """
+        base = [w.strip().lower() for w in dict.fromkeys(words) if w.strip()]
+        if len(base) < 2:
+            return []
+
+        rng = random.Random(seed)
+        years = list(years) if years else []
+
+        combos: list[str] = []
+        seen: set[str] = set()
+        attempts = 0
+        max_attempts = max(count * 10, 100)
+
+        while len(combos) < count and attempts < max_attempts:
+            attempts += 1
+            first_idx, second_idx = rng.sample(range(len(base)), 2)
+            w1_raw, w2_raw = base[first_idx], base[second_idx]
+
+            w1 = self._apply_case_style(w1_raw, rng.choice(self._CASE_STYLES), rng)
+            w2 = self._apply_case_style(w2_raw, rng.choice(self._CASE_STYLES), rng)
+
+            if rng.random() < 0.5:
+                w1 = self._leetify(w1, rng)
+            if rng.random() < 0.5:
+                w2 = self._leetify(w2, rng)
+
+            joiner = rng.choice(self._COMBINE_JOINERS)
+            combo = f"{w1}{joiner}{w2}"
+
+            if years and rng.random() < 0.5:
+                combo = f"{combo}{rng.choice(years)}"
+
+            if len(combo) > max_word_length:
+                continue
+            if deduplicate and combo in seen:
+                continue
+
+            seen.add(combo)
+            combos.append(combo)
+
+        return combos
+
+    def _apply_case_style(self, word: str, style: str, rng: random.Random) -> str:
+        """Apply one of ``lower``/``title``/``upper``/``mixed`` to a word."""
+        if style == "upper":
+            return word.upper()
+        if style == "title":
+            return word.title()
+        if style == "mixed":
+            return "".join(
+                c.upper() if rng.random() < 0.5 else c for c in word
+            )
+        return word  # lower
+
+    def _leetify(self, word: str, rng: random.Random) -> str:
+        """Randomly substitute some letters with l33t forms, per character."""
+        out = []
+        for char in word:
+            lower = char.lower()
+            if lower in self.LEET_MAP and rng.random() < 0.5:
+                out.append(rng.choice(self.LEET_MAP[lower]))
+            else:
+                out.append(char)
+        return "".join(out)
 
     def _add_numbers(
         self, word: str, numbers: list[int], enable_uppercase: bool = True

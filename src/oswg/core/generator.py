@@ -95,6 +95,20 @@ class WordlistGenerator:
                 mutations = self._expand_to_target(mutations, base_words, config)
             mutations = mutations[: config.target_size]
 
+        if config.enable_random_combine and base_words:
+            combos = self.mutation_engine.random_combine(
+                base_words,
+                count=config.random_combine_count,
+                years=config.common_years,
+                seed=config.random_combine_seed,
+                max_word_length=config.max_word_length,
+                deduplicate=config.deduplicate,
+            )
+            merged = list(dict.fromkeys([*mutations, *combos]))
+            if len(merged) > config.target_size:
+                truncated_count += len(merged) - config.target_size
+            mutations = merged[: config.target_size]
+
         if len(mutations) < config.target_size:
             import sys
             print(

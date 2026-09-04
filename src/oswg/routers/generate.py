@@ -79,6 +79,9 @@ async def execute_generate(job_id: str) -> dict:
         special_chars=config_data.get("special_chars") or ["!", "@", "#", "$"],
         merge_words=config_data.get("merge_words", []),
         merge_max=config_data.get("merge_max", 5000),
+        enable_random_combine=config_data.get("enable_random_combine", False),
+        random_combine_count=config_data.get("random_combine_count", 1000),
+        random_combine_seed=config_data.get("random_combine_seed"),
     )
 
     await job_manager.update_progress(job_id, 40.0, "Generating mutations...")
@@ -148,6 +151,9 @@ async def generate_wordlist(
             "proxy": request.proxy,
             "merge_words": _resolve_merge_words(request),
             "merge_max": request.merge_max,
+            "enable_random_combine": request.enable_random_combine,
+            "random_combine_count": request.random_combine_count,
+            "random_combine_seed": request.random_combine_seed,
         }
 
         job_id = await job_manager.create_job(

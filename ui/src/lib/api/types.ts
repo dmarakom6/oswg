@@ -35,6 +35,9 @@ export interface GenerateRequest {
 	merge_max?: number;
 	merge_builtin?: boolean;
 	merge_rockyou?: boolean;
+	enable_random_combine?: boolean;
+	random_combine_count?: number;
+	random_combine_seed?: number | null;
 	retention_seconds?: number;
 }
 
@@ -67,6 +70,9 @@ export interface MutateRequest {
 	append?: string;
 	enable_case_perms?: boolean;
 	case_perm_max?: number;
+	enable_random_combine?: boolean;
+	random_combine_count?: number;
+	random_combine_seed?: number | null;
 }
 
 export interface JobResponse {

@@ -80,6 +80,15 @@ class GenerateRequest(BaseRequest):
     merge_max: int = Field(5000, description="Total cap on merged words.", ge=1, le=1000000)
     merge_builtin: bool = Field(False, description="Merge bundled bundled common passwords.")
     merge_rockyou: bool = Field(False, description="Merge /usr/share/wordlists/rockyou.txt if present.")
+    enable_random_combine: bool = Field(
+        False, description="Bind random pairs of base words in random case/l33t forms."
+    )
+    random_combine_count: int = Field(
+        1000, description="Number of random pair combinations to generate.", ge=1, le=1000000
+    )
+    random_combine_seed: Optional[int] = Field(
+        None, description="Seed for reproducible random combinations. Empty = random each run."
+    )
 
     @field_validator("special_chars")
     @classmethod
@@ -121,6 +130,15 @@ class MutateRequest(BaseModel):
     append: Optional[str] = Field(None, description="Append this string to every word.", max_length=50)
     enable_case_perms: bool = Field(False, description="Generate all case permutations of each word.")
     case_perm_max: int = Field(8, description="Max word length for case permutations (2^n variants).", ge=2, le=16)
+    enable_random_combine: bool = Field(
+        False, description="Bind random pairs of words in random case/l33t forms."
+    )
+    random_combine_count: int = Field(
+        1000, description="Number of random pair combinations to generate.", ge=1, le=1000000
+    )
+    random_combine_seed: Optional[int] = Field(
+        None, description="Seed for reproducible random combinations. Empty = random each run."
+    )
 
 
 class JobResponse(BaseModel):

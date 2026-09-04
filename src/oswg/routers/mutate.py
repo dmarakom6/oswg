@@ -38,6 +38,15 @@ async def mutate_words(request: MutateRequest) -> MutateResponse:
         mutations = engine.generate_all_mutations(request.words, config=config)
         mutations = list(dict.fromkeys(mutations))
 
+        if request.enable_random_combine:
+            combos = engine.random_combine(
+                request.words,
+                count=request.random_combine_count,
+                seed=request.random_combine_seed,
+                deduplicate=True,
+            )
+            mutations = list(dict.fromkeys([*mutations, *combos]))
+
         return MutateResponse(
             words=mutations,
             count=len(mutations),

@@ -40,6 +40,9 @@
 	let extraStopwords = $state('');
 	let years = $state('');
 	let specialChars = $state('!, @, #, $');
+	let enableRandomCombine = $state(DEFAULTS.enableRandomCombine);
+	let randomCombineCount = $state(DEFAULTS.randomCombineCount);
+	let randomCombineSeed = $state('');
 	let advancedOpen = $state(false);
 	let submitting = $state(false);
 
@@ -56,6 +59,14 @@
 	let specialCharsError = $derived(
 		parsedSpecialChars.find((c) => c.length !== 1 || /[a-zA-Z0-9]/.test(c) || /\s/.test(c))
 			? 'Only single special characters allowed (no letters, numbers or spaces).'
+			: ''
+	);
+	let parsedCombineSeed = $derived(
+		randomCombineSeed.trim().length > 0 ? parseInt(randomCombineSeed.trim(), 10) : undefined
+	);
+	let combineSeedError = $derived(
+		randomCombineSeed.trim().length > 0 && Number.isNaN(parsedCombineSeed)
+			? 'Enter a valid integer seed or leave empty for random output.'
 			: ''
 	);
 
@@ -95,6 +106,9 @@
 				merge_max: merge.merge_max,
 				merge_builtin: merge.merge_builtin,
 				merge_rockyou: merge.merge_rockyou,
+				enable_random_combine: enableRandomCombine,
+				...((enableRandomCombine && randomCombineCount > 0) ? { random_combine_count: randomCombineCount } : {}),
+				...(enableRandomCombine && !combineSeedError && parsedCombineSeed !== undefined ? { random_combine_seed: parsedCombineSeed } : {}),
 				retention_seconds: retentionSeconds
 			});
 
@@ -179,6 +193,35 @@
 			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => (enableReverseLeet = v)} label="Reverse leet" />
 			<ToggleSwitch checked={enableNumbers} onchange={(v) => (enableNumbers = v)} label="Numbers" />
 			<ToggleSwitch checked={enableSpecial} onchange={(v) => (enableSpecial = v)} label="Special chars" />
+			<ToggleSwitch checked={enableRandomCombine} onchange={(v) => (enableRandomCombine = v)} label="Random combine" />
+			{#if enableRandomCombine}
+				<div class="ml-12 space-y-1.5">
+					<NumberStepper
+						value={randomCombineCount}
+						onchange={(v) => (randomCombineCount = v)}
+						label="Combinations"
+						min={1}
+						max={1000000}
+						step={100}
+					/>
+					<div class="space-y-1.5">
+						<label for="combine-seed" class="block text-sm font-medium text-foreground">Seed</label>
+						<input
+							id="combine-seed"
+							type="text"
+							inputmode="numeric"
+							bind:value={randomCombineSeed}
+							placeholder="Empty = random each run"
+							class="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+						/>
+						{#if combineSeedError}
+							<p class="text-xs text-destructive">{combineSeedError}</p>
+						{:else}
+							<p class="text-xs text-muted-foreground">Binds random word pairs in random case/l33t forms (e.g. <span class="font-mono">NutellaCream2024</span>, <span class="font-mono">cr4amnut3ll4</span>). A seed makes the output reproducible.</p>
+						{/if}
+					</div>
+				</div>
+			{/if}
 		</div>
 	</div>
 

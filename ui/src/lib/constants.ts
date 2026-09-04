@@ -15,7 +15,9 @@ export const DEFAULTS = {
 	retentionSeconds: 3600,
 	timeoutSeconds: 30,
 	rateLimit: 0,
-	mergeMax: 5000
+	mergeMax: 5000,
+	enableRandomCombine: false,
+	randomCombineCount: 1000
 };
 
 export const LIMITS = {

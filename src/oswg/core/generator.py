@@ -63,10 +63,15 @@ class WordlistGenerator:
             if inspect.isawaitable(result):
                 await result
 
+        # L33t and reverse l33t are contradictory, so they are mutually
+        # exclusive: enabling reverse l33t disables the l33t pass
+        # ("either one of these two can be enabled").
+        enable_leet = config.enable_leet and not config.enable_reverse_leet
+
         groups = self.mutation_engine.generate_all_mutations(
             base_words,
             config={
-                "enable_leet": config.enable_leet,
+                "enable_leet": enable_leet,
                 "enable_uppercase": config.enable_uppercase,
                 "enable_reverse_leet": config.enable_reverse_leet,
                 "enable_numbers": config.enable_numbers,
@@ -234,14 +239,15 @@ class WordlistGenerator:
         if len(expanded) >= target:
             return expanded
 
-        for word in base_words:
-            if len(expanded) >= target:
-                break
-            leet_variations = self.mutation_engine._leet_speak(word, level=2)
-            for lv in leet_variations:
-                if lv not in seen and len(expanded) < target:
-                    seen.add(lv)
-                    expanded.append(lv)
+        if config.enable_leet and not config.enable_reverse_leet:
+            for word in base_words:
+                if len(expanded) >= target:
+                    break
+                leet_variations = self.mutation_engine._leet_speak(word, level=2)
+                for lv in leet_variations:
+                    if lv not in seen and len(expanded) < target:
+                        seen.add(lv)
+                        expanded.append(lv)
 
         if len(expanded) >= target:
             return expanded

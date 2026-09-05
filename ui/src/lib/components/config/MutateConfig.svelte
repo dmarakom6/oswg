@@ -142,7 +142,7 @@
 	<div class="space-y-4">
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mutations</h2>
 		<div class="space-y-3">
-			<ToggleSwitch checked={enableLeet} onchange={(v) => (enableLeet = v)} label="L33t speak" />
+			<ToggleSwitch checked={enableLeet} onchange={(v) => { enableLeet = v; if (v) enableReverseLeet = false; }} label="L33t speak" />
 			{#if enableLeet}
 				<div class="ml-12 space-y-1.5">
 					<SegmentedControl
@@ -158,7 +158,10 @@
 				</div>
 			{/if}
 			<ToggleSwitch checked={enableUppercase} onchange={(v) => (enableUppercase = v)} label="Uppercase" />
-			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => (enableReverseLeet = v)} label="Reverse leet" />
+			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => { enableReverseLeet = v; if (v) enableLeet = false; }} label="Reverse leet" />
+			{#if enableReverseLeet}
+				<p class="text-xs text-muted-foreground">Reverse leet converts l33t chars back to letters — it undoes L33t speak, so the two are mutually exclusive.</p>
+			{/if}
 			<ToggleSwitch checked={enableCommonSubs} onchange={(v) => (enableCommonSubs = v)} label="Common substitutions" />
 			<ToggleSwitch checked={enableCasePerms} onchange={(v) => (enableCasePerms = v)} label="Case permutations" />
 			{#if enableCasePerms}

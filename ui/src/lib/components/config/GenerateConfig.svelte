@@ -174,7 +174,7 @@
 	<div class="space-y-4">
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mutations</h2>
 		<div class="space-y-3">
-			<ToggleSwitch checked={enableLeet} onchange={(v) => (enableLeet = v)} label="L33t speak" />
+			<ToggleSwitch checked={enableLeet} onchange={(v) => { enableLeet = v; if (v) enableReverseLeet = false; }} label="L33t speak" />
 			{#if enableLeet}
 				<div class="ml-12 space-y-1.5">
 					<SegmentedControl
@@ -189,39 +189,13 @@
 					{/if}
 				</div>
 			{/if}
+			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => { enableReverseLeet = v; if (v) enableLeet = false; }} label="Reverse leet" />
+			{#if enableReverseLeet}
+				<p class="text-xs text-muted-foreground">Reverse leet converts l33t chars back to letters — it undoes L33t speak, so the two are mutually exclusive.</p>
+			{/if}
 			<ToggleSwitch checked={enableUppercase} onchange={(v) => (enableUppercase = v)} label="Uppercase" />
-			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => (enableReverseLeet = v)} label="Reverse leet" />
 			<ToggleSwitch checked={enableNumbers} onchange={(v) => (enableNumbers = v)} label="Numbers" />
 			<ToggleSwitch checked={enableSpecial} onchange={(v) => (enableSpecial = v)} label="Special chars" />
-			<ToggleSwitch checked={enableRandomCombine} onchange={(v) => (enableRandomCombine = v)} label="Random combine" />
-			{#if enableRandomCombine}
-				<div class="ml-12 space-y-1.5">
-					<NumberStepper
-						value={randomCombineCount}
-						onchange={(v) => (randomCombineCount = v)}
-						label="Combinations"
-						min={1}
-						max={1000000}
-						step={100}
-					/>
-					<div class="space-y-1.5">
-						<label for="combine-seed" class="block text-sm font-medium text-foreground">Seed</label>
-						<input
-							id="combine-seed"
-							type="text"
-							inputmode="numeric"
-							bind:value={randomCombineSeed}
-							placeholder="Empty = random each run"
-							class="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-						/>
-						{#if combineSeedError}
-							<p class="text-xs text-destructive">{combineSeedError}</p>
-						{:else}
-							<p class="text-xs text-muted-foreground">Binds random word pairs in random case/l33t forms (e.g. <span class="font-mono">NutellaCream2024</span>, <span class="font-mono">cr4amnut3ll4</span>). A seed makes the output reproducible.</p>
-						{/if}
-					</div>
-				</div>
-			{/if}
 		</div>
 	</div>
 
@@ -290,6 +264,35 @@
 					{:else}
 						<p class="text-xs text-muted-foreground">Comma-separated special characters appended to words. Empty = ! @ # $.</p>
 					{/if}
+				</div>
+			{/if}
+			<ToggleSwitch checked={enableRandomCombine} onchange={(v) => (enableRandomCombine = v)} label="Random combine" />
+			{#if enableRandomCombine}
+				<div class="ml-12 space-y-1.5">
+					<NumberStepper
+						value={randomCombineCount}
+						onchange={(v) => (randomCombineCount = v)}
+						label="Combinations"
+						min={1}
+						max={1000000}
+						step={100}
+					/>
+					<div class="space-y-1.5">
+						<label for="combine-seed" class="block text-sm font-medium text-foreground">Seed</label>
+						<input
+							id="combine-seed"
+							type="text"
+							inputmode="numeric"
+							bind:value={randomCombineSeed}
+							placeholder="Empty = random each run"
+							class="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+						/>
+						{#if combineSeedError}
+							<p class="text-xs text-destructive">{combineSeedError}</p>
+						{:else}
+							<p class="text-xs text-muted-foreground">Binds random word pairs in random case/l33t forms (e.g. <span class="font-mono">NutellaCream2024</span>, <span class="font-mono">cr4amnut3ll4</span>). A seed makes the output reproducible.</p>
+						{/if}
+					</div>
 				</div>
 			{/if}
 			<NumberStepper

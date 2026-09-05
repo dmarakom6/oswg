@@ -43,6 +43,13 @@
 	let enableRandomCombine = $state(DEFAULTS.enableRandomCombine);
 	let randomCombineCount = $state(DEFAULTS.randomCombineCount);
 	let randomCombineSeed = $state('');
+	let aiEnabled = $state(DEFAULTS.aiEnabled);
+	let aiProvider = $state<'auto' | 'ollama' | 'openai'>(DEFAULTS.aiProvider);
+	let aiModel = $state('');
+	let aiBaseUrl = $state('');
+	let aiWordsPerWord = $state(DEFAULTS.aiWordsPerWord);
+	let aiMaxWords = $state(DEFAULTS.aiMaxWords);
+	let aiConcurrency = $state(DEFAULTS.aiConcurrency);
 	let advancedOpen = $state(false);
 	let submitting = $state(false);
 
@@ -109,6 +116,15 @@
 				enable_random_combine: enableRandomCombine,
 				...((enableRandomCombine && randomCombineCount > 0) ? { random_combine_count: randomCombineCount } : {}),
 				...(enableRandomCombine && !combineSeedError && parsedCombineSeed !== undefined ? { random_combine_seed: parsedCombineSeed } : {}),
+				ai_enabled: aiEnabled,
+				...(aiEnabled ? {
+					ai_provider: aiProvider,
+					ai_model: aiModel.trim() || undefined,
+					ai_base_url: aiBaseUrl.trim() || undefined,
+					ai_max_words: aiMaxWords,
+					ai_words_per_word: aiWordsPerWord,
+					ai_max_concurrency: aiConcurrency
+				} : {}),
 				retention_seconds: retentionSeconds
 			});
 
@@ -293,6 +309,68 @@
 							<p class="text-xs text-muted-foreground">Binds random word pairs in random case/l33t forms (e.g. <span class="font-mono">NutellaCream2024</span>, <span class="font-mono">cr4amnut3ll4</span>). A seed makes the output reproducible.</p>
 						{/if}
 					</div>
+				</div>
+			{/if}
+			<ToggleSwitch checked={aiEnabled} onchange={(v) => (aiEnabled = v)} label="AI completions" />
+			{#if aiEnabled}
+				<div class="ml-12 space-y-1.5">
+					<p class="text-xs text-muted-foreground">
+						⚠️ Scraped base words are sent to an AI provider. OpenAI is a paid online API — words leave your machine. For fully offline generation, use <span class="font-mono">Ollama</span> (recommended, auto-detected).
+					</p>
+					<fieldset class="space-y-1.5">
+						<legend class="block text-sm font-medium text-foreground">Provider</legend>
+						<SegmentedControl
+							value={aiProvider}
+							onchange={(v) => (aiProvider = v as unknown as 'auto' | 'ollama' | 'openai')}
+							options={[{ value: 'auto', label: 'Auto' }, { value: 'ollama', label: 'Ollama' }, { value: 'openai', label: 'OpenAI' }]}
+						/>
+					</fieldset>
+					<div class="space-y-1.5">
+						<label for="ai-model" class="block text-sm font-medium text-foreground">Model</label>
+						<input
+							id="ai-model"
+							type="text"
+							bind:value={aiModel}
+							placeholder="Empty = auto-detect (e.g. llama3.2, gpt-4o-mini)"
+							class="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+						/>
+					</div>
+					<div class="space-y-1.5">
+						<label for="ai-base-url" class="block text-sm font-medium text-foreground">Base URL (optional)</label>
+						<input
+							id="ai-base-url"
+							type="text"
+							bind:value={aiBaseUrl}
+							placeholder="http://localhost:11434/v1"
+							class="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+						/>
+						<p class="text-xs text-muted-foreground">OpenAI-compatible endpoint. Defaults: Ollama <span class="font-mono">http://localhost:11434</span> (offline), OpenAI <span class="font-mono">https://api.openai.com/v1</span>.</p>
+					</div>
+					<div class="grid grid-cols-2 gap-2">
+						<NumberStepper
+							value={aiWordsPerWord}
+							onchange={(v) => (aiWordsPerWord = v)}
+							label="Words per word"
+							min={LIMITS.aiWordsPerWord.min}
+							max={LIMITS.aiWordsPerWord.max}
+						/>
+						<NumberStepper
+							value={aiMaxWords}
+							onchange={(v) => (aiMaxWords = v)}
+							label="Max words"
+							min={LIMITS.aiMaxWords.min}
+							max={LIMITS.aiMaxWords.max}
+							step={100}
+						/>
+					</div>
+					<NumberStepper
+						value={aiConcurrency}
+						onchange={(v) => (aiConcurrency = v)}
+						label="Concurrency"
+						min={LIMITS.aiConcurrency.min}
+						max={LIMITS.aiConcurrency.max}
+					/>
+					<p class="text-xs text-muted-foreground">Related words become extra base words, then go through all mutations. The API key is never stored — set <span class="font-mono">OPENAI_API_KEY</span> in the environment for the OpenAI provider.</p>
 				</div>
 			{/if}
 			<NumberStepper

@@ -38,6 +38,14 @@ export interface GenerateRequest {
 	enable_random_combine?: boolean;
 	random_combine_count?: number;
 	random_combine_seed?: number | null;
+	ai_enabled?: boolean;
+	ai_provider?: 'auto' | 'ollama' | 'openai';
+	ai_model?: string;
+	ai_base_url?: string;
+	ai_max_words?: number;
+	ai_words_per_word?: number;
+	ai_max_concurrency?: number;
+	ai_timeout?: number;
 	retention_seconds?: number;
 }
 

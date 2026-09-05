@@ -82,7 +82,32 @@ async def execute_generate(job_id: str) -> dict:
         enable_random_combine=config_data.get("enable_random_combine", False),
         random_combine_count=config_data.get("random_combine_count", 1000),
         random_combine_seed=config_data.get("random_combine_seed"),
+        ai_enabled=config_data.get("ai_enabled", False),
+        ai_provider=config_data.get("ai_provider", "auto"),
+        ai_model=config_data.get("ai_model"),
+        ai_base_url=config_data.get("ai_base_url"),
+        ai_max_words=config_data.get("ai_max_words", 1000),
+        ai_words_per_word=config_data.get("ai_words_per_word", 3),
+        ai_max_concurrency=config_data.get("ai_max_concurrency", 2),
+        ai_timeout=config_data.get("ai_timeout", 30.0),
     )
+
+    if generation_config.ai_enabled:
+        from oswg.core.ai import AIError, resolve_ai_config
+
+        try:
+            resolved = await resolve_ai_config(
+                provider=generation_config.ai_provider,
+                model=generation_config.ai_model,
+                base_url=generation_config.ai_base_url,
+            )
+        except AIError as exc:
+            await job_manager.update_progress(job_id, 40.0, f"AI provider error: {exc}")
+            raise ValueError(str(exc)) from exc
+        generation_config.ai_provider = resolved.provider
+        generation_config.ai_model = resolved.model
+        generation_config.ai_base_url = resolved.base_url
+        await job_manager.update_progress(job_id, 42.0, f"AI provider: {resolved.display_name}")
 
     await job_manager.update_progress(job_id, 40.0, "Generating mutations...")
 
@@ -154,6 +179,14 @@ async def generate_wordlist(
             "enable_random_combine": request.enable_random_combine,
             "random_combine_count": request.random_combine_count,
             "random_combine_seed": request.random_combine_seed,
+            "ai_enabled": request.ai_enabled,
+            "ai_provider": request.ai_provider,
+            "ai_model": request.ai_model,
+            "ai_base_url": request.ai_base_url,
+            "ai_max_words": request.ai_max_words,
+            "ai_words_per_word": request.ai_words_per_word,
+            "ai_max_concurrency": request.ai_max_concurrency,
+            "ai_timeout": request.ai_timeout,
         }
 
         job_id = await job_manager.create_job(

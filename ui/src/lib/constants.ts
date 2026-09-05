@@ -17,7 +17,12 @@ export const DEFAULTS = {
 	rateLimit: 0,
 	mergeMax: 5000,
 	enableRandomCombine: false,
-	randomCombineCount: 1000
+	randomCombineCount: 1000,
+	aiEnabled: false,
+	aiProvider: 'auto' as const,
+	aiWordsPerWord: 3,
+	aiMaxWords: 1000,
+	aiConcurrency: 2
 };
 
 export const LIMITS = {
@@ -29,7 +34,10 @@ export const LIMITS = {
 	timeoutSeconds: { min: 1, max: 300 },
 	rateLimit: { min: 0, max: 60 },
 	mergeMax: { min: 1, max: 1000000 },
-	casePermMax: { min: 2, max: 16 }
+	casePermMax: { min: 2, max: 16 },
+	aiWordsPerWord: { min: 1, max: 20 },
+	aiMaxWords: { min: 1, max: 100000 },
+	aiConcurrency: { min: 1, max: 16 }
 };
 
 export const RETENTION_OPTIONS = [

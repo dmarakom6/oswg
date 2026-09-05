@@ -51,6 +51,13 @@ def validate_special_chars(values: list[str] | None) -> list[str] | None:
     return values
 
 
+def validate_ai_provider(value: str) -> str:
+    """Validate --ai-provider value."""
+    if value not in ("auto", "ollama", "openai"):
+        raise typer.BadParameter("must be one of: auto, ollama, openai")
+    return value
+
+
 def parse_headers(values: list[str] | None) -> dict[str, str] | None:
     """Parse repeatable 'Name: value' flags into a headers dict."""
     if not values:
@@ -194,6 +201,44 @@ def generate(
         None, "--combine-seed",
         help="Seed for reproducible random combinations (same seed = same output).",
     ),
+    ai_completions: bool = typer.Option(
+        False, "--ai-completions",
+        help="Expand base words with AI-generated related words "
+        "(Ollama locally, or OpenAI with OPENAI_API_KEY).",
+    ),
+    ai_provider: str = typer.Option(
+        "auto", "--ai-provider",
+        help="AI provider: auto (detect local Ollama first — recommended), ollama, openai.",
+        callback=validate_ai_provider,
+    ),
+    ai_model: str = typer.Option(
+        None, "--ai-model",
+        help="AI model (e.g. llama3.2, gpt-4o-mini). Empty = auto-detect.",
+    ),
+    ai_base_url: str = typer.Option(
+        None, "--ai-base-url",
+        help="OpenAI-compatible base URL override (e.g. a custom Ollama address).",
+    ),
+    ai_max_words: int = typer.Option(
+        1000, "--ai-max-words",
+        help="Cap on total AI-generated words (cost guard).",
+        min=1,
+    ),
+    ai_words_per_word: int = typer.Option(
+        3, "--ai-words-per-word",
+        help="Related words requested per base word.",
+        min=1, max=20,
+    ),
+    ai_concurrency: int = typer.Option(
+        2, "--ai-concurrency",
+        help="Max concurrent AI requests.",
+        min=1, max=16,
+    ),
+    ai_timeout: float = typer.Option(
+        30.0, "--ai-timeout",
+        help="AI request timeout in seconds.",
+        min=1.0,
+    ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
     """Generate a targeted wordlist from a website URL."""
@@ -225,7 +270,48 @@ def generate(
         enable_random_combine=random_combine,
         random_combine_count=combine_count,
         random_combine_seed=combine_seed,
+        ai_enabled=ai_completions,
+        ai_provider=ai_provider,
+        ai_model=ai_model,
+        ai_base_url=ai_base_url,
+        ai_max_words=ai_max_words,
+        ai_words_per_word=ai_words_per_word,
+        ai_max_concurrency=ai_concurrency,
+        ai_timeout=ai_timeout,
     )
+
+    if ai_completions:
+        if not quiet:
+            print_warning(
+                "AI completions send scraped base words to an AI provider. "
+                "OpenAI is a paid online API — words leave your machine and you may be charged. "
+                "For fully offline generation, use --ai-provider ollama (local)."
+            )
+
+        from oswg.core.ai import AIError, resolve_ai_config
+
+        try:
+            resolved = asyncio.run(
+                resolve_ai_config(
+                    provider=ai_provider, model=ai_model, base_url=ai_base_url
+                )
+            )
+        except AIError as e:
+            print_error(f"AI provider unavailable: {e}")
+            raise typer.Exit(code=1) from e
+
+        config.ai_provider = resolved.provider
+        config.ai_model = resolved.model
+        config.ai_base_url = resolved.base_url
+        if not quiet:
+            if resolved.provider == "ollama":
+                print_info(
+                    f"Detected local Ollama — fully offline generation (model: {resolved.model})."
+                )
+            else:
+                print_info(
+                    f"AI provider: OpenAI ({resolved.model}). Base words are sent to a third-party API."
+                )
 
     generator = WordlistGenerator()
     generator.scraper.max_pages = max_pages

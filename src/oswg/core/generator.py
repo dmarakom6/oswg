@@ -3,6 +3,7 @@
 import inspect
 from typing import Callable
 
+from oswg.core.ai import AICompleter, AIError, resolve_ai_config
 from oswg.core.models import GenerationConfig, GenerationResult, ScrapedContent
 from oswg.core.mutations import MutationEngine
 from oswg.core.scraper import Scraper
@@ -14,9 +15,10 @@ ProgressCallback = Callable[[str], None]
 class WordlistGenerator:
     """Generates targeted wordlists from website content."""
 
-    def __init__(self):
+    def __init__(self, ai_completer: AICompleter | None = None):
         self.scraper = Scraper()
         self.mutation_engine = MutationEngine()
+        self.ai_completer = ai_completer
 
     async def generate(
         self,
@@ -62,6 +64,9 @@ class WordlistGenerator:
             )
             if inspect.isawaitable(result):
                 await result
+
+        if config.ai_enabled:
+            await self._ai_expand_base_words(base_words, config, on_progress)
 
         # L33t and reverse l33t are contradictory, so they are mutually
         # exclusive: enabling reverse l33t disables the l33t pass
@@ -130,6 +135,78 @@ class WordlistGenerator:
             truncated_count=truncated_count,
             config=config,
         )
+
+    async def _ai_expand_base_words(
+        self,
+        base_words: list[str],
+        config: GenerationConfig,
+        on_progress: ProgressCallback | None = None,
+    ) -> int:
+        """Expand base_words with AI-generated related words (Ollama/OpenAI).
+
+        New words become additional *base words*, so the regular mutation
+        pipeline (leet, numbers, case, ...) applies to them afterwards.
+        Returns the number of words added.
+        """
+        if self.ai_completer is None:
+            try:
+                resolved = await resolve_ai_config(
+                    provider=config.ai_provider,
+                    model=config.ai_model,
+                    base_url=config.ai_base_url,
+                    detection_timeout=config.ai_detection_timeout,
+                )
+            except AIError as exc:
+                raise ValueError(f"AI completions unavailable: {exc}") from exc
+            self.ai_completer = AICompleter(
+                resolved,
+                max_concurrency=config.ai_max_concurrency,
+                batch_size=config.ai_batch_size,
+                timeout=config.ai_timeout,
+            )
+
+        if on_progress:
+            result = on_progress(
+                f"Generating AI completions via {self.ai_completer.config.display_name} "
+                f"(up to {config.ai_max_words} words)..."
+            )
+            if inspect.isawaitable(result):
+                await result
+
+        blocked = set(base_words)
+        if config.filter_stopwords:
+            blocked |= STOPWORDS | {w.lower() for w in config.extra_stopwords}
+
+        try:
+            new_words = await self.ai_completer.complete_many(
+                base_words,
+                k=config.ai_words_per_word,
+                min_length=config.min_word_length,
+                max_length=config.max_word_length,
+                max_words=config.ai_max_words,
+                blocked=blocked,
+            )
+        finally:
+            await self.ai_completer.aclose()
+            self.ai_completer = None
+
+        if on_progress:
+            result = on_progress(
+                f"AI completions: added {len(new_words)} related words "
+                f"(from {len(base_words)} base words)."
+            )
+            if inspect.isawaitable(result):
+                await result
+
+        added = 0
+        for word in new_words:
+            # Defense in depth: never trust the provider — re-check the full
+            # blocked set (base words, stopwords) and skip duplicates.
+            if word in blocked:
+                continue
+            base_words.append(word)
+            added += 1
+        return added
 
     def _merge_external_words(
         self, base_words: list[str], config: GenerationConfig

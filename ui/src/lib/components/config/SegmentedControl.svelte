@@ -4,9 +4,9 @@
 		onchange,
 		options
 	}: {
-		value: number;
-		onchange: (val: number) => void;
-		options: { value: number; label: string }[];
+		value: number | string;
+		onchange: (val: number | string) => void;
+		options: { value: number | string; label: string }[];
 	} = $props();
 </script>
 

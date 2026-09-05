@@ -89,6 +89,40 @@ class GenerateRequest(BaseRequest):
     random_combine_seed: Optional[int] = Field(
         None, description="Seed for reproducible random combinations. Empty = random each run."
     )
+    ai_enabled: bool = Field(
+        False, description="Expand base words with AI-generated related words (Ollama or OpenAI)."
+    )
+    ai_provider: str = Field(
+        "auto",
+        description="AI provider: auto (recommended, detects local Ollama first), ollama, openai.",
+    )
+    ai_model: Optional[str] = Field(
+        None, description="AI model (e.g. llama3.2, gpt-4o-mini). Empty = auto-detect.", max_length=100
+    )
+    ai_base_url: Optional[str] = Field(
+        None,
+        description="OpenAI-compatible base URL override (e.g. a custom Ollama address).",
+        max_length=300,
+    )
+    ai_max_words: int = Field(
+        1000, description="Cap on total AI-generated words (cost guard).", ge=1, le=100000
+    )
+    ai_words_per_word: int = Field(
+        3, description="Related words requested per base word.", ge=1, le=20
+    )
+    ai_max_concurrency: int = Field(
+        2, description="Max concurrent AI requests.", ge=1, le=16
+    )
+    ai_timeout: float = Field(
+        30.0, description="AI request timeout in seconds.", ge=1.0, le=300.0
+    )
+
+    @field_validator("ai_provider")
+    @classmethod
+    def _validate_ai_provider(cls, value: str) -> str:
+        if value not in ("auto", "ollama", "openai"):
+            raise ValueError("must be one of: auto, ollama, openai")
+        return value
 
     @field_validator("special_chars")
     @classmethod

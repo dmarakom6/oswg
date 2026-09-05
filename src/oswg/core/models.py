@@ -79,6 +79,16 @@ class GenerationConfig:
     enable_random_combine: bool = False
     random_combine_count: int = 1000
     random_combine_seed: Optional[int] = None
+    ai_enabled: bool = False
+    ai_provider: str = "auto"
+    ai_model: Optional[str] = None
+    ai_base_url: Optional[str] = None
+    ai_max_words: int = 1000
+    ai_words_per_word: int = 3
+    ai_max_concurrency: int = 2
+    ai_batch_size: int = 10
+    ai_timeout: float = 30.0
+    ai_detection_timeout: float = 2.0
 
 
 @dataclass

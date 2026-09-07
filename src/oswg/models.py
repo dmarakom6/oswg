@@ -205,6 +205,7 @@ class JobStatusResponse(BaseModel):
     words_count: Optional[int] = None
     source_keywords: Optional[int] = None
     truncated_count: Optional[int] = None
+    rule_format: Optional[str] = None
 
 
 class JobListItem(BaseModel):

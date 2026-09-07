@@ -50,7 +50,7 @@ class JobManager:
 
             result = await executor(job_id)
 
-            stats_keys = ("words_count", "source_keywords", "truncated_count")
+            stats_keys = ("words_count", "source_keywords", "truncated_count", "rule_format")
             result_stats = json.dumps(
                 {k: v for k, v in result.items() if k in stats_keys and v is not None}
             ) if any(k in result for k in stats_keys) else None

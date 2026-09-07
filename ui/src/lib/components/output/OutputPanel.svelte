@@ -2,7 +2,7 @@
 	import { currentJobForTab, jobsStore } from '$lib/stores/jobs';
 	import { endpoints } from '$lib/api/endpoints';
 	import { notifications } from '$lib/stores/notifications';
-	import type { ActiveTab } from '$lib/api/types';
+	import type { ActiveTab, JobPreviewResult } from '$lib/api/types';
 
 	let {
 		activeTab,
@@ -18,7 +18,7 @@
 
 	let pollTimer: ReturnType<typeof setInterval> | null = null;
 	let pollJobId: string | null = null;
-	let preview = $state<{ words: string[]; total: number; truncated: boolean } | null>(null);
+	let preview = $state<JobPreviewResult | null>(null);
 
 	function startPolling(jobId: string) {
 		if (pollJobId === jobId && pollTimer) return;
@@ -37,12 +37,12 @@
 					completed_at: job.completed_at,
 					words_count: job.words_count,
 					source_keywords: job.source_keywords,
-					truncated_count: job.truncated_count
+					truncated_count: job.truncated_count,
+					rule_format: job.rule_format
 				});
 				if (job.status === 'completed') {
 					stopPolling();
-					const result = await endpoints.previewJob(jobId);
-					preview = { words: result.preview, total: result.total_words, truncated: result.truncated };
+					preview = await endpoints.previewJob(jobId);
 				} else if (job.status === 'failed') {
 					stopPolling();
 				}
@@ -79,9 +79,9 @@
 		return Math.min(Math.floor((progress / 100) * total), total - 1);
 	}
 
-	async function downloadJob(jobId: string) {
+	async function downloadJob(jobId: string, target: 'rules' | 'base' | 'wordlist' = 'rules') {
 		try {
-			const { blob, filename } = await endpoints.downloadJob(jobId);
+			const { blob, filename } = await endpoints.downloadJob(jobId, target);
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
@@ -198,13 +198,65 @@
 		</div>
 
 		{#if currentJob.status === 'completed'}
-			<div class="mt-auto flex flex-col gap-3 border-t border-border pt-4" style="animation: fade-in 300ms ease">
-				{#if preview}
+			{#if preview?.mode === 'rules'}
+				<div class="flex flex-col gap-3" style="animation: fade-in 300ms ease">
+					<div class="flex items-baseline justify-between">
+						<span class="text-sm font-medium text-foreground">
+							{preview.format === 'hashcat' ? 'Hashcat' : 'JtR'} rules
+						</span>
+						<span class="font-mono text-xs text-muted-foreground">
+							{preview.rules_total} rules
+						</span>
+					</div>
+					<div class="max-h-48 overflow-y-auto rounded-md border border-border bg-muted/30 p-2 font-mono text-xs leading-relaxed text-primary">
+						{#each preview.rules as rule}
+							<div>{rule}</div>
+						{/each}
+						{#if preview.rules_truncated}
+							<div class="pt-1 text-muted-foreground">...{preview.rules_total - preview.rules.length} more rules</div>
+						{/if}
+					</div>
+					<div class="flex items-baseline justify-between">
+						<span class="text-sm font-medium text-foreground">Base words</span>
+						<span class="font-mono text-xs text-muted-foreground">
+							{preview.base_total} words
+						</span>
+					</div>
+					<div class="max-h-32 overflow-y-auto rounded-md border border-border bg-muted/30 p-2 font-mono text-xs leading-relaxed text-foreground">
+						{#each preview.base_words as word}
+							<div>{word}</div>
+						{/each}
+						{#if preview.base_truncated}
+							<div class="pt-1 text-muted-foreground">...{preview.base_total - preview.base_words.length} more</div>
+						{/if}
+					</div>
+					<div class="rounded-md border border-border bg-muted/20 px-3 py-2 font-mono text-[11px] leading-relaxed text-muted-foreground">
+						<p class="text-foreground">Saved files</p>
+						<p>rules: {preview.rules_path}</p>
+						<p>base: {preview.base_path}</p>
+					</div>
+					<div class="flex gap-2">
+						<button
+							onclick={() => downloadJob(currentJob.job_id, 'rules')}
+							class="flex-1 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
+						>
+							Download Rules
+						</button>
+						<button
+							onclick={() => downloadJob(currentJob.job_id, 'base')}
+							class="flex-1 rounded-md border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+						>
+							Download Base Words
+						</button>
+					</div>
+				</div>
+			{:else if preview}
+				<div class="mt-auto flex flex-col gap-3 border-t border-border pt-4" style="animation: fade-in 300ms ease">
 					<div>
 						<div class="mb-2 flex items-center justify-between">
 							<span class="text-xs font-medium text-foreground">Preview</span>
 							<span class="text-xs text-muted-foreground">
-								{preview.words.length} of {preview.total} words
+								{preview.preview.length} of {preview.total_words} words
 								{#if preview.truncated}
 									<span class="text-muted-foreground/60"> · showing first 200</span>
 								{/if}
@@ -212,27 +264,27 @@
 						</div>
 						<div class="max-h-48 overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
 							<div class="font-mono text-xs leading-relaxed text-foreground">
-								{#each preview.words as word}
+								{#each preview.preview as word}
 									<div>{word}</div>
 								{/each}
 							</div>
 						</div>
 					</div>
-				{/if}
-				{#if currentJob.truncated_count && currentJob.truncated_count > 0}
-					<div class="rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
-						<p class="text-xs text-amber-700 dark:text-amber-400">
-							⚠ Truncated {currentJob.truncated_count.toLocaleString()} mutations to reach the target size.
-						</p>
-					</div>
-				{/if}
-				<button
-					onclick={() => downloadJob(currentJob.job_id)}
-					class="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
-				>
-					Download Wordlist
-				</button>
-			</div>
+					{#if currentJob.truncated_count && currentJob.truncated_count > 0}
+						<div class="rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+							<p class="text-xs text-amber-700 dark:text-amber-400">
+								⚠ Truncated {currentJob.truncated_count.toLocaleString()} mutations to reach the target size.
+							</p>
+						</div>
+					{/if}
+					<button
+						onclick={() => downloadJob(currentJob.job_id, 'wordlist')}
+						class="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
+					>
+						Download Wordlist
+					</button>
+				</div>
+			{/if}
 		{:else if currentJob.status === 'failed'}
 			<div class="mt-auto flex flex-col gap-3 border-t border-border pt-4" style="animation: fade-in 300ms ease">
 				<div class="rounded-md border border-destructive/30 bg-destructive/10 p-3">

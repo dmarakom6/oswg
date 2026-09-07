@@ -7,7 +7,7 @@ import type {
 	Job,
 	MutateResponse,
 	JobListItem,
-	JobPreview
+	JobPreviewResult
 } from './types';
 
 export const endpoints = {
@@ -17,6 +17,7 @@ export const endpoints = {
 	getJobStatus: (jobId: string) => api.get<Job>(`/api/v1/jobs/${jobId}`),
 	listJobs: () => api.get<JobListItem[]>('/api/v1/jobs'),
 	clearJobs: () => api.post<{ cleared: number }>('/api/v1/jobs/clear', {}),
-	previewJob: (jobId: string, limit = 200) => api.get<JobPreview>(`/api/v1/jobs/${jobId}/preview?limit=${limit}`),
-	downloadJob: (jobId: string) => api.download(`/api/v1/jobs/${jobId}/download`)
+	previewJob: (jobId: string, limit = 200) => api.get<JobPreviewResult>(`/api/v1/jobs/${jobId}/preview?limit=${limit}`),
+	downloadJob: (jobId: string, target: 'rules' | 'base' | 'wordlist' = 'rules') =>
+		api.download(`/api/v1/jobs/${jobId}/download?target=${target}`)
 };

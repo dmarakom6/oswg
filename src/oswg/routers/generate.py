@@ -136,6 +136,7 @@ async def execute_generate(job_id: str) -> dict:
         "words_count": result.unique_words,
         "source_keywords": result.source_keywords,
         "truncated_count": result.truncated_count,
+        "rule_format": rule_format,
     }
 
 

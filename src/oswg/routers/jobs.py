@@ -96,6 +96,7 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         words_count=stats.get("words_count"),
         source_keywords=stats.get("source_keywords"),
         truncated_count=stats.get("truncated_count"),
+        rule_format=stats.get("rule_format"),
     )
 
 
@@ -105,8 +106,13 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         404: {"model": ErrorResponse, "description": "Job or file not found"},
     },
 )
-async def download_job_result(job_id: str) -> FileResponse:
-    """Download the result file for a completed job."""
+async def download_job_result(job_id: str, target: str = "rules"):
+    """Download a completed job's result file.
+
+    ``target`` selects which file: ``rules`` (default), ``base``, or
+    ``wordlist``. Rule-mode jobs store .rules + .base.txt; wordlist jobs
+    store .txt.
+    """
     job = await job_manager.get_job_status(job_id)
 
     if not job:
@@ -118,16 +124,22 @@ async def download_job_result(job_id: str) -> FileResponse:
             detail=f"Job {job_id} is not completed (status: {job['status']})",
         )
 
-    if not file_manager.file_exists(job_id):
+    if target not in ("rules", "base", "wordlist"):
+        raise HTTPException(status_code=400, detail=f"Unknown target '{target}'")
+
+    extension = {"rules": ".rules", "base": ".base.txt", "wordlist": ".txt"}[target]
+
+    if not file_manager.file_exists(job_id, extension):
         raise HTTPException(
-            status_code=404, detail=f"Result file for job {job_id} not found"
+            status_code=404,
+            detail=f"File ({extension}) for job {job_id} not found",
         )
 
-    file_path = file_manager.get_file_path(job_id)
+    file_path = file_manager.get_file_path(job_id, extension)
 
     return FileResponse(
         path=file_path,
-        filename=f"oswg_{job_id}.txt",
+        filename=f"oswg_{job_id}{extension}",
         media_type="text/plain",
     )
 
@@ -139,7 +151,7 @@ async def download_job_result(job_id: str) -> FileResponse:
     },
 )
 async def preview_job_result(job_id: str, limit: int = 100):
-    """Preview the first N words of a completed job's wordlist."""
+    """Preview the first N words/rules of a completed job's result."""
     job = await job_manager.get_job_status(job_id)
 
     if not job:
@@ -150,6 +162,42 @@ async def preview_job_result(job_id: str, limit: int = 100):
             status_code=400,
             detail=f"Job {job_id} is not completed (status: {job['status']})",
         )
+
+    stats = {}
+    if job.get("result_stats"):
+        try:
+            stats = json.loads(job["result_stats"])
+        except (ValueError, TypeError):
+            stats = {}
+
+    rule_format = stats.get("rule_format")
+
+    if rule_format:
+        rules_path = file_manager.get_file_path(job_id, ".rules")
+        base_path = file_manager.get_file_path(job_id, ".base.txt")
+        if not rules_path.exists() or not base_path.exists():
+            raise HTTPException(
+                status_code=404, detail=f"Rule files for job {job_id} not found"
+            )
+
+        with open(rules_path, "r", encoding="utf-8") as f:
+            rule_lines = [line.strip() for line in f if line.strip()]
+        with open(base_path, "r", encoding="utf-8") as f:
+            base_words = [line.strip() for line in f if line.strip()]
+
+        return {
+            "job_id": job_id,
+            "mode": "rules",
+            "format": rule_format,
+            "rules": rule_lines[:limit],
+            "rules_total": len(rule_lines),
+            "rules_truncated": len(rule_lines) > limit,
+            "base_words": base_words[:limit],
+            "base_total": len(base_words),
+            "base_truncated": len(base_words) > limit,
+            "rules_path": str(rules_path),
+            "base_path": str(base_path),
+        }
 
     if not file_manager.file_exists(job_id):
         raise HTTPException(
@@ -165,6 +213,7 @@ async def preview_job_result(job_id: str, limit: int = 100):
 
     return {
         "job_id": job_id,
+        "mode": "wordlist",
         "total_words": total,
         "preview": preview,
         "truncated": total > limit,

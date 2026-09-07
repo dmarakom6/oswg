@@ -103,6 +103,7 @@ export interface Job {
 	words_count?: number | null;
 	source_keywords?: number | null;
 	truncated_count?: number | null;
+	rule_format?: 'jtr' | 'hashcat' | null;
 }
 
 export interface MutateResponse {
@@ -124,10 +125,27 @@ export interface JobListItem {
 
 export interface JobPreview {
 	job_id: string;
+	mode: 'wordlist';
 	total_words: number;
 	preview: string[];
 	truncated: boolean;
 }
+
+export interface JobRulePreview {
+	job_id: string;
+	mode: 'rules';
+	format: 'jtr' | 'hashcat';
+	rules: string[];
+	rules_total: number;
+	rules_truncated: boolean;
+	base_words: string[];
+	base_total: number;
+	base_truncated: boolean;
+	rules_path: string;
+	base_path: string;
+}
+
+export type JobPreviewResult = JobPreview | JobRulePreview;
 
 export interface WSJobMessage {
 	job_id: string;

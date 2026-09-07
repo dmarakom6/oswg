@@ -118,9 +118,16 @@ async def execute_generate(job_id: str) -> dict:
         sitemap=config_data.get("sitemap", False),
     )
 
-    await job_manager.update_progress(job_id, 80.0, "Saving wordlist...")
+    rule_format = config_data.get("rule_format")
+    if rule_format:
+        from oswg.core.rulegen import generate_rules
 
-    file_path = file_manager.save_words(job_id, result.words)
+        rules = generate_rules(generation_config, format=rule_format)
+        await job_manager.update_progress(job_id, 80.0, "Saving rules...")
+        file_path = file_manager.save_rules(job_id, rules, result.base_words)
+    else:
+        await job_manager.update_progress(job_id, 80.0, "Saving wordlist...")
+        file_path = file_manager.save_words(job_id, result.words)
 
     await job_manager.update_progress(job_id, 95.0, "Finalizing...")
 
@@ -187,6 +194,7 @@ async def generate_wordlist(
             "ai_words_per_word": request.ai_words_per_word,
             "ai_max_concurrency": request.ai_max_concurrency,
             "ai_timeout": request.ai_timeout,
+            "rule_format": request.rule_format,
         }
 
         job_id = await job_manager.create_job(

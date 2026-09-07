@@ -116,6 +116,17 @@ class GenerateRequest(BaseRequest):
     ai_timeout: float = Field(
         30.0, description="AI request timeout in seconds.", ge=1.0, le=300.0
     )
+    rule_format: Optional[str] = Field(
+        None,
+        description="Emit cracker rules (jtr|hashcat) + base words instead of an expanded wordlist.",
+    )
+
+    @field_validator("rule_format")
+    @classmethod
+    def _validate_rule_format(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and value not in ("jtr", "hashcat"):
+            raise ValueError("must be one of: jtr, hashcat")
+        return value
 
     @field_validator("ai_provider")
     @classmethod

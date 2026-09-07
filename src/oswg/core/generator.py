@@ -134,6 +134,7 @@ class WordlistGenerator:
             unique_words=len(set(mutations)),
             truncated_count=truncated_count,
             config=config,
+            base_words=base_words,
         )
 
     async def _ai_expand_base_words(

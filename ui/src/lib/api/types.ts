@@ -35,6 +35,7 @@ export interface GenerateRequest {
 	merge_max?: number;
 	merge_builtin?: boolean;
 	merge_rockyou?: boolean;
+	rule_format?: 'jtr' | 'hashcat';
 	enable_random_combine?: boolean;
 	random_combine_count?: number;
 	random_combine_seed?: number | null;

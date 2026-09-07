@@ -33,6 +33,7 @@
 	let cookies = $state<{ name: string; value: string }[]>([]);
 	let proxy = $state('');
 	let merge = $state({ merge_words: [] as string[], merge_max: DEFAULTS.mergeMax, merge_builtin: false, merge_rockyou: false });
+	let ruleFormat = $state<'jtr' | 'hashcat' | undefined>(undefined);
 	let useSitemap = $state(false);
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
@@ -113,6 +114,7 @@
 				merge_max: merge.merge_max,
 				merge_builtin: merge.merge_builtin,
 				merge_rockyou: merge.merge_rockyou,
+				rule_format: ruleFormat,
 				enable_random_combine: enableRandomCombine,
 				...((enableRandomCombine && randomCombineCount > 0) ? { random_combine_count: randomCombineCount } : {}),
 				...(enableRandomCombine && !combineSeedError && parsedCombineSeed !== undefined ? { random_combine_seed: parsedCombineSeed } : {}),
@@ -434,6 +436,21 @@
 				{/if}
 			</div>
 			<MergeConfig value={merge} onchange={(v) => (merge = v)} />
+			<div class="space-y-1.5">
+				<span class="block text-sm font-medium text-foreground">Output format</span>
+				<SegmentedControl
+					value={ruleFormat ?? 'wordlist'}
+					onchange={(v) => (ruleFormat = v === 'wordlist' ? undefined : (v as 'jtr' | 'hashcat'))}
+					options={[
+						{ value: 'wordlist', label: 'Wordlist' },
+						{ value: 'jtr', label: 'JtR rules' },
+						{ value: 'hashcat', label: 'Hashcat rules' }
+					]}
+				/>
+				<p class="text-xs text-muted-foreground">
+					Rules mode writes a .rules file + base words instead of expanding the wordlist — run the rules against your base words in hashcat/john.
+				</p>
+			</div>
 			<div class="space-y-1.5">
 				<label for="retention" class="block text-sm font-medium text-foreground">Retention</label>
 				<select

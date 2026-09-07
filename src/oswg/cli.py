@@ -73,6 +73,15 @@ def parse_headers(values: list[str] | None) -> dict[str, str] | None:
     return headers
 
 
+def validate_rule_format(value: str | None) -> str | None:
+    """Validate --rule-format value."""
+    if value is not None and value.lower() not in ("jtr", "hashcat"):
+        raise typer.BadParameter(
+            f"Unknown rule format '{value}' (expected 'jtr' or 'hashcat')"
+        )
+    return value.lower() if value else None
+
+
 def parse_cookies(values: list[str] | None) -> dict[str, str] | None:
     """Parse repeatable 'name=value' flags into a cookies dict."""
     if not values:
@@ -174,6 +183,12 @@ def generate(
     rate_limit: float = typer.Option(0.0, "--rate-limit", help="Delay between requests in seconds.", min=0.0),
     jitter: bool = typer.Option(False, "--jitter", help="Randomize delay by ±50%% (with --rate-limit)."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview the generated wordlist without writing a file."),
+    rule_format: str = typer.Option(
+        None, "--rule-format",
+        help="Emit cracker rules instead of an expanded wordlist (jtr or hashcat). "
+        "Writes <output>.rules + <output>.base.txt and bypasses wordlist expansion.",
+        callback=validate_rule_format,
+    ),
     header: list[str] = typer.Option(None, "--header", help="Custom header, repeatable (e.g. --header 'X-Foo: bar')."),
     cookie: list[str] = typer.Option(None, "--cookie", help="Custom cookie, repeatable (e.g. --cookie 'session=abc')."),
     proxy: str = typer.Option(None, "--proxy", help="Proxy for requests (e.g. http://127.0.0.1:8080 or socks5://127.0.0.1:9050)."),
@@ -342,6 +357,34 @@ def generate(
     except Exception as e:
         print_error(str(e))
         raise typer.Exit(code=1) from e
+
+    if rule_format:
+        output_path = output.resolve()
+        rules_path = output_path.with_suffix(".rules")
+        base_path = output_path.with_suffix(".base.txt")
+
+        from oswg.core.rulegen import generate_rules
+
+        rules = generate_rules(config, format=rule_format)
+        base_words = result.base_words
+
+        rules_path.write_text("\n".join(rules) + "\n", encoding="utf-8")
+        base_path.write_text("\n".join(base_words) + "\n", encoding="utf-8")
+
+        if not quiet:
+            print_info(
+                f"Rule mode ({rule_format}): {len(rules)} rules, "
+                f"{len(base_words)} base words — wordlist expansion bypassed."
+            )
+            print_success(f"Rules written to {rules_path}")
+            print_success(f"Base words written to {base_path}")
+            hint = (
+                "hashcat -a 0 <hashes> BASE_WORDS -r RULES"
+                if rule_format == "hashcat"
+                else "john --wordlist=BASE_WORDS --rules=RULES <hashfile>"
+            )
+            print_info(f"Usage hint: {hint}")
+        return
 
     if not quiet:
         if dry_run:

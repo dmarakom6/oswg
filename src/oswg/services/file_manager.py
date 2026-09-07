@@ -24,6 +24,19 @@ class FileManager:
                 f.write(f"{word}\n")
         return file_path
 
+    def save_rules(self, job_id: str, rules: list[str], base_words: list[str]) -> Path:
+        """Save a cracker rules file plus its companion base-words file.
+
+        Writes <job_id>.rules and <job_id>.base.txt; returns the rules path.
+        """
+        rules_path = self.get_file_path(job_id, ".rules")
+        base_path = self.get_file_path(job_id, ".base.txt")
+        with open(rules_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(rules) + "\n")
+        with open(base_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(base_words) + "\n")
+        return rules_path
+
     def save_json(self, job_id: str, data: dict) -> Path:
         """Save JSON data to file."""
         import json

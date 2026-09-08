@@ -4,6 +4,7 @@
 	import ToggleSwitch from './ToggleSwitch.svelte';
 	import SegmentedControl from './SegmentedControl.svelte';
 	import KeyValueList from './KeyValueList.svelte';
+	import StringList from './StringList.svelte';
 	import MergeConfig from './MergeConfig.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
 	import { isValidUrl } from '$lib/utils/validators';
@@ -35,6 +36,9 @@
 	let merge = $state({ merge_words: [] as string[], merge_max: DEFAULTS.mergeMax, merge_builtin: false, merge_rockyou: false });
 	let ruleFormat = $state<'jtr' | 'hashcat' | undefined>(undefined);
 	let useSitemap = $state(false);
+	let allowSubdomains = $state(false);
+	let includePaths = $state<string[]>([]);
+	let excludePatterns = $state<string[]>([]);
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
 	let stopwordThreshold = $state(0.5);
@@ -86,6 +90,9 @@
 			const response = await endpoints.generate({
 				url,
 				sitemap: useSitemap,
+				allow_subdomains: allowSubdomains,
+				include_paths: includePaths,
+				exclude_patterns: excludePatterns,
 				size,
 				max_pages: maxPages,
 				min_length: minLength,
@@ -172,6 +179,14 @@
 		<div class="grid grid-cols-2 gap-4">
 			<NumberStepper value={maxPages} onchange={(v) => (maxPages = v)} label="Pages to scrape" min={LIMITS.maxPages.min} max={LIMITS.maxPages.max} />
 			<NumberStepper value={size} onchange={(v) => (size = v)} label="Wordlist size" min={LIMITS.wordlistSize.min} max={LIMITS.wordlistSize.max} step={1000} />
+		</div>
+		<div class="flex items-center gap-3">
+			<ToggleSwitch checked={allowSubdomains} onchange={(v) => (allowSubdomains = v)} label="Allow subdomains" />
+			{#if allowSubdomains}
+				<p class="text-xs text-muted-foreground">Crawl sibling subdomains (e.g. www → blog, api).</p>
+			{:else}
+				<p class="text-xs text-muted-foreground">Stay within the exact host.</p>
+			{/if}
 		</div>
 		<div class="flex items-center gap-3">
 			<ToggleSwitch checked={useSitemap} onchange={(v) => (useSitemap = v)} label="Use sitemap.xml" />
@@ -414,6 +429,20 @@
 			</div>
 			<KeyValueList kind="header" items={headers} onchange={(v) => (headers = v)} />
 			<KeyValueList kind="cookie" items={cookies} onchange={(v) => (cookies = v)} />
+			<StringList
+				label="Only scrape paths"
+				items={includePaths}
+				onchange={(v) => (includePaths = v)}
+				placeholder="/docs — press Enter to add"
+				hint="Crawl only URLs whose path starts with one of these prefixes."
+			/>
+			<StringList
+				label="Exclude patterns"
+				items={excludePatterns}
+				onchange={(v) => (excludePatterns = v)}
+				placeholder="private — press Enter to add"
+				hint="Skip URLs whose path contains any of these substrings."
+			/>
 			<div class="space-y-1.5">
 				<label for="proxy" class="block text-sm font-medium text-foreground">Proxy</label>
 				<input

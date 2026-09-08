@@ -33,6 +33,13 @@ class GenerateRequest(BaseRequest):
     url: str = Field(..., description="Target URL to scrape.")
     urls: list[str] = Field(default=[], description="Additional URLs to scrape.", max_length=50)
     sitemap: bool = Field(False, description="Use sitemap.xml for page discovery.")
+    allow_subdomains: bool = Field(False, description="Crawl sibling subdomains of the seed.")
+    include_paths: list[str] = Field(
+        default=[], description="Only crawl paths starting with these prefixes.", max_length=50
+    )
+    exclude_patterns: list[str] = Field(
+        default=[], description="Skip URLs whose path contains any of these substrings.", max_length=50
+    )
     size: int = Field(10000, description="Target wordlist size.", ge=1, le=1000000)
     max_pages: int = Field(10, description="Maximum pages to scrape.", ge=1, le=100)
     min_length: int = Field(3, description="Minimum word length.", ge=1, le=32)
@@ -151,6 +158,13 @@ class ScrapeRequest(BaseRequest):
     url: str = Field(..., description="Target URL to scrape.")
     urls: list[str] = Field(default=[], description="Additional URLs to scrape.", max_length=50)
     sitemap: bool = Field(False, description="Use sitemap.xml for page discovery.")
+    allow_subdomains: bool = Field(False, description="Crawl sibling subdomains of the seed.")
+    include_paths: list[str] = Field(
+        default=[], description="Only crawl paths starting with these prefixes.", max_length=50
+    )
+    exclude_patterns: list[str] = Field(
+        default=[], description="Skip URLs whose path contains any of these substrings.", max_length=50
+    )
     max_pages: int = Field(10, description="Maximum pages to scrape.", ge=1, le=100)
     timeout: float = Field(30.0, description="HTTP request timeout in seconds.", ge=1.0, le=300.0)
     respect_robots: bool = Field(False, description="Respect robots.txt rules.")

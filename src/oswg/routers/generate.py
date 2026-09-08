@@ -58,6 +58,9 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.headers = config_data.get("headers") or None
     generator.scraper.cookies = config_data.get("cookies") or None
     generator.scraper.proxy = config_data.get("proxy")
+    generator.scraper.allow_subdomains = config_data.get("allow_subdomains", False)
+    generator.scraper.include_paths = config_data.get("include_paths", [])
+    generator.scraper.exclude_patterns = config_data.get("exclude_patterns", [])
 
     await job_manager.update_progress(job_id, 20.0, "Scraping website...")
 
@@ -182,6 +185,9 @@ async def generate_wordlist(
             "headers": request.headers,
             "cookies": request.cookies,
             "proxy": request.proxy,
+            "allow_subdomains": request.allow_subdomains,
+            "include_paths": request.include_paths,
+            "exclude_patterns": request.exclude_patterns,
             "merge_words": _resolve_merge_words(request),
             "merge_max": request.merge_max,
             "enable_random_combine": request.enable_random_combine,

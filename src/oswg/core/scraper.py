@@ -54,6 +54,9 @@ class Scraper:
         cookies: dict[str, str] | None = None,
         headers: dict[str, str] | None = None,
         proxy: str | None = None,
+        allow_subdomains: bool = False,
+        include_paths: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
     ):
         self.max_pages = max_pages
         self.timeout = timeout
@@ -66,6 +69,9 @@ class Scraper:
         self.cookies = cookies
         self.headers = headers
         self.proxy = proxy
+        self.allow_subdomains = allow_subdomains
+        self.include_paths = [p for p in (include_paths or []) if p]
+        self.exclude_patterns = [p for p in (exclude_patterns or []) if p]
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
@@ -140,12 +146,44 @@ class Scraper:
             return True
         return parser.can_fetch(url, self.user_agent or ROBOTS_USER_AGENT)
 
+    @staticmethod
+    def _registrable_domain(netloc: str) -> str:
+        """Return the last two labels of a host (docs.example.com -> example.com)."""
+        labels = netloc.lower().split(".")
+        return ".".join(labels[-2:]) if len(labels) >= 2 else netloc.lower()
+
+    def _should_include(self, url: str) -> bool:
+        """Apply domain / path-include / exclude filters to a candidate URL."""
+        parsed = urlparse(url)
+
+        # Domain filtering: exact host by default, or sibling subdomains.
+        if self.allow_subdomains:
+            if self._registrable_domain(parsed.netloc) != self._seed_registrable:
+                return False
+        elif parsed.netloc != self._seed_domain:
+            return False
+
+        # Path filtering: only crawl URLs whose path starts with an include prefix.
+        if self.include_paths:
+            if not any(parsed.path.startswith(prefix) for prefix in self.include_paths):
+                return False
+
+        # Exclude patterns: skip URLs whose path contains any substring.
+        if self.exclude_patterns:
+            if any(pattern in parsed.path for pattern in self.exclude_patterns):
+                return False
+
+        return True
+
     async def scrape(
         self, url: str, sitemap: bool = False, on_progress: ProgressCallback | None = None
     ) -> ScrapedContent:
         """Scrape a website and extract keywords."""
         self.page_word_sets = []
         self.failed_pages = []
+        seed_parsed = urlparse(url)
+        self._seed_domain = seed_parsed.netloc
+        self._seed_registrable = self._registrable_domain(seed_parsed.netloc)
         urls_to_scrape = [url]
 
         if sitemap:
@@ -246,6 +284,9 @@ class Scraper:
         """Scrape multiple seed URLs and merge results."""
         self.page_word_sets = []
         self.failed_pages = []
+        seed_parsed = urlparse(urls[0]) if urls else urlparse("")
+        self._seed_domain = seed_parsed.netloc
+        self._seed_registrable = self._registrable_domain(seed_parsed.netloc)
         all_content = ScrapedContent(url=urls[0] if urls else "")
         queue = list(urls)
 
@@ -390,7 +431,6 @@ class Scraper:
 
     def _extract_links(self, soup: BeautifulSoup, base_url: str) -> list[str]:
         """Extract same-domain links from a parsed page, with filtering."""
-        domain = urlparse(base_url).netloc
         links = []
         seen_paths: set[str] = set()
 
@@ -404,7 +444,7 @@ class Scraper:
 
             if parsed.scheme in SKIP_SCHEMES:
                 continue
-            if parsed.netloc != domain:
+            if not self._should_include(full_url):
                 continue
 
             path_lower = parsed.path.lower()
@@ -451,7 +491,7 @@ class Scraper:
                 urls = []
                 for loc in soup.find_all("loc"):
                     url_text = loc.get_text(strip=True)
-                    if url_text:
+                    if url_text and self._should_include(url_text):
                         urls.append(url_text)
                 return urls
         except Exception:

@@ -3,6 +3,7 @@
 	import NumberStepper from './NumberStepper.svelte';
 	import ToggleSwitch from './ToggleSwitch.svelte';
 	import KeyValueList from './KeyValueList.svelte';
+	import StringList from './StringList.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
 	import { isValidUrl } from '$lib/utils/validators';
 	import { endpoints } from '$lib/api/endpoints';
@@ -22,6 +23,9 @@
 	let cookies = $state<{ name: string; value: string }[]>([]);
 	let proxy = $state('');
 	let useSitemap = $state(false);
+	let allowSubdomains = $state(false);
+	let includePaths = $state<string[]>([]);
+	let excludePatterns = $state<string[]>([]);
 	let submitting = $state(false);
 
 	let urlError = $derived(url.length > 0 && !isValidUrl(url) ? 'Enter a valid URL including protocol (https://)' : '');
@@ -35,6 +39,9 @@
 			const response = await endpoints.scrape({
 				url,
 				sitemap: useSitemap,
+				allow_subdomains: allowSubdomains,
+				include_paths: includePaths,
+				exclude_patterns: excludePatterns,
 				max_pages: maxPages,
 				timeout,
 				respect_robots: respectRobots,
@@ -88,6 +95,14 @@
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scope</h2>
 		<NumberStepper value={maxPages} onchange={(v) => (maxPages = v)} label="Pages to scrape" min={LIMITS.maxPages.min} max={LIMITS.maxPages.max} />
 		<div class="flex items-center gap-3">
+			<ToggleSwitch checked={allowSubdomains} onchange={(v) => (allowSubdomains = v)} label="Allow subdomains" />
+			{#if allowSubdomains}
+				<p class="text-xs text-muted-foreground">Crawl sibling subdomains (e.g. www → blog, api).</p>
+			{:else}
+				<p class="text-xs text-muted-foreground">Stay within the exact host.</p>
+			{/if}
+		</div>
+		<div class="flex items-center gap-3">
 			<ToggleSwitch checked={useSitemap} onchange={(v) => (useSitemap = v)} label="Use sitemap.xml" />
 			{#if useSitemap}
 				<p class="text-xs text-muted-foreground">Discovers pages from sitemap instead of link following.</p>
@@ -139,6 +154,20 @@
 			</div>
 			<KeyValueList kind="header" items={headers} onchange={(v) => (headers = v)} />
 			<KeyValueList kind="cookie" items={cookies} onchange={(v) => (cookies = v)} />
+			<StringList
+				label="Only scrape paths"
+				items={includePaths}
+				onchange={(v) => (includePaths = v)}
+				placeholder="/docs — press Enter to add"
+				hint="Crawl only URLs whose path starts with one of these prefixes."
+			/>
+			<StringList
+				label="Exclude patterns"
+				items={excludePatterns}
+				onchange={(v) => (excludePatterns = v)}
+				placeholder="private — press Enter to add"
+				hint="Skip URLs whose path contains any of these substrings."
+			/>
 			<div class="space-y-1.5">
 				<label for="proxy" class="block text-sm font-medium text-foreground">Proxy</label>
 				<input

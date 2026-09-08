@@ -7,6 +7,9 @@ export interface GenerateRequest {
 	url: string;
 	urls?: string[];
 	sitemap?: boolean;
+	allow_subdomains?: boolean;
+	include_paths?: string[];
+	exclude_patterns?: string[];
 	size: number;
 	max_pages: number;
 	min_length: number;
@@ -54,6 +57,9 @@ export interface ScrapeRequest {
 	url: string;
 	urls?: string[];
 	sitemap?: boolean;
+	allow_subdomains?: boolean;
+	include_paths?: string[];
+	exclude_patterns?: string[];
 	max_pages: number;
 	timeout?: number;
 	respect_robots?: boolean;

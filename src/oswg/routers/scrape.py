@@ -39,6 +39,9 @@ async def execute_scrape(job_id: str) -> dict:
         headers=config_data.get("headers") or None,
         cookies=config_data.get("cookies") or None,
         proxy=config_data.get("proxy"),
+        allow_subdomains=config_data.get("allow_subdomains", False),
+        include_paths=config_data.get("include_paths", []),
+        exclude_patterns=config_data.get("exclude_patterns", []),
     )
 
     await job_manager.update_progress(job_id, 30.0, "Scraping website...")
@@ -96,6 +99,9 @@ async def scrape_keywords(
             "headers": request.headers,
             "cookies": request.cookies,
             "proxy": request.proxy,
+            "allow_subdomains": request.allow_subdomains,
+            "include_paths": request.include_paths,
+            "exclude_patterns": request.exclude_patterns,
         }
 
         job_id = await job_manager.create_job(

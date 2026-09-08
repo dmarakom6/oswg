@@ -162,6 +162,18 @@ def generate(
     ),
     leet_level: int = typer.Option(1, "--leet-level", help="L33t speak intensity (1=basic, 2=advanced).", min=1, max=2),
     sitemap: bool = typer.Option(False, "--sitemap", help="Use sitemap.xml for page discovery."),
+    allow_subdomains: bool = typer.Option(
+        False, "--allow-subdomains",
+        help="Crawl sibling subdomains of the seed (default: stay on the exact host).",
+    ),
+    include_path: list[str] = typer.Option(
+        None, "--include-path",
+        help="Only crawl paths starting with this prefix, repeatable.",
+    ),
+    exclude: list[str] = typer.Option(
+        None, "--exclude",
+        help="Skip URLs whose path contains this substring, repeatable.",
+    ),
     no_filter_stopwords: bool = typer.Option(False, "--no-filter-stopwords", help="Disable common word filtering."),
     stopword_threshold: float = typer.Option(
         0.5, "--stopword-threshold",
@@ -337,6 +349,9 @@ def generate(
     generator.scraper.jitter = jitter
     generator.scraper.headers = parse_headers(header)
     generator.scraper.cookies = parse_cookies(cookie)
+    generator.scraper.allow_subdomains = allow_subdomains
+    generator.scraper.include_paths = include_path
+    generator.scraper.exclude_patterns = exclude
     generator.scraper.proxy = proxy
 
     primary_url = url[0]
@@ -423,6 +438,18 @@ def scrape(
     url: list[str] = typer.Argument(..., help="Target URL(s) to scrape."),
     max_pages: int = typer.Option(10, "--max-pages", "-p", help="Maximum pages to scrape.", min=1),
     sitemap: bool = typer.Option(False, "--sitemap", help="Use sitemap.xml for page discovery."),
+    allow_subdomains: bool = typer.Option(
+        False, "--allow-subdomains",
+        help="Crawl sibling subdomains of the seed (default: stay on the exact host).",
+    ),
+    include_path: list[str] = typer.Option(
+        None, "--include-path",
+        help="Only crawl paths starting with this prefix, repeatable.",
+    ),
+    exclude: list[str] = typer.Option(
+        None, "--exclude",
+        help="Skip URLs whose path contains this substring, repeatable.",
+    ),
     output: Path = typer.Option(None, "--output", "-o", help="Save keywords to file."),
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all keywords (not just preview)."),
     timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
@@ -451,6 +478,9 @@ def scrape(
         headers=parse_headers(header),
         cookies=parse_cookies(cookie),
         proxy=proxy,
+        allow_subdomains=allow_subdomains,
+        include_paths=include_path,
+        exclude_patterns=exclude,
     )
     on_progress = make_verbose_callback() if verbose else None
 

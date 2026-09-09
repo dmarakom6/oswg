@@ -135,6 +135,7 @@ class WordlistGenerator:
             truncated_count=truncated_count,
             config=config,
             base_words=base_words,
+            link_graph=self.scraper.link_graph,
         )
 
     async def _ai_expand_base_words(

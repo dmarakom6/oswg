@@ -7,7 +7,8 @@ import type {
 	Job,
 	MutateResponse,
 	JobListItem,
-	JobPreviewResult
+	JobPreviewResult,
+	CrawlGraph
 } from './types';
 
 export const endpoints = {
@@ -18,6 +19,7 @@ export const endpoints = {
 	listJobs: () => api.get<JobListItem[]>('/api/v1/jobs'),
 	clearJobs: () => api.post<{ cleared: number }>('/api/v1/jobs/clear', {}),
 	previewJob: (jobId: string, limit = 200) => api.get<JobPreviewResult>(`/api/v1/jobs/${jobId}/preview?limit=${limit}`),
+	getGraph: (jobId: string) => api.get<CrawlGraph>(`/api/v1/jobs/${jobId}/graph`),
 	downloadJob: (jobId: string, target: 'rules' | 'base' | 'wordlist' = 'rules') =>
 		api.download(`/api/v1/jobs/${jobId}/download?target=${target}`)
 };

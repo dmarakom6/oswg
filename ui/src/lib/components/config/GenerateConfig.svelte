@@ -39,6 +39,7 @@
 	let allowSubdomains = $state(false);
 	let includePaths = $state<string[]>([]);
 	let excludePatterns = $state<string[]>([]);
+	let crawlStrategy = $state<'bfs' | 'dfs'>('bfs');
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
 	let stopwordThreshold = $state(0.5);
@@ -93,6 +94,7 @@
 				allow_subdomains: allowSubdomains,
 				include_paths: includePaths,
 				exclude_patterns: excludePatterns,
+				crawl_strategy: crawlStrategy,
 				size,
 				max_pages: maxPages,
 				min_length: minLength,
@@ -186,6 +188,20 @@
 				<p class="text-xs text-muted-foreground">Crawl sibling subdomains (e.g. www → blog, api).</p>
 			{:else}
 				<p class="text-xs text-muted-foreground">Stay within the exact host.</p>
+			{/if}
+		</div>
+		<div class="space-y-1.5">
+			<span class="block text-sm font-medium text-foreground">Discovery order</span>
+			<SegmentedControl
+				value={crawlStrategy}
+				onchange={(v) => (crawlStrategy = v as 'bfs' | 'dfs')}
+				options={[
+					{ value: 'bfs', label: 'Breadth-first' },
+					{ value: 'dfs', label: 'Depth-first' }
+				]}
+			/>
+			{#if crawlStrategy === 'dfs'}
+				<p class="text-xs text-muted-foreground">DFS goes deep down one branch before siblings — can burn max_pages on a single path.</p>
 			{/if}
 		</div>
 		<div class="flex items-center gap-3">

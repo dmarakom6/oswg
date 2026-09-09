@@ -61,6 +61,7 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.allow_subdomains = config_data.get("allow_subdomains", False)
     generator.scraper.include_paths = config_data.get("include_paths", [])
     generator.scraper.exclude_patterns = config_data.get("exclude_patterns", [])
+    generator.scraper.crawl_strategy = config_data.get("crawl_strategy", "bfs")
 
     await job_manager.update_progress(job_id, 20.0, "Scraping website...")
 
@@ -132,6 +133,8 @@ async def execute_generate(job_id: str) -> dict:
         await job_manager.update_progress(job_id, 80.0, "Saving wordlist...")
         file_path = file_manager.save_words(job_id, result.words)
 
+    file_manager.save_graph(job_id, result.link_graph)
+
     await job_manager.update_progress(job_id, 95.0, "Finalizing...")
 
     return {
@@ -140,6 +143,7 @@ async def execute_generate(job_id: str) -> dict:
         "source_keywords": result.source_keywords,
         "truncated_count": result.truncated_count,
         "rule_format": rule_format,
+        "crawl_strategy": config_data.get("crawl_strategy", "bfs"),
     }
 
 
@@ -188,6 +192,7 @@ async def generate_wordlist(
             "allow_subdomains": request.allow_subdomains,
             "include_paths": request.include_paths,
             "exclude_patterns": request.exclude_patterns,
+            "crawl_strategy": request.crawl_strategy,
             "merge_words": _resolve_merge_words(request),
             "merge_max": request.merge_max,
             "enable_random_combine": request.enable_random_combine,

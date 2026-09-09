@@ -42,6 +42,7 @@ async def execute_scrape(job_id: str) -> dict:
         allow_subdomains=config_data.get("allow_subdomains", False),
         include_paths=config_data.get("include_paths", []),
         exclude_patterns=config_data.get("exclude_patterns", []),
+        crawl_strategy=config_data.get("crawl_strategy", "bfs"),
     )
 
     await job_manager.update_progress(job_id, 30.0, "Scraping website...")
@@ -61,6 +62,7 @@ async def execute_scrape(job_id: str) -> dict:
     await job_manager.update_progress(job_id, 85.0, "Saving keywords...")
 
     file_path = file_manager.save_words(job_id, keywords)
+    file_manager.save_graph(job_id, scraper.link_graph)
 
     await job_manager.update_progress(job_id, 95.0, "Finalizing...")
 
@@ -69,6 +71,7 @@ async def execute_scrape(job_id: str) -> dict:
         "keywords_count": len(keywords),
         "title": content.title,
         "meta_description": content.meta_description,
+        "crawl_strategy": config_data.get("crawl_strategy", "bfs"),
     }
 
 
@@ -102,6 +105,7 @@ async def scrape_keywords(
             "allow_subdomains": request.allow_subdomains,
             "include_paths": request.include_paths,
             "exclude_patterns": request.exclude_patterns,
+            "crawl_strategy": request.crawl_strategy,
         }
 
         job_id = await job_manager.create_job(

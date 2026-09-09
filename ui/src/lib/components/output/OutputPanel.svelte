@@ -2,6 +2,7 @@
 	import { currentJobForTab, jobsStore } from '$lib/stores/jobs';
 	import { endpoints } from '$lib/api/endpoints';
 	import { notifications } from '$lib/stores/notifications';
+	import CrawlGraph from './CrawlGraph.svelte';
 	import type { ActiveTab, JobPreviewResult } from '$lib/api/types';
 
 	let {
@@ -38,7 +39,8 @@
 					words_count: job.words_count,
 					source_keywords: job.source_keywords,
 					truncated_count: job.truncated_count,
-					rule_format: job.rule_format
+					rule_format: job.rule_format,
+					crawl_strategy: job.crawl_strategy
 				});
 				if (job.status === 'completed') {
 					stopPolling();
@@ -198,6 +200,9 @@
 		</div>
 
 		{#if currentJob.status === 'completed'}
+			{#if currentJob.type !== 'mutate'}
+				<CrawlGraph jobId={currentJob.job_id} />
+			{/if}
 			{#if preview?.mode === 'rules'}
 				<div class="flex flex-col gap-3" style="animation: fade-in 300ms ease">
 					<div class="flex items-baseline justify-between">

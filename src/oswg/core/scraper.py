@@ -57,7 +57,10 @@ class Scraper:
         allow_subdomains: bool = False,
         include_paths: list[str] | None = None,
         exclude_patterns: list[str] | None = None,
+        crawl_strategy: str = "bfs",
     ):
+        if crawl_strategy not in ("bfs", "dfs"):
+            raise ValueError(f"Unknown crawl strategy '{crawl_strategy}' (expected 'bfs' or 'dfs')")
         self.max_pages = max_pages
         self.timeout = timeout
         self.min_word_length = min_word_length
@@ -72,9 +75,11 @@ class Scraper:
         self.allow_subdomains = allow_subdomains
         self.include_paths = [p for p in (include_paths or []) if p]
         self.exclude_patterns = [p for p in (exclude_patterns or []) if p]
+        self.crawl_strategy = crawl_strategy
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
+        self.link_graph: dict[str, list[str]] = {}
         self._robots_cache: dict[str, Protego | None] = {}
 
     @property
@@ -195,6 +200,8 @@ class Scraper:
 
         content = ScrapedContent(url=url)
         queue = list(urls_to_scrape)
+        # BFS pops the front (FIFO); DFS pops the back (LIFO).
+        pop_index = 0 if self.crawl_strategy == "bfs" else -1
 
         async with httpx.AsyncClient(
             timeout=self.timeout,
@@ -205,7 +212,7 @@ class Scraper:
         ) as client:
             first_request = True
             while queue and len(self.visited_urls) < self.max_pages:
-                current_url = queue.pop(0)
+                current_url = queue.pop(pop_index)
                 if current_url in self.visited_urls:
                     continue
 
@@ -246,6 +253,7 @@ class Scraper:
                             f"{current_url} ({len(page_words)} words)",
                         )
 
+                    enqueued_children: list[str] = []
                     for link in discovered_links:
                         if (
                             link not in self.visited_urls
@@ -253,6 +261,8 @@ class Scraper:
                             and len(self.visited_urls) + len(queue) < self.max_pages
                         ):
                             queue.append(link)
+                            enqueued_children.append(link)
+                    self.link_graph[current_url] = enqueued_children
                 except Exception as e:
                     self.failed_pages.append((current_url, str(e)))
                     if on_progress:
@@ -289,6 +299,8 @@ class Scraper:
         self._seed_registrable = self._registrable_domain(seed_parsed.netloc)
         all_content = ScrapedContent(url=urls[0] if urls else "")
         queue = list(urls)
+        # BFS pops the front (FIFO); DFS pops the back (LIFO).
+        pop_index = 0 if self.crawl_strategy == "bfs" else -1
 
         async with httpx.AsyncClient(
             timeout=self.timeout,
@@ -299,7 +311,7 @@ class Scraper:
         ) as client:
             first_request = True
             while queue and len(self.visited_urls) < self.max_pages:
-                current_url = queue.pop(0)
+                current_url = queue.pop(pop_index)
                 if current_url in self.visited_urls:
                     continue
 
@@ -340,6 +352,7 @@ class Scraper:
                             f"{current_url} ({len(page_words)} words)",
                         )
 
+                    enqueued_children: list[str] = []
                     for link in discovered_links:
                         if (
                             link not in self.visited_urls
@@ -347,6 +360,8 @@ class Scraper:
                             and len(self.visited_urls) + len(queue) < self.max_pages
                         ):
                             queue.append(link)
+                            enqueued_children.append(link)
+                    self.link_graph[current_url] = enqueued_children
                 except Exception as e:
                     self.failed_pages.append((current_url, str(e)))
                     if on_progress:

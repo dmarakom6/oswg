@@ -101,3 +101,4 @@ class GenerationResult:
     config: GenerationConfig
     truncated_count: int = 0
     base_words: list[str] = field(default_factory=list)
+    link_graph: dict[str, list[str]] = field(default_factory=dict)

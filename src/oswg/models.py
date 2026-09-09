@@ -40,6 +40,9 @@ class GenerateRequest(BaseRequest):
     exclude_patterns: list[str] = Field(
         default=[], description="Skip URLs whose path contains any of these substrings.", max_length=50
     )
+    crawl_strategy: str = Field(
+        default="bfs", description="Link discovery order: bfs (breadth-first, default) or dfs (depth-first)."
+    )
     size: int = Field(10000, description="Target wordlist size.", ge=1, le=1000000)
     max_pages: int = Field(10, description="Maximum pages to scrape.", ge=1, le=100)
     min_length: int = Field(3, description="Minimum word length.", ge=1, le=32)
@@ -135,6 +138,13 @@ class GenerateRequest(BaseRequest):
             raise ValueError("must be one of: jtr, hashcat")
         return value
 
+    @field_validator("crawl_strategy")
+    @classmethod
+    def _validate_crawl_strategy(cls, value: str) -> str:
+        if value not in ("bfs", "dfs"):
+            raise ValueError("must be one of: bfs, dfs")
+        return value
+
     @field_validator("ai_provider")
     @classmethod
     def _validate_ai_provider(cls, value: str) -> str:
@@ -165,6 +175,9 @@ class ScrapeRequest(BaseRequest):
     exclude_patterns: list[str] = Field(
         default=[], description="Skip URLs whose path contains any of these substrings.", max_length=50
     )
+    crawl_strategy: str = Field(
+        default="bfs", description="Link discovery order: bfs (breadth-first, default) or dfs (depth-first)."
+    )
     max_pages: int = Field(10, description="Maximum pages to scrape.", ge=1, le=100)
     timeout: float = Field(30.0, description="HTTP request timeout in seconds.", ge=1.0, le=300.0)
     respect_robots: bool = Field(False, description="Respect robots.txt rules.")
@@ -174,6 +187,13 @@ class ScrapeRequest(BaseRequest):
     headers: dict[str, str] = Field(default={}, description="Custom request headers.")
     cookies: dict[str, str] = Field(default={}, description="Custom request cookies.")
     proxy: Optional[str] = Field(None, description="Proxy for requests (http/https/socks5).", max_length=200)
+
+    @field_validator("crawl_strategy")
+    @classmethod
+    def _validate_crawl_strategy(cls, value: str) -> str:
+        if value not in ("bfs", "dfs"):
+            raise ValueError("must be one of: bfs, dfs")
+        return value
 
 
 class MutateRequest(BaseModel):
@@ -220,6 +240,7 @@ class JobStatusResponse(BaseModel):
     source_keywords: Optional[int] = None
     truncated_count: Optional[int] = None
     rule_format: Optional[str] = None
+    crawl_strategy: Optional[str] = None
 
 
 class JobListItem(BaseModel):

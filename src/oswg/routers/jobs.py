@@ -97,6 +97,7 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         source_keywords=stats.get("source_keywords"),
         truncated_count=stats.get("truncated_count"),
         rule_format=stats.get("rule_format"),
+        crawl_strategy=stats.get("crawl_strategy"),
     )
 
 
@@ -142,6 +143,61 @@ async def download_job_result(job_id: str, target: str = "rules"):
         filename=f"oswg_{job_id}{extension}",
         media_type="text/plain",
     )
+
+
+@router.get(
+    "/jobs/{job_id}/graph",
+    responses={
+        404: {"model": ErrorResponse, "description": "Job or graph file not found"},
+    },
+)
+async def get_job_graph(job_id: str):
+    """Return the crawl graph (nodes + edges) for a completed job."""
+    job = await job_manager.get_job_status(job_id)
+
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    if job["status"] != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Job {job_id} is not completed (status: {job['status']})",
+        )
+
+    graph_path = file_manager.get_file_path(job_id, ".json")
+    if not graph_path.exists():
+        raise HTTPException(
+            status_code=404, detail=f"Crawl graph for job {job_id} not found"
+        )
+
+    import json as json_mod
+
+    with open(graph_path, "r", encoding="utf-8") as f:
+        data = json_mod.load(f)
+
+    link_graph: dict[str, list[str]] = data.get("link_graph", {})
+
+    stats = {}
+    if job.get("result_stats"):
+        try:
+            stats = json_mod.loads(job["result_stats"])
+        except (ValueError, TypeError):
+            stats = {}
+
+    # Build nodes (crawled pages) and edges (parent -> child).
+    nodes = [{"id": url} for url in link_graph]
+    edges = []
+    for parent, children in link_graph.items():
+        for child in children:
+            if child in link_graph:
+                edges.append([parent, child])
+
+    return {
+        "job_id": job_id,
+        "crawl_strategy": stats.get("crawl_strategy"),
+        "nodes": nodes,
+        "edges": edges,
+    }
 
 
 @router.get(

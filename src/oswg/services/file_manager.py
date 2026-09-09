@@ -46,6 +46,10 @@ class FileManager:
             json.dump(data, f, indent=2)
         return file_path
 
+    def save_graph(self, job_id: str, link_graph: dict[str, list[str]]) -> Path:
+        """Save a crawl graph (url -> children) as JSON."""
+        return self.save_json(job_id, {"link_graph": link_graph})
+
     def file_exists(self, job_id: str, extension: str = ".txt") -> bool:
         """Check if a file exists."""
         return self.get_file_path(job_id, extension).exists()

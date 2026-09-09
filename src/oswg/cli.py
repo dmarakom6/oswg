@@ -82,6 +82,15 @@ def validate_rule_format(value: str | None) -> str | None:
     return value.lower() if value else None
 
 
+def validate_crawl_strategy(value: str) -> str:
+    """Validate --crawl-strategy value."""
+    if value.lower() not in ("bfs", "dfs"):
+        raise typer.BadParameter(
+            f"Unknown crawl strategy '{value}' (expected 'bfs' or 'dfs')"
+        )
+    return value.lower()
+
+
 def parse_cookies(values: list[str] | None) -> dict[str, str] | None:
     """Parse repeatable 'name=value' flags into a cookies dict."""
     if not values:
@@ -173,6 +182,11 @@ def generate(
     exclude: list[str] = typer.Option(
         None, "--exclude",
         help="Skip URLs whose path contains this substring, repeatable.",
+    ),
+    crawl_strategy: str = typer.Option(
+        "bfs", "--crawl-strategy",
+        help="Link discovery order: bfs (breadth-first, default) or dfs (depth-first).",
+        callback=validate_crawl_strategy,
     ),
     no_filter_stopwords: bool = typer.Option(False, "--no-filter-stopwords", help="Disable common word filtering."),
     stopword_threshold: float = typer.Option(
@@ -352,6 +366,7 @@ def generate(
     generator.scraper.allow_subdomains = allow_subdomains
     generator.scraper.include_paths = include_path
     generator.scraper.exclude_patterns = exclude
+    generator.scraper.crawl_strategy = crawl_strategy
     generator.scraper.proxy = proxy
 
     primary_url = url[0]
@@ -450,6 +465,11 @@ def scrape(
         None, "--exclude",
         help="Skip URLs whose path contains this substring, repeatable.",
     ),
+    crawl_strategy: str = typer.Option(
+        "bfs", "--crawl-strategy",
+        help="Link discovery order: bfs (breadth-first, default) or dfs (depth-first).",
+        callback=validate_crawl_strategy,
+    ),
     output: Path = typer.Option(None, "--output", "-o", help="Save keywords to file."),
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all keywords (not just preview)."),
     timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
@@ -481,6 +501,7 @@ def scrape(
         allow_subdomains=allow_subdomains,
         include_paths=include_path,
         exclude_patterns=exclude,
+        crawl_strategy=crawl_strategy,
     )
     on_progress = make_verbose_callback() if verbose else None
 

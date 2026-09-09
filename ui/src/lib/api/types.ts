@@ -10,6 +10,7 @@ export interface GenerateRequest {
 	allow_subdomains?: boolean;
 	include_paths?: string[];
 	exclude_patterns?: string[];
+	crawl_strategy?: 'bfs' | 'dfs';
 	size: number;
 	max_pages: number;
 	min_length: number;
@@ -60,6 +61,7 @@ export interface ScrapeRequest {
 	allow_subdomains?: boolean;
 	include_paths?: string[];
 	exclude_patterns?: string[];
+	crawl_strategy?: 'bfs' | 'dfs';
 	max_pages: number;
 	timeout?: number;
 	respect_robots?: boolean;
@@ -110,6 +112,7 @@ export interface Job {
 	source_keywords?: number | null;
 	truncated_count?: number | null;
 	rule_format?: 'jtr' | 'hashcat' | null;
+	crawl_strategy?: 'bfs' | 'dfs' | null;
 }
 
 export interface MutateResponse {
@@ -152,6 +155,13 @@ export interface JobRulePreview {
 }
 
 export type JobPreviewResult = JobPreview | JobRulePreview;
+
+export interface CrawlGraph {
+	job_id: string;
+	crawl_strategy: 'bfs' | 'dfs' | null;
+	nodes: { id: string }[];
+	edges: [string, string][];
+}
 
 export interface WSJobMessage {
 	job_id: string;

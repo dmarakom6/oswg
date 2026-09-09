@@ -2,20 +2,24 @@
 	let {
 		value,
 		onchange,
-		options
+		options,
+		disabled = false
 	}: {
 		value: number | string;
 		onchange: (val: number | string) => void;
 		options: { value: number | string; label: string }[];
+		disabled?: boolean;
 	} = $props();
 </script>
 
-<div class="inline-flex rounded-md border border-border">
+<div class="inline-flex rounded-md border border-border {disabled ? 'opacity-50' : ''}">
 	{#each options as opt}
 		<button
 			type="button"
+			disabled={disabled}
 			class="px-3 py-1.5 text-sm transition-colors first:rounded-l-md last:rounded-r-md
-				{value === opt.value
+				{disabled ? 'cursor-not-allowed'
+				: value === opt.value
 				? 'bg-primary text-primary-foreground'
 				: 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}"
 			onclick={() => onchange(opt.value)}

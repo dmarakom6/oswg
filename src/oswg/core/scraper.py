@@ -254,14 +254,15 @@ class Scraper:
                         )
 
                     enqueued_children: list[str] = []
-                    for link in discovered_links:
-                        if (
-                            link not in self.visited_urls
-                            and link not in queue
-                            and len(self.visited_urls) + len(queue) < self.max_pages
-                        ):
-                            queue.append(link)
-                            enqueued_children.append(link)
+                    if not sitemap:
+                        for link in discovered_links:
+                            if (
+                                link not in self.visited_urls
+                                and link not in queue
+                                and len(self.visited_urls) + len(queue) < self.max_pages
+                            ):
+                                queue.append(link)
+                                enqueued_children.append(link)
                     self.link_graph[current_url] = enqueued_children
                 except Exception as e:
                     self.failed_pages.append((current_url, str(e)))
@@ -353,14 +354,15 @@ class Scraper:
                         )
 
                     enqueued_children: list[str] = []
-                    for link in discovered_links:
-                        if (
-                            link not in self.visited_urls
-                            and link not in queue
-                            and len(self.visited_urls) + len(queue) < self.max_pages
-                        ):
-                            queue.append(link)
-                            enqueued_children.append(link)
+                    if not sitemap:
+                        for link in discovered_links:
+                            if (
+                                link not in self.visited_urls
+                                and link not in queue
+                                and len(self.visited_urls) + len(queue) < self.max_pages
+                            ):
+                                queue.append(link)
+                                enqueued_children.append(link)
                     self.link_graph[current_url] = enqueued_children
                 except Exception as e:
                     self.failed_pages.append((current_url, str(e)))

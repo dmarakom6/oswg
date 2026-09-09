@@ -114,8 +114,11 @@
 					{ value: 'bfs', label: 'Breadth-first' },
 					{ value: 'dfs', label: 'Depth-first' }
 				]}
+				disabled={useSitemap}
 			/>
-			{#if crawlStrategy === 'dfs'}
+			{#if useSitemap}
+				<p class="text-xs text-muted-foreground">Link discovery is replaced by the sitemap.</p>
+			{:else if crawlStrategy === 'dfs'}
 				<p class="text-xs text-muted-foreground">DFS goes deep down one branch before siblings — can burn max_pages on a single path.</p>
 			{/if}
 		</div>

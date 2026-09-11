@@ -1,10 +1,12 @@
 <script lang="ts">
 	let {
 		value,
-		onchange
+		onchange,
+		showLabel = true
 	}: {
 		value: string;
 		onchange: (val: string) => void;
+		showLabel?: boolean;
 	} = $props();
 
 	let fileInput: HTMLInputElement | undefined = $state();
@@ -22,7 +24,9 @@
 
 <div class="space-y-1.5">
 	<div class="flex items-center justify-between gap-3">
-		<span class="block text-sm font-medium text-foreground">Cookie file (cookies.txt)</span>
+		{#if showLabel}
+			<span class="block text-sm font-medium text-foreground">Cookie file (cookies.txt)</span>
+		{/if}
 		<label class="cursor-pointer rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
 			Load file…
 			<input
@@ -35,7 +39,8 @@
 		</label>
 	</div>
 	<textarea
-		bind:value={value}
+		value={value}
+		oninput={(e) => onchange(e.currentTarget.value)}
 		rows={4}
 		spellcheck="false"
 		placeholder="# Netscape HTTP Cookie File&#10;.example.com&#9;TRUE&#9;/&#9;FALSE&#9;1754518563&#9;session&#9;abc123"

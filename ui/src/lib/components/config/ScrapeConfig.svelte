@@ -4,8 +4,7 @@
 	import ToggleSwitch from './ToggleSwitch.svelte';
 	import SegmentedControl from './SegmentedControl.svelte';
 	import KeyValueList from './KeyValueList.svelte';
-	import CookieFileField from './CookieFileField.svelte';
-	import SessionStateField from './SessionStateField.svelte';
+	import AuthField from './AuthField.svelte';
 	import StringList from './StringList.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
 	import { isValidUrl } from '$lib/utils/validators';
@@ -190,9 +189,16 @@
 				</div>
 			</div>
 			<KeyValueList kind="header" items={headers} onchange={(v) => (headers = v)} />
-			<KeyValueList kind="cookie" items={cookies} onchange={(v) => (cookies = v)} />
-			<CookieFileField value={cookieFile} onchange={(v) => (cookieFile = v)} />
-			<SessionStateField value={sessionState} onchange={(v) => (sessionState = v)} />
+			<AuthField
+				cookies={cookies}
+				cookieFile={cookieFile}
+				sessionState={sessionState}
+				onchange={(v) => {
+					cookies = v.cookies;
+					cookieFile = v.cookieFile;
+					sessionState = v.sessionState;
+				}}
+			/>
 			<StringList
 				label="Only scrape paths"
 				items={includePaths}

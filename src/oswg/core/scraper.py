@@ -12,6 +12,7 @@ import httpx
 from bs4 import BeautifulSoup
 from protego import Protego
 
+from oswg.core.cookie_file import Cookie, parse_cookie_file
 from oswg.core.models import ScrapedContent
 
 ProgressCallback = Callable[[str], None]
@@ -53,6 +54,7 @@ class Scraper:
         jitter: bool = False,
         cookies: dict[str, str] | None = None,
         headers: dict[str, str] | None = None,
+        cookie_file: str | None = None,
         proxy: str | None = None,
         allow_subdomains: bool = False,
         include_paths: list[str] | None = None,
@@ -72,6 +74,9 @@ class Scraper:
         self.jitter = jitter
         self.cookies = cookies
         self.headers = headers
+        self.cookie_jar: list[Cookie] = []
+        if cookie_file:
+            self.cookie_jar = parse_cookie_file(cookie_file)
         self.proxy = proxy
         self.allow_subdomains = allow_subdomains
         self.include_paths = [p for p in (include_paths or []) if p]
@@ -96,9 +101,21 @@ class Scraper:
         return merged or None
 
     @property
-    def _cookies(self) -> dict[str, str] | None:
-        """Request cookies, or None when none are set."""
-        return self.cookies or None
+    def _cookies(self) -> httpx.Cookies | None:
+        """Combined cookie jar (flat dict + cookie file), or None when empty."""
+        if not self.cookies and not self.cookie_jar:
+            return None
+        jar = httpx.Cookies()
+        for name, value in (self.cookies or {}).items():
+            jar.set(name, value)
+        for cookie in self.cookie_jar:
+            jar.set(
+                cookie.name,
+                cookie.value,
+                domain=cookie.domain,
+                path=cookie.path,
+            )
+        return jar
 
     async def _emit_progress(self, callback: ProgressCallback | None, message: str) -> None:
         """Call a progress callback, awaiting it if it's a coroutine function."""
@@ -465,6 +482,24 @@ class Scraper:
 
         return content, discovered_links, page_words
 
+    def _playwright_cookies(self) -> list[dict]:
+        """Build Playwright cookie objects from the flat dict and cookie file."""
+        cookies: list[dict] = []
+        seed_domain = getattr(self, "_seed_domain", None)
+        for name, value in (self.cookies or {}).items():
+            cookies.append({"name": name, "value": value, "domain": seed_domain or "localhost", "path": "/"})
+        for cookie in self.cookie_jar:
+            cookies.append(
+                {
+                    "name": cookie.name,
+                    "value": cookie.value,
+                    "domain": cookie.domain,
+                    "path": cookie.path,
+                    "expires": cookie.expires or 0,
+                }
+            )
+        return cookies
+
     async def _render_page(self, url: str) -> tuple[str, bytes | None]:
         """Load a page in a real browser (JS rendering) and return (html, png)."""
         try:
@@ -478,10 +513,16 @@ class Scraper:
         if self._js_browser is None:
             self._pw = await async_playwright().start()
             self._js_browser = await self._pw.chromium.launch(headless=True)
+
+            extra_headers = dict(self.headers or {})
+            extra_headers.pop("User-Agent", None)
             self._js_context = await self._js_browser.new_context(
                 user_agent=self.user_agent or ROBOTS_USER_AGENT,
                 ignore_https_errors=True,
+                extra_http_headers=extra_headers or None,
             )
+            if self.cookies or self.cookie_jar:
+                await self._js_context.add_cookies(self._playwright_cookies())
 
         page = await self._js_context.new_page()
         try:

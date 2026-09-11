@@ -108,6 +108,17 @@ def parse_cookies(values: list[str] | None) -> dict[str, str] | None:
     return cookies
 
 
+def _read_cookie_file(path: Path | None) -> list:
+    """Read a Netscape cookies.txt file into parsed Cookie objects."""
+    if path is None:
+        return []
+    if not path.exists():
+        raise typer.BadParameter(f"Cookie file not found: {path}")
+    from oswg.core.cookie_file import parse_cookie_file
+
+    return parse_cookie_file(path.read_text(encoding="utf-8", errors="replace"))
+
+
 def collect_merge_words(
     merge_files: list[Path] | None,
     merge_builtin: bool,
@@ -223,6 +234,10 @@ def generate(
     ),
     header: list[str] = typer.Option(None, "--header", help="Custom header, repeatable (e.g. --header 'X-Foo: bar')."),
     cookie: list[str] = typer.Option(None, "--cookie", help="Custom cookie, repeatable (e.g. --cookie 'session=abc')."),
+    cookie_file: Path = typer.Option(
+        None, "--cookie-file",
+        help="Read session cookies from a cookies.txt file (curl -b compatible).",
+    ),
     proxy: str = typer.Option(None, "--proxy", help="Proxy for requests (e.g. http://127.0.0.1:8080 or socks5://127.0.0.1:9050)."),
     merge: list[Path] = typer.Option(
         None, "--merge",
@@ -369,6 +384,7 @@ def generate(
     generator.scraper.jitter = jitter
     generator.scraper.headers = parse_headers(header)
     generator.scraper.cookies = parse_cookies(cookie)
+    generator.scraper.cookie_jar = _read_cookie_file(cookie_file)
     generator.scraper.allow_subdomains = allow_subdomains
     generator.scraper.include_paths = include_path
     generator.scraper.exclude_patterns = exclude
@@ -494,6 +510,10 @@ def scrape(
     jitter: bool = typer.Option(False, "--jitter", help="Randomize delay by ±50%% (with --rate-limit)."),
     header: list[str] = typer.Option(None, "--header", help="Custom header, repeatable (e.g. --header 'X-Foo: bar')."),
     cookie: list[str] = typer.Option(None, "--cookie", help="Custom cookie, repeatable (e.g. --cookie 'session=abc')."),
+    cookie_file: Path = typer.Option(
+        None, "--cookie-file",
+        help="Read session cookies from a cookies.txt file (curl -b compatible).",
+    ),
     proxy: str = typer.Option(None, "--proxy", help="Proxy for requests (e.g. http://127.0.0.1:8080 or socks5://127.0.0.1:9050)."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed scraping progress."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
@@ -519,6 +539,7 @@ def scrape(
         crawl_strategy=crawl_strategy,
         js_render=js_render,
     )
+    scraper.cookie_jar = _read_cookie_file(cookie_file)
     on_progress = make_verbose_callback() if verbose else None
 
     try:

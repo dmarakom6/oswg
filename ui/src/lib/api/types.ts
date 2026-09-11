@@ -35,6 +35,7 @@ export interface GenerateRequest {
 	jitter?: boolean;
 	headers?: Record<string, string>;
 	cookies?: Record<string, string>;
+	cookie_file?: string;
 	proxy?: string;
 	merge_words?: string[];
 	merge_max?: number;
@@ -72,6 +73,7 @@ export interface ScrapeRequest {
 	jitter?: boolean;
 	headers?: Record<string, string>;
 	cookies?: Record<string, string>;
+	cookie_file?: string;
 	proxy?: string;
 	retention_seconds?: number;
 }

@@ -88,6 +88,13 @@ class GenerateRequest(BaseRequest):
     jitter: bool = Field(False, description="Randomize delay by ±50% (with rate_limit).")
     headers: dict[str, str] = Field(default={}, description="Custom request headers.")
     cookies: dict[str, str] = Field(default={}, description="Custom request cookies.")
+    cookie_file: str = Field(
+        default="",
+        description=(
+            "Netscape cookies.txt contents (paste from browser export) for "
+            "authenticated scraping."
+        ),
+    )
     proxy: Optional[str] = Field(None, description="Proxy for requests (http/https/socks5).", max_length=200)
     merge_words: list[str] = Field(default=[], description="External words to merge and mutate.", max_length=100000)
     merge_max: int = Field(5000, description="Total cap on merged words.", ge=1, le=1000000)
@@ -192,6 +199,13 @@ class ScrapeRequest(BaseRequest):
     jitter: bool = Field(False, description="Randomize delay by ±50% (with rate_limit).")
     headers: dict[str, str] = Field(default={}, description="Custom request headers.")
     cookies: dict[str, str] = Field(default={}, description="Custom request cookies.")
+    cookie_file: str = Field(
+        default="",
+        description=(
+            "Netscape cookies.txt contents (paste from browser export) for "
+            "authenticated scraping."
+        ),
+    )
     proxy: Optional[str] = Field(None, description="Proxy for requests (http/https/socks5).", max_length=200)
 
     @field_validator("crawl_strategy")

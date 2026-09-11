@@ -5,6 +5,7 @@ import json
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from oswg.config import settings
+from oswg.core.cookie_file import parse_cookie_file
 from oswg.core.scraper import Scraper
 from oswg.models import (
     ErrorResponse,
@@ -17,6 +18,13 @@ from oswg.services.file_manager import file_manager
 from oswg.services.job_manager import job_manager
 
 router = APIRouter()
+
+
+def _parse_cookie_text(text: str | None) -> list:
+    """Parse pasted cookies.txt contents into Cookie objects."""
+    if not text:
+        return []
+    return parse_cookie_file(text)
 
 
 async def execute_scrape(job_id: str) -> dict:
@@ -45,6 +53,7 @@ async def execute_scrape(job_id: str) -> dict:
         crawl_strategy=config_data.get("crawl_strategy", "bfs"),
         js_render=config_data.get("js_render", False),
     )
+    scraper.cookie_jar = _parse_cookie_text(config_data.get("cookie_file"))
 
     await job_manager.update_progress(job_id, 30.0, "Scraping website...")
 
@@ -109,6 +118,7 @@ async def scrape_keywords(
             "jitter": request.jitter,
             "headers": request.headers,
             "cookies": request.cookies,
+            "cookie_file": request.cookie_file,
             "proxy": request.proxy,
             "allow_subdomains": request.allow_subdomains,
             "include_paths": request.include_paths,

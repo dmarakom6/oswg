@@ -4,6 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from oswg.config import settings
 from oswg.core import WordlistGenerator
+from oswg.core.cookie_file import parse_cookie_file
 from oswg.core.models import GenerationConfig, default_years
 from oswg.models import (
     ErrorResponse,
@@ -16,6 +17,13 @@ from oswg.services.file_manager import file_manager
 from oswg.services.job_manager import job_manager
 
 router = APIRouter()
+
+
+def _parse_cookie_text(text: str | None) -> list:
+    """Parse pasted cookies.txt contents into Cookie objects."""
+    if not text:
+        return []
+    return parse_cookie_file(text)
 
 
 def _resolve_merge_words(request: GenerateRequest) -> list[str]:
@@ -57,6 +65,7 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.jitter = config_data.get("jitter", False)
     generator.scraper.headers = config_data.get("headers") or None
     generator.scraper.cookies = config_data.get("cookies") or None
+    generator.scraper.cookie_jar = _parse_cookie_text(config_data.get("cookie_file"))
     generator.scraper.proxy = config_data.get("proxy")
     generator.scraper.allow_subdomains = config_data.get("allow_subdomains", False)
     generator.scraper.include_paths = config_data.get("include_paths", [])
@@ -196,6 +205,7 @@ async def generate_wordlist(
             "jitter": request.jitter,
             "headers": request.headers,
             "cookies": request.cookies,
+            "cookie_file": request.cookie_file,
             "proxy": request.proxy,
             "allow_subdomains": request.allow_subdomains,
             "include_paths": request.include_paths,

@@ -5,6 +5,7 @@
 	import SegmentedControl from './SegmentedControl.svelte';
 	import KeyValueList from './KeyValueList.svelte';
 	import CookieFileField from './CookieFileField.svelte';
+	import SessionStateField from './SessionStateField.svelte';
 	import StringList from './StringList.svelte';
 	import MergeConfig from './MergeConfig.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
@@ -35,6 +36,7 @@
 	let headers = $state<{ name: string; value: string }[]>([]);
 	let cookies = $state<{ name: string; value: string }[]>([]);
 	let cookieFile = $state('');
+	let sessionState = $state('');
 	let proxy = $state('');
 	let merge = $state({ merge_words: [] as string[], merge_max: DEFAULTS.mergeMax, merge_builtin: false, merge_rockyou: false });
 	let ruleFormat = $state<'jtr' | 'hashcat' | undefined>(undefined);
@@ -124,6 +126,7 @@
 				headers: Object.fromEntries(headers.filter(h => h.name.trim()).map(h => [h.name.trim(), h.value])),
 				cookies: Object.fromEntries(cookies.filter(c => c.name.trim()).map(c => [c.name.trim(), c.value])),
 				cookie_file: cookieFile,
+				storage_state: sessionState,
 				...((proxy.trim().length > 0) ? { proxy: proxy.trim() } : {}),
 				merge_words: merge.merge_words,
 				merge_max: merge.merge_max,
@@ -463,6 +466,7 @@
 			<KeyValueList kind="header" items={headers} onchange={(v) => (headers = v)} />
 			<KeyValueList kind="cookie" items={cookies} onchange={(v) => (cookies = v)} />
 			<CookieFileField value={cookieFile} onchange={(v) => (cookieFile = v)} />
+			<SessionStateField value={sessionState} onchange={(v) => (sessionState = v)} />
 			<StringList
 				label="Only scrape paths"
 				items={includePaths}

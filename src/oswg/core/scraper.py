@@ -14,6 +14,7 @@ from protego import Protego
 
 from oswg.core.cookie_file import Cookie, parse_cookie_file
 from oswg.core.models import ScrapedContent
+from oswg.core.session import cookies_from_session
 
 ProgressCallback = Callable[[str], None]
 
@@ -61,6 +62,7 @@ class Scraper:
         exclude_patterns: list[str] | None = None,
         crawl_strategy: str = "bfs",
         js_render: bool = False,
+        storage_state: dict | None = None,
     ):
         if crawl_strategy not in ("bfs", "dfs"):
             raise ValueError(f"Unknown crawl strategy '{crawl_strategy}' (expected 'bfs' or 'dfs')")
@@ -77,6 +79,9 @@ class Scraper:
         self.cookie_jar: list[Cookie] = []
         if cookie_file:
             self.cookie_jar = parse_cookie_file(cookie_file)
+        self.storage_state = storage_state
+        if storage_state:
+            self.cookie_jar.extend(cookies_from_session(storage_state))
         self.proxy = proxy
         self.allow_subdomains = allow_subdomains
         self.include_paths = [p for p in (include_paths or []) if p]
@@ -520,6 +525,7 @@ class Scraper:
                 user_agent=self.user_agent or ROBOTS_USER_AGENT,
                 ignore_https_errors=True,
                 extra_http_headers=extra_headers or None,
+                storage_state=self.storage_state or None,
             )
             if self.cookies or self.cookie_jar:
                 await self._js_context.add_cookies(self._playwright_cookies())

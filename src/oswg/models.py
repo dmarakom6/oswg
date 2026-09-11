@@ -95,6 +95,13 @@ class GenerateRequest(BaseRequest):
             "authenticated scraping."
         ),
     )
+    storage_state: str = Field(
+        default="",
+        description=(
+            "Playwright storage_state JSON (from 'oswg login') with cookies and "
+            "localStorage for authenticated scraping."
+        ),
+    )
     proxy: Optional[str] = Field(None, description="Proxy for requests (http/https/socks5).", max_length=200)
     merge_words: list[str] = Field(default=[], description="External words to merge and mutate.", max_length=100000)
     merge_max: int = Field(5000, description="Total cap on merged words.", ge=1, le=1000000)
@@ -204,6 +211,13 @@ class ScrapeRequest(BaseRequest):
         description=(
             "Netscape cookies.txt contents (paste from browser export) for "
             "authenticated scraping."
+        ),
+    )
+    storage_state: str = Field(
+        default="",
+        description=(
+            "Playwright storage_state JSON (from 'oswg login') with cookies and "
+            "localStorage for authenticated scraping."
         ),
     )
     proxy: Optional[str] = Field(None, description="Proxy for requests (http/https/socks5).", max_length=200)

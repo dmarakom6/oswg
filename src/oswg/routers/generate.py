@@ -26,6 +26,16 @@ def _parse_cookie_text(text: str | None) -> list:
     return parse_cookie_file(text)
 
 
+def _parse_session_text(text: str | None) -> dict | None:
+    """Parse pasted storage_state JSON text."""
+    from oswg.core.session import parse_session_text
+
+    try:
+        return parse_session_text(text)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
 def _resolve_merge_words(request: GenerateRequest) -> list[str]:
     """Combine uploaded words with bundled/rockyou lists for merging."""
     from oswg.core.wordlists import detect_rockyou, iter_builtin, iter_wordlist
@@ -65,7 +75,13 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.jitter = config_data.get("jitter", False)
     generator.scraper.headers = config_data.get("headers") or None
     generator.scraper.cookies = config_data.get("cookies") or None
+    session = _parse_session_text(config_data.get("storage_state"))
+    generator.scraper.storage_state = session
     generator.scraper.cookie_jar = _parse_cookie_text(config_data.get("cookie_file"))
+    if session:
+        from oswg.core.session import cookies_from_session
+
+        generator.scraper.cookie_jar.extend(cookies_from_session(session))
     generator.scraper.proxy = config_data.get("proxy")
     generator.scraper.allow_subdomains = config_data.get("allow_subdomains", False)
     generator.scraper.include_paths = config_data.get("include_paths", [])
@@ -178,6 +194,7 @@ async def generate_wordlist(
 ) -> JobResponse:
     """Generate a targeted wordlist from a website URL."""
     try:
+        _parse_session_text(request.storage_state)
         config = {
             "url": request.url,
             "urls": request.urls,
@@ -206,6 +223,7 @@ async def generate_wordlist(
             "headers": request.headers,
             "cookies": request.cookies,
             "cookie_file": request.cookie_file,
+            "storage_state": request.storage_state,
             "proxy": request.proxy,
             "allow_subdomains": request.allow_subdomains,
             "include_paths": request.include_paths,
@@ -243,5 +261,7 @@ async def generate_wordlist(
             message="Wordlist generation started",
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

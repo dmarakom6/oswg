@@ -36,6 +36,7 @@ export interface GenerateRequest {
 	headers?: Record<string, string>;
 	cookies?: Record<string, string>;
 	cookie_file?: string;
+	storage_state?: string;
 	proxy?: string;
 	merge_words?: string[];
 	merge_max?: number;
@@ -74,6 +75,7 @@ export interface ScrapeRequest {
 	headers?: Record<string, string>;
 	cookies?: Record<string, string>;
 	cookie_file?: string;
+	storage_state?: string;
 	proxy?: string;
 	retention_seconds?: number;
 }

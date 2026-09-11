@@ -27,6 +27,16 @@ def _parse_cookie_text(text: str | None) -> list:
     return parse_cookie_file(text)
 
 
+def _parse_session_text(text: str | None) -> dict | None:
+    """Parse pasted storage_state JSON text."""
+    from oswg.core.session import parse_session_text
+
+    try:
+        return parse_session_text(text)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
 async def execute_scrape(job_id: str) -> dict:
     """Execute keyword scraping job."""
     job = await job_manager.get_job_status(job_id)
@@ -52,8 +62,9 @@ async def execute_scrape(job_id: str) -> dict:
         exclude_patterns=config_data.get("exclude_patterns", []),
         crawl_strategy=config_data.get("crawl_strategy", "bfs"),
         js_render=config_data.get("js_render", False),
+        storage_state=_parse_session_text(config_data.get("storage_state")),
     )
-    scraper.cookie_jar = _parse_cookie_text(config_data.get("cookie_file"))
+    scraper.cookie_jar = _parse_cookie_text(config_data.get("cookie_file")) + scraper.cookie_jar
 
     await job_manager.update_progress(job_id, 30.0, "Scraping website...")
 
@@ -106,6 +117,7 @@ async def scrape_keywords(
 ) -> JobResponse:
     """Scrape keywords from a website URL."""
     try:
+        _parse_session_text(request.storage_state)
         config = {
             "url": request.url,
             "urls": request.urls,
@@ -119,6 +131,7 @@ async def scrape_keywords(
             "headers": request.headers,
             "cookies": request.cookies,
             "cookie_file": request.cookie_file,
+            "storage_state": request.storage_state,
             "proxy": request.proxy,
             "allow_subdomains": request.allow_subdomains,
             "include_paths": request.include_paths,
@@ -142,5 +155,7 @@ async def scrape_keywords(
             message="Keyword scraping started",
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

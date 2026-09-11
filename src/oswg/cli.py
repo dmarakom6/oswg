@@ -119,6 +119,63 @@ def _read_cookie_file(path: Path | None) -> list:
     return parse_cookie_file(path.read_text(encoding="utf-8", errors="replace"))
 
 
+def _load_session_file(path: Path | None) -> dict | None:
+    """Load a Playwright storage_state JSON session file."""
+    if path is None:
+        return None
+    if not path.exists():
+        raise typer.BadParameter(f"Session file not found: {path}")
+    from oswg.core.session import load_session
+
+    try:
+        return load_session(path)
+    except (ValueError, OSError) as e:
+        raise typer.BadParameter(f"Invalid session file: {e}") from e
+
+
+def _interactive_login(
+    url: str,
+    timeout: float,
+    user_agent: str | None,
+    headers: dict[str, str] | None,
+    proxy: str | None,
+) -> dict:
+    """Run a headed interactive login and return the captured storage state."""
+    import asyncio
+
+    from oswg.core.session import interactive_login
+
+    try:
+        return asyncio.run(
+            interactive_login(
+                url,
+                timeout=timeout,
+                user_agent=user_agent,
+                headers=headers,
+                proxy=proxy,
+                on_prompt=print_info,
+            )
+        )
+    except RuntimeError as e:
+        print_error(str(e))
+        raise typer.Exit(code=1) from e
+
+
+def _resolve_session(
+    session_file: Path | None,
+    do_login: bool,
+    url: str,
+    timeout: float,
+    user_agent: str | None,
+    headers: dict[str, str] | None,
+    proxy: str | None,
+) -> dict | None:
+    """Resolve a session from --login (interactive) or --session-file."""
+    if do_login:
+        return _interactive_login(url, timeout, user_agent, headers, proxy)
+    return _load_session_file(session_file)
+
+
 def collect_merge_words(
     merge_files: list[Path] | None,
     merge_builtin: bool,
@@ -237,6 +294,14 @@ def generate(
     cookie_file: Path = typer.Option(
         None, "--cookie-file",
         help="Read session cookies from a cookies.txt file (curl -b compatible).",
+    ),
+    session_file: Path = typer.Option(
+        None, "--session-file",
+        help="Reuse a saved session (storage_state JSON) from 'oswg login'.",
+    ),
+    do_login: bool = typer.Option(
+        False, "--login",
+        help="Log in interactively in a browser before scraping. Requires 'pip install oswg[js]'.",
     ),
     proxy: str = typer.Option(None, "--proxy", help="Proxy for requests (e.g. http://127.0.0.1:8080 or socks5://127.0.0.1:9050)."),
     merge: list[Path] = typer.Option(
@@ -395,6 +460,15 @@ def generate(
     primary_url = url[0]
     extra_urls = url[1:] if len(url) > 1 else []
 
+    session = _resolve_session(
+        session_file, do_login, primary_url, timeout, user_agent,
+        parse_headers(header), proxy,
+    )
+    if session:
+        from oswg.core.session import cookies_from_session
+        generator.scraper.storage_state = session
+        generator.scraper.cookie_jar.extend(cookies_from_session(session))
+
     on_progress = make_verbose_callback() if verbose else None
 
     try:
@@ -514,6 +588,14 @@ def scrape(
         None, "--cookie-file",
         help="Read session cookies from a cookies.txt file (curl -b compatible).",
     ),
+    session_file: Path = typer.Option(
+        None, "--session-file",
+        help="Reuse a saved session (storage_state JSON) from 'oswg login'.",
+    ),
+    do_login: bool = typer.Option(
+        False, "--login",
+        help="Log in interactively in a browser before scraping. Requires 'pip install oswg[js]'.",
+    ),
     proxy: str = typer.Option(None, "--proxy", help="Proxy for requests (e.g. http://127.0.0.1:8080 or socks5://127.0.0.1:9050)."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed scraping progress."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
@@ -522,6 +604,11 @@ def scrape(
     import asyncio
 
     from oswg.core.scraper import Scraper
+
+    session = _resolve_session(
+        session_file, do_login, url[0], timeout, user_agent,
+        parse_headers(header), proxy,
+    )
 
     scraper = Scraper(
         max_pages=max_pages,
@@ -538,8 +625,9 @@ def scrape(
         exclude_patterns=exclude,
         crawl_strategy=crawl_strategy,
         js_render=js_render,
+        storage_state=session,
     )
-    scraper.cookie_jar = _read_cookie_file(cookie_file)
+    scraper.cookie_jar = _read_cookie_file(cookie_file) + scraper.cookie_jar
     on_progress = make_verbose_callback() if verbose else None
 
     try:
@@ -572,6 +660,51 @@ def scrape(
             else:
                 print_keywords_preview(keywords)
             print_info(f"Total: {len(keywords)} unique keywords extracted")
+
+
+@app.command()
+def login(
+    url: str = typer.Argument(..., help="URL to open for interactive login."),
+    save: Path = typer.Option(
+        None, "--save", "-o",
+        help="Save the captured session (storage_state JSON). Prints to stdout if omitted.",
+    ),
+    timeout: float = typer.Option(300.0, "--timeout", help="Max seconds to wait for login.", min=1.0),
+    user_agent: str = typer.Option(None, "--user-agent", help="Custom User-Agent header for the login browser."),
+    header: list[str] = typer.Option(None, "--header", help="Custom header, repeatable (e.g. --header 'X-Foo: bar')."),
+    proxy: str = typer.Option(None, "--proxy", help="Proxy for the login browser (http/https/socks5)."),
+) -> None:
+    """Open a browser to log in, then capture the authenticated session.
+
+    Requires Playwright ('pip install oswg[js]'). Reuse the saved session with
+    --session-file on generate/scrape, or paste the printed JSON into the web UI.
+    """
+    import asyncio
+    import json
+
+    from oswg.core.session import interactive_login, save_session
+
+    try:
+        state = asyncio.run(
+            interactive_login(
+                url,
+                timeout=timeout,
+                user_agent=user_agent,
+                headers=parse_headers(header),
+                proxy=proxy,
+                on_prompt=print_info,
+            )
+        )
+    except RuntimeError as e:
+        print_error(str(e))
+        raise typer.Exit(code=1) from e
+
+    if save:
+        path = save_session(state, save)
+        print_success(f"Session saved to {path}")
+        print_info("Reuse it with: --session-file " + str(save))
+    else:
+        console.print(json.dumps(state, indent=2))
 
 
 @app.command()

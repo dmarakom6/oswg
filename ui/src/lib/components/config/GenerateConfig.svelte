@@ -244,10 +244,6 @@
 					{/if}
 				</div>
 			{/if}
-			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => { enableReverseLeet = v; if (v) enableLeet = false; }} label="Reverse leet" />
-			{#if enableReverseLeet}
-				<p class="text-xs text-muted-foreground">Reverse leet converts l33t chars back to letters — it undoes L33t speak, so the two are mutually exclusive.</p>
-			{/if}
 			<ToggleSwitch checked={enableUppercase} onchange={(v) => (enableUppercase = v)} label="Uppercase" />
 			<ToggleSwitch checked={enableNumbers} onchange={(v) => (enableNumbers = v)} label="Numbers" />
 			<ToggleSwitch checked={enableSpecial} onchange={(v) => (enableSpecial = v)} label="Special chars" />
@@ -419,6 +415,10 @@
 					/>
 					<p class="text-xs text-muted-foreground">Related words become extra base words, then go through all mutations. The API key is never stored — set <span class="font-mono">OPENAI_API_KEY</span> in the environment for the OpenAI provider.</p>
 				</div>
+			{/if}
+			<ToggleSwitch checked={enableReverseLeet} onchange={(v) => { enableReverseLeet = v; if (v) enableLeet = false; }} label="Reverse leet" />
+			{#if enableReverseLeet}
+				<p class="text-xs text-muted-foreground">Reverse leet converts l33t chars back to letters — it undoes L33t speak, so the two are mutually exclusive.</p>
 			{/if}
 			<NumberStepper
 				value={timeout}

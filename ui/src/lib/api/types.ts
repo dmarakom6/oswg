@@ -11,6 +11,7 @@ export interface GenerateRequest {
 	include_paths?: string[];
 	exclude_patterns?: string[];
 	crawl_strategy?: 'bfs' | 'dfs';
+	js_render?: boolean;
 	size: number;
 	max_pages: number;
 	min_length: number;
@@ -62,6 +63,7 @@ export interface ScrapeRequest {
 	include_paths?: string[];
 	exclude_patterns?: string[];
 	crawl_strategy?: 'bfs' | 'dfs';
+	js_render?: boolean;
 	max_pages: number;
 	timeout?: number;
 	respect_robots?: boolean;
@@ -113,6 +115,12 @@ export interface Job {
 	truncated_count?: number | null;
 	rule_format?: 'jtr' | 'hashcat' | null;
 	crawl_strategy?: 'bfs' | 'dfs' | null;
+	screenshot_count?: number | null;
+}
+
+export interface AppInfo {
+	version: string;
+	js_available: boolean;
 }
 
 export interface MutateResponse {

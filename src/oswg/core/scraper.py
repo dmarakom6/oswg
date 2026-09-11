@@ -58,6 +58,7 @@ class Scraper:
         include_paths: list[str] | None = None,
         exclude_patterns: list[str] | None = None,
         crawl_strategy: str = "bfs",
+        js_render: bool = False,
     ):
         if crawl_strategy not in ("bfs", "dfs"):
             raise ValueError(f"Unknown crawl strategy '{crawl_strategy}' (expected 'bfs' or 'dfs')")
@@ -76,10 +77,14 @@ class Scraper:
         self.include_paths = [p for p in (include_paths or []) if p]
         self.exclude_patterns = [p for p in (exclude_patterns or []) if p]
         self.crawl_strategy = crawl_strategy
+        self.js_render = js_render
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
         self.link_graph: dict[str, list[str]] = {}
+        self.screenshots: list[bytes | None] = []
+        self._js_browser = None
+        self._js_context = None
         self._robots_cache: dict[str, Protego | None] = {}
 
     @property
@@ -287,6 +292,9 @@ class Scraper:
                 f"Failed to scrape {url_failed}: {reason} (0 pages scraped)"
             )
 
+        if self.js_render:
+            await self._close_js()
+
         return content
 
     async def scrape_urls(
@@ -387,6 +395,9 @@ class Scraper:
                 f"Failed to scrape {url_failed}: {reason} (0 pages scraped)"
             )
 
+        if self.js_render:
+            await self._close_js()
+
         return all_content
 
     async def _scrape_page(
@@ -394,10 +405,18 @@ class Scraper:
     ) -> tuple[ScrapedContent, list[str], set[str]]:
         """Scrape a single page. Returns (content, discovered_links, page_words)."""
         self.visited_urls.add(url)
-        response = await client.get(url)
-        response.raise_for_status()
 
-        soup = BeautifulSoup(response.text, "lxml")
+        screenshot: bytes | None = None
+        if self.js_render:
+            html, screenshot = await self._render_page(url)
+            soup = BeautifulSoup(html, "lxml")
+        else:
+            response = await client.get(url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "lxml")
+
+        if screenshot is not None:
+            self.screenshots.append(screenshot)
 
         content = ScrapedContent(url=url)
         page_words: set[str] = set()
@@ -445,6 +464,48 @@ class Scraper:
         discovered_links = self._extract_links(soup, url)
 
         return content, discovered_links, page_words
+
+    async def _render_page(self, url: str) -> tuple[str, bytes | None]:
+        """Load a page in a real browser (JS rendering) and return (html, png)."""
+        try:
+            from playwright.async_api import async_playwright
+        except ImportError as e:
+            raise RuntimeError(
+                "JavaScript rendering requires Playwright. Install with "
+                "'pip install oswg[js]' then 'playwright install chromium'."
+            ) from e
+
+        if self._js_browser is None:
+            self._pw = await async_playwright().start()
+            self._js_browser = await self._pw.chromium.launch(headless=True)
+            self._js_context = await self._js_browser.new_context(
+                user_agent=self.user_agent or ROBOTS_USER_AGENT,
+                ignore_https_errors=True,
+            )
+
+        page = await self._js_context.new_page()
+        try:
+            await page.goto(url, wait_until="networkidle", timeout=self.timeout * 1000)
+            html = await page.content()
+            screenshot = await page.screenshot(type="png")
+        except Exception:
+            html = ""
+            screenshot = None
+        finally:
+            await page.close()
+        return html, screenshot
+
+    async def _close_js(self) -> None:
+        """Shut down the JS-rendering browser if it was launched."""
+        if self._js_context is not None:
+            await self._js_context.close()
+            self._js_context = None
+        if self._js_browser is not None:
+            await self._js_browser.close()
+            self._js_browser = None
+        if getattr(self, "_pw", None) is not None:
+            await self._pw.stop()
+            self._pw = None
 
     def _extract_links(self, soup: BeautifulSoup, base_url: str) -> list[str]:
         """Extract same-domain links from a parsed page, with filtering."""

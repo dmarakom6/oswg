@@ -5,11 +5,13 @@
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import { theme } from '$lib/stores/theme';
 	import { activeTab } from '$lib/stores/tabs';
+	import { loadJsAvailability } from '$lib/stores/capabilities';
 	import type { ActiveTab } from '$lib/api/types';
 
 	let { children } = $props();
 
 	theme.init();
+	loadJsAvailability();
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;

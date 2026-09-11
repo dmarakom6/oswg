@@ -77,7 +77,13 @@ def _create_app(static_path: Path):
 
     @app.get("/api/v1/info")
     async def info():
-        return {"version": __version__}
+        js_available = False
+        try:
+            import playwright  # noqa: F401
+            js_available = True
+        except ImportError:
+            pass
+        return {"version": __version__, "js_available": js_available}
 
     if (static_path / "index.html").exists():
 

@@ -62,6 +62,7 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.include_paths = config_data.get("include_paths", [])
     generator.scraper.exclude_patterns = config_data.get("exclude_patterns", [])
     generator.scraper.crawl_strategy = config_data.get("crawl_strategy", "bfs")
+    generator.scraper.js_render = config_data.get("js_render", False)
 
     await job_manager.update_progress(job_id, 20.0, "Scraping website...")
 
@@ -135,6 +136,12 @@ async def execute_generate(job_id: str) -> dict:
 
     file_manager.save_graph(job_id, result.link_graph)
 
+    screenshot_count = 0
+    for i, png in enumerate(generator.scraper.screenshots):
+        if png is not None:
+            file_manager.save_screenshot(job_id, i, png)
+            screenshot_count += 1
+
     await job_manager.update_progress(job_id, 95.0, "Finalizing...")
 
     return {
@@ -144,6 +151,7 @@ async def execute_generate(job_id: str) -> dict:
         "truncated_count": result.truncated_count,
         "rule_format": rule_format,
         "crawl_strategy": config_data.get("crawl_strategy", "bfs"),
+        "screenshot_count": screenshot_count,
     }
 
 
@@ -193,6 +201,7 @@ async def generate_wordlist(
             "include_paths": request.include_paths,
             "exclude_patterns": request.exclude_patterns,
             "crawl_strategy": request.crawl_strategy,
+            "js_render": request.js_render,
             "merge_words": _resolve_merge_words(request),
             "merge_max": request.merge_max,
             "enable_random_combine": request.enable_random_combine,

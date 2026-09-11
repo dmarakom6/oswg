@@ -12,6 +12,7 @@
 	import { jobsStore } from '$lib/stores/jobs';
 	import { connectJobWs } from '$lib/websocket/job-ws';
 	import { notifications } from '$lib/stores/notifications';
+	import { jsAvailable } from '$lib/stores/capabilities';
 
 	let url = $state('');
 	let size = $state(DEFAULTS.wordlistSize);
@@ -40,6 +41,7 @@
 	let includePaths = $state<string[]>([]);
 	let excludePatterns = $state<string[]>([]);
 	let crawlStrategy = $state<'bfs' | 'dfs'>('bfs');
+	let jsRender = $state(false);
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
 	let stopwordThreshold = $state(0.5);
@@ -95,6 +97,7 @@
 				include_paths: includePaths,
 				exclude_patterns: excludePatterns,
 				crawl_strategy: crawlStrategy,
+				js_render: jsRender,
 				size,
 				max_pages: maxPages,
 				min_length: minLength,
@@ -256,6 +259,14 @@
 			Advanced
 		</summary>
 		<div class="space-y-3 pl-1">
+			<ToggleSwitch checked={jsRender} onchange={(v) => (jsRender = v)} label="JavaScript rendering" disabled={!$jsAvailable} />
+			{#if !$jsAvailable}
+				<p class="text-xs text-muted-foreground">
+					Requires the optional dependency. Install with <span class="font-mono">pip install 'oswg[js]'</span> then <span class="font-mono">playwright install chromium</span>.
+				</p>
+			{:else}
+				<p class="text-xs text-muted-foreground">Render pages in a real browser for JS-driven sites. Saves a screenshot per page.</p>
+			{/if}
 			<ToggleSwitch checked={deduplicate} onchange={(v) => (deduplicate = v)} label="Deduplicate" />
 			<p class="text-xs text-muted-foreground">Remove duplicate words from the output.</p>
 			<ToggleSwitch checked={filterStopwords} onchange={(v) => (filterStopwords = v)} label="Filter common words" />

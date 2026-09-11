@@ -39,6 +39,17 @@ app.include_router(mutate.router, prefix=settings.api_prefix, tags=["mutate"])
 app.include_router(jobs.router, prefix=settings.api_prefix, tags=["jobs"])
 
 
+@app.get("/api/v1/info")
+async def info():
+    js_available = False
+    try:
+        import playwright  # noqa: F401
+        js_available = True
+    except ImportError:
+        pass
+    return {"version": settings.app_version, "js_available": js_available}
+
+
 @app.get("/")
 async def root():
     """Root endpoint."""

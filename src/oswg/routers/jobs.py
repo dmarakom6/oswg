@@ -98,6 +98,7 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         truncated_count=stats.get("truncated_count"),
         rule_format=stats.get("rule_format"),
         crawl_strategy=stats.get("crawl_strategy"),
+        screenshot_count=stats.get("screenshot_count"),
     )
 
 
@@ -198,6 +199,34 @@ async def get_job_graph(job_id: str):
         "nodes": nodes,
         "edges": edges,
     }
+
+
+@router.get(
+    "/jobs/{job_id}/screenshot",
+    responses={
+        404: {"model": ErrorResponse, "description": "Job or screenshot not found"},
+    },
+)
+async def get_job_screenshot(job_id: str, page: int = 0):
+    """Return a rendered-page screenshot (PNG) for a job."""
+    job = await job_manager.get_job_status(job_id)
+
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    if job["status"] != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Job {job_id} is not completed (status: {job['status']})",
+        )
+
+    path = file_manager.get_screenshot_path(job_id, page)
+    if path is None:
+        raise HTTPException(
+            status_code=404, detail=f"Screenshot {page} for job {job_id} not found"
+        )
+
+    return FileResponse(path=path, media_type="image/png")
 
 
 @router.get(

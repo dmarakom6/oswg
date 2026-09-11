@@ -50,6 +50,25 @@ class FileManager:
         """Save a crawl graph (url -> children) as JSON."""
         return self.save_json(job_id, {"link_graph": link_graph})
 
+    def save_screenshot(self, job_id: str, page_index: int, png_bytes: bytes) -> Path:
+        """Save a rendered-page screenshot as PNG."""
+        file_path = self.get_file_path(job_id, f".shot-{page_index}.png")
+        with open(file_path, "wb") as f:
+            f.write(png_bytes)
+        return file_path
+
+    def screenshot_count(self, job_id: str) -> int:
+        """Count saved screenshots for a job."""
+        count = 0
+        while self.get_file_path(job_id, f".shot-{count}.png").exists():
+            count += 1
+        return count
+
+    def get_screenshot_path(self, job_id: str, page_index: int) -> Path | None:
+        """Return the path for a job's page screenshot, or None."""
+        path = self.get_file_path(job_id, f".shot-{page_index}.png")
+        return path if path.exists() else None
+
     def file_exists(self, job_id: str, extension: str = ".txt") -> bool:
         """Check if a file exists."""
         return self.get_file_path(job_id, extension).exists()

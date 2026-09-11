@@ -43,6 +43,7 @@ async def execute_scrape(job_id: str) -> dict:
         include_paths=config_data.get("include_paths", []),
         exclude_patterns=config_data.get("exclude_patterns", []),
         crawl_strategy=config_data.get("crawl_strategy", "bfs"),
+        js_render=config_data.get("js_render", False),
     )
 
     await job_manager.update_progress(job_id, 30.0, "Scraping website...")
@@ -64,6 +65,12 @@ async def execute_scrape(job_id: str) -> dict:
     file_path = file_manager.save_words(job_id, keywords)
     file_manager.save_graph(job_id, scraper.link_graph)
 
+    screenshot_count = 0
+    for i, png in enumerate(scraper.screenshots):
+        if png is not None:
+            file_manager.save_screenshot(job_id, i, png)
+            screenshot_count += 1
+
     await job_manager.update_progress(job_id, 95.0, "Finalizing...")
 
     return {
@@ -72,6 +79,7 @@ async def execute_scrape(job_id: str) -> dict:
         "title": content.title,
         "meta_description": content.meta_description,
         "crawl_strategy": config_data.get("crawl_strategy", "bfs"),
+        "screenshot_count": screenshot_count,
     }
 
 
@@ -106,6 +114,7 @@ async def scrape_keywords(
             "include_paths": request.include_paths,
             "exclude_patterns": request.exclude_patterns,
             "crawl_strategy": request.crawl_strategy,
+            "js_render": request.js_render,
         }
 
         job_id = await job_manager.create_job(

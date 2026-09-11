@@ -1,5 +1,6 @@
 """CLI output utilities - shared between CLI and UI launcher."""
 
+from pathlib import Path
 from typing import Callable
 
 from rich.console import Console
@@ -91,3 +92,42 @@ def print_success(message: str) -> None:
 
 def print_info(message: str) -> None:
     console.print(f"[bold cyan]--[/bold cyan] {message}")
+
+
+def save_screenshots(
+    screenshots: list[bytes | None],
+    base_path: Path | None,
+    stem: str = "page",
+) -> list[Path]:
+    """Save rendered-page screenshots next to ``base_path`` (or ./screenshots).
+
+    Returns the list of written file paths.
+    """
+    if not screenshots:
+        return []
+
+    if base_path is not None:
+        target_dir = base_path.parent / "screenshots"
+        file_stem = base_path.stem
+    else:
+        target_dir = Path("screenshots")
+        file_stem = stem
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    paths: list[Path] = []
+    for i, png in enumerate(screenshots):
+        if png is None:
+            continue
+        path = target_dir / f"{file_stem}.shot-{i}.png"
+        path.write_bytes(png)
+        paths.append(path)
+    return paths
+
+
+def print_screenshots_summary(paths: list[Path], quiet: bool = False) -> None:
+    """Report saved screenshot locations."""
+    if not paths or quiet:
+        return
+    print_success(f"Saved {len(paths)} rendered-page screenshot{'s' if len(paths) != 1 else ''} to {paths[0].parent}/")
+    for path in paths:
+        print_info(str(path))

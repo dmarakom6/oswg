@@ -56,6 +56,9 @@ dev = [
     "ruff>=0.3.0",
     "pyinstaller>=6.0.0",
 ]
+js = [
+    "playwright>=1.40.0",
+]
 
 [project.scripts]
 oswg = "oswg.cli:app"

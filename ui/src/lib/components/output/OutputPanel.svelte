@@ -20,6 +20,8 @@
 	let pollTimer: ReturnType<typeof setInterval> | null = null;
 	let pollJobId: string | null = null;
 	let preview = $state<JobPreviewResult | null>(null);
+	let viewingScreenshot = $state<number | null>(null);
+	const screenshotUrl = (jobId: string, page: number) => `/api/v1/jobs/${jobId}/screenshot?page=${page}`;
 
 	function startPolling(jobId: string) {
 		if (pollJobId === jobId && pollTimer) return;
@@ -40,7 +42,8 @@
 					source_keywords: job.source_keywords,
 					truncated_count: job.truncated_count,
 					rule_format: job.rule_format,
-					crawl_strategy: job.crawl_strategy
+					crawl_strategy: job.crawl_strategy,
+					screenshot_count: job.screenshot_count
 				});
 				if (job.status === 'completed') {
 					stopPolling();
@@ -203,6 +206,31 @@
 			{#if currentJob.type !== 'mutate'}
 				<CrawlGraph jobId={currentJob.job_id} />
 			{/if}
+			{#if currentJob.screenshot_count && currentJob.screenshot_count > 0}
+				<div class="space-y-2">
+					<div class="flex items-center justify-between">
+						<span class="text-xs font-medium text-foreground">Rendered pages</span>
+						<span class="text-xs text-muted-foreground">{currentJob.screenshot_count} screenshot{currentJob.screenshot_count !== 1 ? 's' : ''}</span>
+					</div>
+					<div class="flex gap-2 overflow-x-auto pb-1">
+						{#each Array(currentJob.screenshot_count) as _, i}
+							<button
+								type="button"
+								onclick={() => (viewingScreenshot = i)}
+								class="shrink-0 rounded-md border border-border p-0.5 transition-colors hover:border-primary"
+								aria-label="View screenshot {i + 1}"
+							>
+								<img
+									src={screenshotUrl(currentJob.job_id, i)}
+									alt="Rendered page {i + 1}"
+									class="h-16 w-24 object-cover rounded"
+									loading="lazy"
+								/>
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
 			{#if preview?.mode === 'rules'}
 				<div class="flex flex-col gap-3" style="animation: fade-in 300ms ease">
 					<div class="flex items-baseline justify-between">
@@ -305,6 +333,55 @@
 			<p class="mt-2 text-sm">
 				Configure options and click {activeTab === 'generate' ? 'Generate' : 'Scrape'} to start.
 			</p>
+		</div>
+	</div>
+{/if}
+
+{#if viewingScreenshot !== null && currentJob}
+	{@const page = viewingScreenshot}
+	{@const total = currentJob.screenshot_count ?? 0}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
+		role="presentation"
+		onclick={() => (viewingScreenshot = null)}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') viewingScreenshot = null;
+		}}
+	>
+		<div
+			class="flex max-h-full flex-col gap-3 rounded-lg border border-border bg-background p-4"
+			role="presentation"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<div class="flex items-center justify-between gap-6">
+				<span class="text-xs font-medium text-foreground">Rendered page {page + 1} of {total}</span>
+				<button
+					type="button"
+					onclick={() => (viewingScreenshot = null)}
+					class="rounded p-1 text-muted-foreground transition-colors hover:text-foreground"
+					aria-label="Close screenshot"
+				>✕</button>
+			</div>
+			<img
+				src={screenshotUrl(currentJob.job_id, page)}
+				alt="Rendered page {page + 1}"
+				class="max-h-[70vh] max-w-[80vw] rounded"
+			/>
+			<div class="flex items-center justify-center gap-2">
+				<button
+					type="button"
+					disabled={page === 0}
+					onclick={() => (viewingScreenshot = page - 1)}
+					class="rounded border border-border px-3 py-1 text-xs text-foreground transition-colors hover:bg-accent disabled:opacity-40"
+				>← Prev</button>
+				<button
+					type="button"
+					disabled={page >= total - 1}
+					onclick={() => (viewingScreenshot = page + 1)}
+					class="rounded border border-border px-3 py-1 text-xs text-foreground transition-colors hover:bg-accent disabled:opacity-40"
+				>Next →</button>
+			</div>
 		</div>
 	</div>
 {/if}

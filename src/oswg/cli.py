@@ -16,8 +16,10 @@ from oswg.cli_utils import (
     print_keywords_preview,
     print_mutations_preview,
     print_result_summary,
+    print_screenshots_summary,
     print_success,
     print_warning,
+    save_screenshots,
 )
 from oswg.core import MutationEngine, WordlistGenerator
 from oswg.core.models import GenerationConfig, default_years
@@ -187,6 +189,10 @@ def generate(
         "bfs", "--crawl-strategy",
         help="Link discovery order: bfs (breadth-first, default) or dfs (depth-first).",
         callback=validate_crawl_strategy,
+    ),
+    js_render: bool = typer.Option(
+        False, "--js-render",
+        help="Render pages with a real browser (JS) instead of plain HTTP. Requires 'pip install oswg[js]'.",
     ),
     no_filter_stopwords: bool = typer.Option(False, "--no-filter-stopwords", help="Disable common word filtering."),
     stopword_threshold: float = typer.Option(
@@ -367,6 +373,7 @@ def generate(
     generator.scraper.include_paths = include_path
     generator.scraper.exclude_patterns = exclude
     generator.scraper.crawl_strategy = crawl_strategy
+    generator.scraper.js_render = js_render
     generator.scraper.proxy = proxy
 
     primary_url = url[0]
@@ -387,6 +394,10 @@ def generate(
     except Exception as e:
         print_error(str(e))
         raise typer.Exit(code=1) from e
+
+    if not dry_run:
+        screenshot_paths = save_screenshots(generator.scraper.screenshots, output.resolve())
+        print_screenshots_summary(screenshot_paths, quiet=quiet)
 
     if rule_format:
         output_path = output.resolve()
@@ -470,6 +481,10 @@ def scrape(
         help="Link discovery order: bfs (breadth-first, default) or dfs (depth-first).",
         callback=validate_crawl_strategy,
     ),
+    js_render: bool = typer.Option(
+        False, "--js-render",
+        help="Render pages with a real browser (JS) instead of plain HTTP. Requires 'pip install oswg[js]'.",
+    ),
     output: Path = typer.Option(None, "--output", "-o", help="Save keywords to file."),
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all keywords (not just preview)."),
     timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
@@ -502,6 +517,7 @@ def scrape(
         include_paths=include_path,
         exclude_patterns=exclude,
         crawl_strategy=crawl_strategy,
+        js_render=js_render,
     )
     on_progress = make_verbose_callback() if verbose else None
 
@@ -515,6 +531,10 @@ def scrape(
         raise typer.Exit(code=1) from e
 
     keywords = content.keywords
+
+    seed_host = url[0].split("//")[-1].split("/")[0]
+    screenshot_paths = save_screenshots(scraper.screenshots, output if output else None, stem=seed_host)
+    print_screenshots_summary(screenshot_paths, quiet=quiet)
 
     if output:
         output_path = output.resolve()

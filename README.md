@@ -58,6 +58,19 @@ oswg generate https://example.com -o wordlist.txt.gz # gzip-compressed
 oswg generate https://example.com -o wordlist.json --gzip  # any format + gzip
 ```
 
+### Health checks
+
+When the API/dashboard is running, monitoring endpoints are available on the
+same origin (no authentication):
+
+```bash
+curl http://127.0.0.1:8000/health        # liveness: status, version, uptime
+curl http://127.0.0.1:8000/health/ready  # readiness: database + storage checks
+```
+
+`/health/ready` returns HTTP 503 with `"status": "unhealthy"` when the
+database is unreachable or the storage directory is not writable.
+
 ### Web Dashboard
 
 ```bash

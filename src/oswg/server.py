@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from oswg.config import settings
 from oswg.database import db
-from oswg.routers import generate, jobs, mutate, scrape
+from oswg.routers import generate, jobs, mutate, scrape, system
 from oswg.services.progress import progress_tracker
 
 
@@ -37,17 +37,7 @@ app.include_router(generate.router, prefix=settings.api_prefix, tags=["generate"
 app.include_router(scrape.router, prefix=settings.api_prefix, tags=["scrape"])
 app.include_router(mutate.router, prefix=settings.api_prefix, tags=["mutate"])
 app.include_router(jobs.router, prefix=settings.api_prefix, tags=["jobs"])
-
-
-@app.get("/api/v1/info")
-async def info():
-    js_available = False
-    try:
-        import playwright  # noqa: F401
-        js_available = True
-    except ImportError:
-        pass
-    return {"version": settings.app_version, "js_available": js_available}
+app.include_router(system.router, tags=["system"])
 
 
 @app.get("/")
@@ -58,12 +48,6 @@ async def root():
         "version": settings.app_version,
         "docs": "/docs",
     }
-
-
-@app.get("/health")
-async def health():
-    """Health check endpoint."""
-    return {"status": "healthy"}
 
 
 @app.websocket("/ws/jobs/{job_id}")

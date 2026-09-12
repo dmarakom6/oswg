@@ -1,6 +1,7 @@
 """SQLite database layer for OSWG API."""
 
 import json
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -125,6 +126,16 @@ class Database:
                 ),
             )
             await db.commit()
+
+    async def ping(self) -> float:
+        """Check database connectivity; returns latency in milliseconds.
+
+        Raises on failure.
+        """
+        start = time.perf_counter()
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("SELECT 1")
+        return (time.perf_counter() - start) * 1000
 
     async def get_job(self, job_id: str) -> Optional[dict]:
         """Get a job by ID."""

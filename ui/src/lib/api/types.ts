@@ -127,6 +127,8 @@ export interface AppInfo {
 	js_available: boolean;
 }
 
+export type DownloadFormat = 'txt' | 'json' | 'csv';
+
 export interface MutateResponse {
 	words: string[];
 	count: number;

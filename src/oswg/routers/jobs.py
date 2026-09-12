@@ -3,9 +3,16 @@
 import json
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import FileResponse
 
+from oswg.core.export import (
+    FORMATS,
+    MEDIA_TYPES,
+    build_metadata,
+    compress_bytes,
+    render_bytes,
+)
 from oswg.models import ErrorResponse, JobListItem, JobStatusResponse
 from oswg.services.file_manager import file_manager
 from oswg.services.job_manager import job_manager
@@ -108,12 +115,17 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         404: {"model": ErrorResponse, "description": "Job or file not found"},
     },
 )
-async def download_job_result(job_id: str, target: str = "rules"):
+async def download_job_result(
+    job_id: str,
+    target: str = "rules",
+    format: str = "txt",
+    gzip: bool = False,
+):
     """Download a completed job's result file.
 
     ``target`` selects which file: ``rules`` (default), ``base``, or
-    ``wordlist``. Rule-mode jobs store .rules + .base.txt; wordlist jobs
-    store .txt.
+    ``wordlist``. ``format`` (txt/json/csv) and ``gzip`` apply to wordlist
+    exports; rules/base are line-based text and ignore ``format``.
     """
     job = await job_manager.get_job_status(job_id)
 
@@ -129,20 +141,90 @@ async def download_job_result(job_id: str, target: str = "rules"):
     if target not in ("rules", "base", "wordlist"):
         raise HTTPException(status_code=400, detail=f"Unknown target '{target}'")
 
-    extension = {"rules": ".rules", "base": ".base.txt", "wordlist": ".txt"}[target]
-
-    if not file_manager.file_exists(job_id, extension):
+    if format not in FORMATS:
         raise HTTPException(
-            status_code=404,
-            detail=f"File ({extension}) for job {job_id} not found",
+            status_code=400,
+            detail=f"Unknown format '{format}' (expected one of: {', '.join(FORMATS)})",
         )
 
-    file_path = file_manager.get_file_path(job_id, extension)
+    if target in ("rules", "base"):
+        extension = ".rules" if target == "rules" else ".base.txt"
+        if not file_manager.file_exists(job_id, extension):
+            raise HTTPException(
+                status_code=404,
+                detail=f"File ({extension}) for job {job_id} not found",
+            )
+        data = file_manager.get_file_path(job_id, extension).read_bytes()
+        if gzip:
+            data = compress_bytes(data)
+        filename = f"oswg_{job_id}{extension}" + (".gz" if gzip else "")
+        media_type = "application/gzip" if gzip else MEDIA_TYPES["txt"]
+        return Response(
+            content=data,
+            media_type=media_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
 
-    return FileResponse(
-        path=file_path,
-        filename=f"oswg_{job_id}{extension}",
-        media_type="text/plain",
+    if not file_manager.file_exists(job_id, ".txt"):
+        raise HTTPException(
+            status_code=404, detail=f"File (.txt) for job {job_id} not found"
+        )
+
+    words = (
+        file_manager.get_file_path(job_id, ".txt")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    )
+    metadata = _job_export_metadata(job)
+    data = render_bytes(words, fmt=format, metadata=metadata, compress=gzip)
+    extension = {"txt": ".txt", "json": ".json", "csv": ".csv"}[format]
+    filename = f"oswg_{job_id}{extension}" + (".gz" if gzip else "")
+    media_type = "application/gzip" if gzip else MEDIA_TYPES[format]
+    return Response(
+        content=data,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def _job_export_metadata(job: dict) -> dict:
+    """Build JSON export metadata from a job row."""
+    from oswg import __version__
+
+    config: dict = {}
+    if job.get("config"):
+        try:
+            config = json.loads(job["config"])
+        except (ValueError, TypeError):
+            config = {}
+
+    stats: dict = {}
+    if job.get("result_stats"):
+        try:
+            stats = json.loads(job["result_stats"])
+        except (ValueError, TypeError):
+            stats = {}
+
+    source = {}
+    if config.get("url"):
+        source["url"] = config["url"]
+    if config.get("urls"):
+        source["urls"] = config["urls"]
+    if config.get("sitemap"):
+        source["sitemap"] = True
+    for key in ("title", "meta_description"):
+        if stats.get(key):
+            source[key] = stats[key]
+
+    return build_metadata(
+        version=__version__,
+        created_at=job.get("created_at"),
+        completed_at=job.get("completed_at"),
+        job_id=job.get("id"),
+        job_type=job.get("type"),
+        source=source or None,
+        stats=stats or None,
+        config=config,
     )
 
 

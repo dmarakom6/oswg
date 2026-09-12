@@ -50,6 +50,12 @@ oswg scrape https://example.com --max-pages 5
 # Mutate words
 oswg mutate password admin login --numbers --special -o mutations.txt
 oswg mutate --file words.txt -o mutations.txt
+
+# Output formats (inferred from the -o extension, or set with --format)
+oswg generate https://example.com -o wordlist.json   # JSON with metadata
+oswg scrape https://example.com -o keywords.csv      # CSV
+oswg generate https://example.com -o wordlist.txt.gz # gzip-compressed
+oswg generate https://example.com -o wordlist.json --gzip  # any format + gzip
 ```
 
 ### Web Dashboard

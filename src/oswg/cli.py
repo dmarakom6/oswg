@@ -22,6 +22,7 @@ from oswg.cli_utils import (
     save_screenshots,
 )
 from oswg.core import MutationEngine, WordlistGenerator
+from oswg.core.export import build_metadata, infer_export, render_bytes, with_gzip_suffix, write_export
 from oswg.core.models import GenerationConfig, default_years
 from oswg.core.stopwords import load_stopwords_file
 
@@ -82,6 +83,18 @@ def validate_rule_format(value: str | None) -> str | None:
             f"Unknown rule format '{value}' (expected 'jtr' or 'hashcat')"
         )
     return value.lower() if value else None
+
+
+def validate_export_format(value: str | None) -> str | None:
+    """Validate --format value."""
+    if value is None:
+        return None
+    normalized = value.lower().lstrip(".")
+    if normalized not in ("txt", "json", "csv"):
+        raise typer.BadParameter(
+            f"Unknown format '{value}' (expected txt, json, or csv)"
+        )
+    return normalized
 
 
 def validate_crawl_strategy(value: str) -> str:
@@ -176,6 +189,19 @@ def _resolve_session(
     return _load_session_file(session_file)
 
 
+def _rule_output_paths(output_path: Path) -> tuple[Path, Path]:
+    """Derive <stem>.rules and <stem>.base.txt from the -o path."""
+    name = output_path.name
+    if name.endswith(".gz"):
+        name = name[:-3]
+    for suffix in (".txt", ".json", ".csv"):
+        if name.endswith(suffix):
+            name = name[: -len(suffix)]
+            break
+    base = output_path.with_name(name)
+    return base.with_name(base.name + ".rules"), base.with_name(base.name + ".base.txt")
+
+
 def collect_merge_words(
     merge_files: list[Path] | None,
     merge_builtin: bool,
@@ -223,6 +249,15 @@ def main(
 def generate(
     url: list[str] = typer.Argument(..., help="Target URL(s) to scrape."),
     output: Path = typer.Option("wordlist.txt", "--output", "-o", help="Output file path."),
+    format: str = typer.Option(
+        None, "--format",
+        help="Output format: txt (default), json, csv. Inferred from the --output extension.",
+        callback=validate_export_format,
+    ),
+    gzip_output: bool = typer.Option(
+        None, "--gzip/--no-gzip",
+        help="Gzip-compress the output. Inferred from a .gz --output extension.",
+    ),
     size: int = typer.Option(10000, "--size", "-s", help="Target wordlist size.", min=1),
     max_pages: int = typer.Option(10, "--max-pages", "-p", help="Maximum pages to scrape.", min=1),
     min_length: int = typer.Option(3, "--min-length", help="Minimum word length.", min=1),
@@ -491,16 +526,18 @@ def generate(
 
     if rule_format:
         output_path = output.resolve()
-        rules_path = output_path.with_suffix(".rules")
-        base_path = output_path.with_suffix(".base.txt")
+        _, compress_rules = infer_export(output_path, None, gzip_output)
+        rules_path, base_path = _rule_output_paths(output_path)
+        rules_path = with_gzip_suffix(rules_path, compress_rules)
+        base_path = with_gzip_suffix(base_path, compress_rules)
 
         from oswg.core.rulegen import generate_rules
 
         rules = generate_rules(config, format=rule_format)
         base_words = result.base_words
 
-        rules_path.write_text("\n".join(rules) + "\n", encoding="utf-8")
-        base_path.write_text("\n".join(base_words) + "\n", encoding="utf-8")
+        rules_path.write_bytes(render_bytes(rules, "txt", compress=compress_rules))
+        base_path.write_bytes(render_bytes(base_words, "txt", compress=compress_rules))
 
         if not quiet:
             print_info(
@@ -517,8 +554,8 @@ def generate(
             print_info(f"Usage hint: {hint}")
         return
 
-    if not quiet:
-        if dry_run:
+    if dry_run:
+        if not quiet:
             print_mutations_preview(result.words, limit=len(result.words))
             print_result_summary(
                 source_keywords=result.source_keywords,
@@ -531,22 +568,36 @@ def generate(
                     f"Truncated {result.truncated_count} mutations to reach target size ({size})."
                 )
             print_info("Dry run — no file written")
-            return
+        return
 
-        output_path = output.resolve()
-        generator.export_to_file(result, str(output_path))
+    output_path = output.resolve()
+    metadata = build_metadata(
+        version=__version__,
+        source={"url": primary_url, "urls": extra_urls or None},
+        stats={
+            "words_count": result.unique_words,
+            "source_keywords": result.source_keywords,
+            "total_mutations": result.total_mutations,
+            "truncated_count": result.truncated_count,
+        },
+        config=config,
+    )
+    written_path = write_export(
+        result.words, output_path, fmt=format, compress=gzip_output, metadata=metadata
+    )
 
+    if not quiet:
         print_result_summary(
             source_keywords=result.source_keywords,
             total_mutations=result.total_mutations,
             unique_words=result.unique_words,
-            output_file=str(output_path),
+            output_file=str(written_path),
         )
         if result.truncated_count > 0:
             print_warning(
                 f"Truncated {result.truncated_count} mutations to reach target size ({size})."
             )
-        print_success(f"Wordlist saved to {output_path}")
+        print_success(f"Wordlist saved to {written_path}")
 
 
 @app.command()
@@ -576,6 +627,15 @@ def scrape(
         help="Render pages with a real browser (JS) instead of plain HTTP. Requires 'pip install oswg[js]'.",
     ),
     output: Path = typer.Option(None, "--output", "-o", help="Save keywords to file."),
+    format: str = typer.Option(
+        None, "--format",
+        help="Output format: txt (default), json, csv. Inferred from the --output extension.",
+        callback=validate_export_format,
+    ),
+    gzip_output: bool = typer.Option(
+        None, "--gzip/--no-gzip",
+        help="Gzip-compress the output. Inferred from a .gz --output extension.",
+    ),
     show_all: bool = typer.Option(False, "--all", "-a", help="Show all keywords (not just preview)."),
     timeout: float = typer.Option(30.0, "--timeout", help="HTTP request timeout in seconds.", min=1.0),
     respect_robots: bool = typer.Option(False, "--respect-robots", help="Respect robots.txt rules."),
@@ -647,11 +707,31 @@ def scrape(
 
     if output:
         output_path = output.resolve()
-        with open(output_path, "w", encoding="utf-8") as f:
-            for kw in keywords:
-                f.write(f"{kw}\n")
+        metadata = build_metadata(
+            version=__version__,
+            source={
+                "url": url[0],
+                "urls": url[1:] or None,
+                "title": content.title,
+                "meta_description": content.meta_description,
+            },
+            stats={"keywords_count": len(keywords), "crawl_strategy": crawl_strategy},
+            config={
+                "max_pages": max_pages,
+                "sitemap": sitemap,
+                "crawl_strategy": crawl_strategy,
+                "js_render": js_render,
+                "respect_robots": respect_robots,
+                "allow_subdomains": allow_subdomains,
+                "include_paths": include_path,
+                "exclude_patterns": exclude,
+            },
+        )
+        written_path = write_export(
+            keywords, output_path, fmt=format, compress=gzip_output, metadata=metadata
+        )
         if not quiet:
-            print_success(f"Saved {len(keywords)} keywords to {output_path}")
+            print_success(f"Saved {len(keywords)} keywords to {written_path}")
     else:
         if not quiet:
             if show_all:
@@ -711,6 +791,15 @@ def login(
 def mutate(
     words: list[str] = typer.Argument(None, help="Words to mutate."),
     output: Path = typer.Option(None, "--output", "-o", help="Save mutations to file."),
+    format: str = typer.Option(
+        None, "--format",
+        help="Output format: txt (default), json, csv. Inferred from the --output extension.",
+        callback=validate_export_format,
+    ),
+    gzip_output: bool = typer.Option(
+        None, "--gzip/--no-gzip",
+        help="Gzip-compress the output. Inferred from a .gz --output extension.",
+    ),
     no_leet: bool = typer.Option(False, "--no-leet", help="Disable l33t speak mutations."),
     reverse_leet: bool = typer.Option(False, "--reverse-leet", help="Convert l33t chars back to letters."),
     common_subs: bool = typer.Option(
@@ -793,11 +882,27 @@ def mutate(
 
     if output:
         output_path = output.resolve()
-        with open(output_path, "w", encoding="utf-8") as f:
-            for word in mutations:
-                f.write(f"{word}\n")
+        metadata = build_metadata(
+            version=__version__,
+            stats={"mutations_count": len(mutations), "source_count": len(input_words)},
+            config={
+                "enable_leet": not no_leet,
+                "enable_uppercase": not no_uppercase,
+                "enable_reverse_leet": reverse_leet,
+                "enable_common_subs": common_subs,
+                "enable_numbers": not no_numbers,
+                "enable_special": special,
+                "leet_level": leet_level,
+                "prepend": prepend,
+                "append": append,
+                "case_permutations": case_permutations,
+            },
+        )
+        written_path = write_export(
+            mutations, output_path, fmt=format, compress=gzip_output, metadata=metadata
+        )
         if not quiet:
-            print_success(f"Saved {len(mutations)} mutations to {output_path}")
+            print_success(f"Saved {len(mutations)} mutations to {written_path}")
     else:
         if not quiet:
             if show_all:

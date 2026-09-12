@@ -40,8 +40,11 @@ export const api = {
 		if (!res.ok) throw new ApiError(res.status, 'download_error', 'Download failed');
 		const blob = await res.blob();
 		const disposition = res.headers.get('content-disposition') ?? '';
-		const match = disposition.match(/filename=(.+)/);
-		const filename = match?.[1] ?? 'oswg_wordlist.txt';
+		const utf8Match = disposition.match(/filename\*=utf-8''([^;]+)/i);
+		const quotedMatch = disposition.match(/filename="([^"]+)"/i);
+		const plainMatch = disposition.match(/filename=([^;]+)/i);
+		const filename =
+			utf8Match?.[1] ?? quotedMatch?.[1] ?? plainMatch?.[1]?.trim() ?? 'oswg_wordlist.txt';
 		return { blob, filename };
 	}
 };

@@ -57,6 +57,9 @@ class JobManager:
                 "rule_format",
                 "crawl_strategy",
                 "screenshot_count",
+                "keywords_count",
+                "title",
+                "meta_description",
             )
             result_stats = json.dumps(
                 {k: v for k, v in result.items() if k in stats_keys and v is not None}

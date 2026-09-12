@@ -9,7 +9,8 @@ import type {
 	JobListItem,
 	JobPreviewResult,
 	CrawlGraph,
-	AppInfo
+	AppInfo,
+	DownloadFormat
 } from './types';
 
 export const endpoints = {
@@ -24,6 +25,10 @@ export const endpoints = {
 	getGraph: (jobId: string) => api.get<CrawlGraph>(`/api/v1/jobs/${jobId}/graph`),
 	getScreenshot: (jobId: string, page: number) =>
 		api.download(`/api/v1/jobs/${jobId}/screenshot?page=${page}`),
-	downloadJob: (jobId: string, target: 'rules' | 'base' | 'wordlist' = 'rules') =>
-		api.download(`/api/v1/jobs/${jobId}/download?target=${target}`)
+	downloadJob: (
+		jobId: string,
+		target: 'rules' | 'base' | 'wordlist' = 'rules',
+		format: DownloadFormat = 'txt',
+		gzip = false
+	) => api.download(`/api/v1/jobs/${jobId}/download?target=${target}&format=${format}&gzip=${gzip}`)
 };

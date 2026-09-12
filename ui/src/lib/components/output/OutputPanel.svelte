@@ -3,7 +3,9 @@
 	import { endpoints } from '$lib/api/endpoints';
 	import { notifications } from '$lib/stores/notifications';
 	import CrawlGraph from './CrawlGraph.svelte';
-	import type { ActiveTab, JobPreviewResult } from '$lib/api/types';
+	import SegmentedControl from '../config/SegmentedControl.svelte';
+	import ToggleSwitch from '../config/ToggleSwitch.svelte';
+	import type { ActiveTab, DownloadFormat, JobPreviewResult } from '$lib/api/types';
 
 	let {
 		activeTab,
@@ -21,6 +23,8 @@
 	let pollJobId: string | null = null;
 	let preview = $state<JobPreviewResult | null>(null);
 	let viewingScreenshot = $state<number | null>(null);
+	let downloadFormat = $state<DownloadFormat>('txt');
+	let downloadGzip = $state(false);
 	const screenshotUrl = (jobId: string, page: number) => `/api/v1/jobs/${jobId}/screenshot?page=${page}`;
 
 	function startPolling(jobId: string) {
@@ -84,9 +88,14 @@
 		return Math.min(Math.floor((progress / 100) * total), total - 1);
 	}
 
-	async function downloadJob(jobId: string, target: 'rules' | 'base' | 'wordlist' = 'rules') {
+	async function downloadJob(
+		jobId: string,
+		target: 'rules' | 'base' | 'wordlist' = 'wordlist',
+		format: DownloadFormat = 'txt',
+		gzip = false
+	) {
 		try {
-			const { blob, filename } = await endpoints.downloadJob(jobId, target);
+			const { blob, filename } = await endpoints.downloadJob(jobId, target, format, gzip);
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
@@ -96,6 +105,32 @@
 		} catch {
 			notifications.add('error', 'Download failed');
 		}
+	}
+
+	function downloadMutateResult(format: DownloadFormat) {
+		if (!mutateResult) return;
+		let payload: string;
+		const metadata = {
+			generator: 'oswg',
+			created_at: new Date().toISOString(),
+			stats: { mutations_count: mutateResult.count, source_count: mutateResult.source_count }
+		};
+		if (format === 'json') {
+			payload = JSON.stringify({ metadata, words: mutateResult.words }, null, 2) + '\n';
+		} else if (format === 'csv') {
+			const escape = (value: string) =>
+				/[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+			payload = ['word', ...mutateResult.words.map(escape)].join('\n') + '\n';
+		} else {
+			payload = mutateResult.words.join('\n') + '\n';
+		}
+		const blob = new Blob([payload], { type: 'text/plain' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `oswg_mutations.${format}`;
+		a.click();
+		URL.revokeObjectURL(url);
 	}
 
 	function copyToClipboard(text: string) {
@@ -139,18 +174,22 @@
 					Copy All
 				</button>
 				<button
-					onclick={() => {
-						const blob = new Blob([mutateResult.words.join('\n')], { type: 'text/plain' });
-						const url = URL.createObjectURL(blob);
-						const a = document.createElement('a');
-						a.href = url;
-						a.download = 'oswg_mutations.txt';
-						a.click();
-						URL.revokeObjectURL(url);
-					}}
+					onclick={() => downloadMutateResult('txt')}
 					class="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
 				>
 					Download .txt
+				</button>
+				<button
+					onclick={() => downloadMutateResult('json')}
+					class="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+				>
+					.json
+				</button>
+				<button
+					onclick={() => downloadMutateResult('csv')}
+					class="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+				>
+					.csv
 				</button>
 			</div>
 		</div>
@@ -268,19 +307,22 @@
 						<p>rules: {preview.rules_path}</p>
 						<p>base: {preview.base_path}</p>
 					</div>
-					<div class="flex gap-2">
-						<button
-							onclick={() => downloadJob(currentJob.job_id, 'rules')}
-							class="flex-1 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
-						>
-							Download Rules
-						</button>
-						<button
-							onclick={() => downloadJob(currentJob.job_id, 'base')}
-							class="flex-1 rounded-md border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-						>
-							Download Base Words
-						</button>
+					<div class="flex items-center justify-between gap-2">
+						<ToggleSwitch checked={downloadGzip} onchange={(v) => (downloadGzip = v)} label="gzip" />
+						<div class="flex gap-2">
+							<button
+								onclick={() => downloadJob(currentJob.job_id, 'rules', 'txt', downloadGzip)}
+								class="rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
+							>
+								Download Rules
+							</button>
+							<button
+								onclick={() => downloadJob(currentJob.job_id, 'base', 'txt', downloadGzip)}
+								class="rounded-md border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+							>
+								Download Base Words
+							</button>
+						</div>
 					</div>
 				</div>
 			{:else if preview}
@@ -310,8 +352,20 @@
 							</p>
 						</div>
 					{/if}
+					<div class="flex items-center justify-between gap-2">
+						<SegmentedControl
+							value={downloadFormat}
+							onchange={(v) => (downloadFormat = v as DownloadFormat)}
+							options={[
+								{ value: 'txt', label: 'TXT' },
+								{ value: 'json', label: 'JSON' },
+								{ value: 'csv', label: 'CSV' }
+							]}
+						/>
+						<ToggleSwitch checked={downloadGzip} onchange={(v) => (downloadGzip = v)} label="gzip" />
+					</div>
 					<button
-						onclick={() => downloadJob(currentJob.job_id, 'wordlist')}
+						onclick={() => downloadJob(currentJob.job_id, 'wordlist', downloadFormat, downloadGzip)}
 						class="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
 					>
 						Download Wordlist

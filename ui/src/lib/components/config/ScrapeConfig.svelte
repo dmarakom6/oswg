@@ -14,6 +14,9 @@
 	import { connectJobWs } from '$lib/websocket/job-ws';
 	import { notifications } from '$lib/stores/notifications';
 	import { jsAvailable } from '$lib/stores/capabilities';
+	import { activeTab } from '$lib/stores/tabs';
+	import { focusUrlSignal, runSignal } from '$lib/stores/shortcuts';
+	import { modLabel } from '$lib/shortcuts';
 
 	let url = $state('');
 	let maxPages = $state(DEFAULTS.maxPages);
@@ -43,6 +46,12 @@
 
 	let urlError = $derived(url.length > 0 && !isValidUrl(url) ? 'Enter a valid URL including protocol (https://)' : '');
 	let canSubmit = $derived(url.length > 0 && isValidUrl(url) && !submitting);
+
+	$effect(() => {
+		if ($runSignal > 0 && $activeTab === 'scrape') {
+			handleSubmit();
+		}
+	});
 
 	async function handleSubmit() {
 		if (!canSubmit) return;
@@ -108,7 +117,7 @@
 <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-6">
 	<div class="space-y-4">
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Target</h2>
-		<UrlInput value={url} onchange={(v) => (url = v)} error={urlError} />
+		<UrlInput value={url} focusSignal={$focusUrlSignal} onchange={(v) => (url = v)} error={urlError} />
 	</div>
 
 	<div class="space-y-4">
@@ -273,6 +282,7 @@
 	<button
 		type="submit"
 		disabled={!canSubmit}
+		title="{modLabel()} + Enter to run"
 		class="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
 	>
 		{#if submitting}
@@ -281,7 +291,12 @@
 				Starting...
 			</span>
 		{:else}
-			Scrape Keywords
+			<span class="flex items-center justify-center gap-2">
+				Scrape Keywords
+				<kbd class="rounded bg-primary-foreground/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/90">
+					{modLabel()}↵
+				</kbd>
+			</span>
 		{/if}
 	</button>
 </form>

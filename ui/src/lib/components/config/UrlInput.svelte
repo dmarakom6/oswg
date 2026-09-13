@@ -3,12 +3,15 @@
 		value,
 		onchange,
 		error,
-		placeholder = 'https://example.com'
+		placeholder = 'https://example.com',
+		focusSignal = 0
 	}: {
 		value: string;
 		onchange: (val: string) => void;
 		error?: string;
 		placeholder?: string;
+		/** Increment to ask this input to focus itself. */
+		focusSignal?: number;
 	} = $props();
 
 	const PROTOCOLS = ['http://', 'https://'];
@@ -17,6 +20,13 @@
 	let protocol = $state('');
 	let rest = $state('');
 	let lastEmitted = $state('');
+	let inputRef = $state<HTMLInputElement | null>(null);
+
+	$effect(() => {
+		if (focusSignal > 0) {
+			inputRef?.focus();
+		}
+	});
 
 	function splitValue(v: string) {
 		const m = PROTOCOL_RE.exec(v);
@@ -97,6 +107,7 @@
 			</span>
 		{/if}
 		<input
+			bind:this={inputRef}
 			id="url-input"
 			type="text"
 			value={protocol ? rest : value}

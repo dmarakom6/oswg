@@ -17,6 +17,11 @@
 			onclick={() => onchange(tab.id)}
 		>
 			{tab.label}
+			{#if tab.shortcut}
+				<kbd class="ml-2 rounded border border-border bg-muted/40 px-1 text-[10px] text-muted-foreground">
+					{tab.shortcut}
+				</kbd>
+			{/if}
 			{#if activeTab === tab.id}
 				<span
 					class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"

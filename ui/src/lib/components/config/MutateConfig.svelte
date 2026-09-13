@@ -6,6 +6,9 @@
 	import { parseWordsInput } from '$lib/utils/validators';
 	import { endpoints } from '$lib/api/endpoints';
 	import { notifications } from '$lib/stores/notifications';
+	import { activeTab } from '$lib/stores/tabs';
+	import { runSignal } from '$lib/stores/shortcuts';
+	import { modLabel } from '$lib/shortcuts';
 
 	let { onResult }: { onResult: (result: { words: string[]; count: number; source_count: number }) => void } = $props();
 
@@ -26,6 +29,12 @@
 	let randomCombineSeed = $state('');
 	let submitting = $state(false);
 	let fileName = $state<string | null>(null);
+
+	$effect(() => {
+		if ($runSignal > 0 && $activeTab === 'mutate') {
+			handleSubmit();
+		}
+	});
 
 	let words = $derived(parseWordsInput(wordsInput));
 	let uniqueWords = $derived([...new Set(words)]);
@@ -228,6 +237,7 @@
 	<button
 		type="submit"
 		disabled={!canSubmit}
+		title="{modLabel()} + Enter to run"
 		class="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
 	>
 		{#if submitting}
@@ -236,7 +246,12 @@
 				Mutating...
 			</span>
 		{:else}
-			Mutate Words
+			<span class="flex items-center justify-center gap-2">
+				Mutate Words
+				<kbd class="rounded bg-primary-foreground/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/90">
+					{modLabel()}↵
+				</kbd>
+			</span>
 		{/if}
 	</button>
 </form>

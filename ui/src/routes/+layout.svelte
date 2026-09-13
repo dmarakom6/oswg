@@ -3,8 +3,11 @@
 	import Header from '$lib/components/layout/Header.svelte';
 	import TabBar from '$lib/components/layout/TabBar.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
+	import ShortcutsDialog from '$lib/components/layout/ShortcutsDialog.svelte';
 	import { theme } from '$lib/stores/theme';
 	import { activeTab } from '$lib/stores/tabs';
+	import { focusUrlSignal, helpOpen, runSignal } from '$lib/stores/shortcuts';
+	import { isMod, isTyping } from '$lib/shortcuts';
 	import { loadJsAvailability } from '$lib/stores/capabilities';
 	import type { ActiveTab } from '$lib/api/types';
 
@@ -13,11 +16,43 @@
 	theme.init();
 	loadJsAvailability();
 
+	const TAB_KEYS: Record<string, ActiveTab> = {
+		'1': 'generate',
+		'2': 'scrape',
+		'3': 'mutate'
+	};
+
 	function handleKeydown(e: KeyboardEvent) {
-		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-		if (e.key === '1') activeTab.set('generate');
-		if (e.key === '2') activeTab.set('scrape');
-		if (e.key === '3') activeTab.set('mutate');
+		// Run works from anywhere, including textareas.
+		if (isMod(e) && e.key === 'Enter') {
+			e.preventDefault();
+			runSignal.update((n) => n + 1);
+			return;
+		}
+
+		// Everything below must not fire while the user is typing.
+		if (isTyping(e)) return;
+
+		if (e.key in TAB_KEYS) {
+			activeTab.set(TAB_KEYS[e.key]);
+			return;
+		}
+
+		if (e.key === '/') {
+			e.preventDefault();
+			focusUrlSignal.update((n) => n + 1);
+			return;
+		}
+
+		if (e.key === '?') {
+			e.preventDefault();
+			helpOpen.update((v) => !v);
+			return;
+		}
+
+		if (e.key === 'Escape' && $helpOpen) {
+			helpOpen.set(false);
+		}
 	}
 </script>
 
@@ -33,3 +68,5 @@
 
 	<Footer />
 </div>
+
+<ShortcutsDialog />

@@ -5,6 +5,7 @@
 	import SegmentedControl from './SegmentedControl.svelte';
 	import KeyValueList from './KeyValueList.svelte';
 	import AuthField from './AuthField.svelte';
+	import HttpAuthField from './HttpAuthField.svelte';
 	import StringList from './StringList.svelte';
 	import MergeConfig from './MergeConfig.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
@@ -36,6 +37,9 @@
 	let cookies = $state<{ name: string; value: string }[]>([]);
 	let cookieFile = $state('');
 	let sessionState = $state('');
+	let authType = $state<'' | 'basic' | 'digest' | 'ntlm'>('');
+	let authUser = $state('');
+	let authPass = $state('');
 	let proxy = $state('');
 	let merge = $state({ merge_words: [] as string[], merge_max: DEFAULTS.mergeMax, merge_builtin: false, merge_rockyou: false });
 	let ruleFormat = $state<'jtr' | 'hashcat' | undefined>(undefined);
@@ -131,6 +135,7 @@
 				cookie_file: cookieFile,
 				storage_state: sessionState,
 				...((proxy.trim().length > 0) ? { proxy: proxy.trim() } : {}),
+				...(authType ? { auth_type: authType, auth_user: authUser.trim(), auth_pass: authPass } : {}),
 				merge_words: merge.merge_words,
 				merge_max: merge.merge_max,
 				merge_builtin: merge.merge_builtin,
@@ -479,6 +484,16 @@
 					cookies = v.cookies;
 					cookieFile = v.cookieFile;
 					sessionState = v.sessionState;
+				}}
+			/>
+			<HttpAuthField
+				authType={authType}
+				authUser={authUser}
+				authPass={authPass}
+				onchange={(v) => {
+					authType = v.authType;
+					authUser = v.authUser;
+					authPass = v.authPass;
 				}}
 			/>
 			<StringList

@@ -14,7 +14,7 @@ FORMATS = ("txt", "json", "csv")
 
 # Config keys that must never leak into exported metadata.
 SECRET_KEYS = frozenset(
-    {"storage_state", "cookie_file", "cookies", "headers", "proxy"}
+    {"storage_state", "cookie_file", "cookies", "headers", "proxy", "auth_pass"}
 )
 
 # Large list keys reduced to a count so exports stay small.

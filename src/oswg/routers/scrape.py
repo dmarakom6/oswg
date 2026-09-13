@@ -37,6 +37,18 @@ def _parse_session_text(text: str | None) -> dict | None:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
+def _validate_auth(auth_type: str | None, auth_user: str | None, auth_pass: str | None) -> None:
+    """Validate HTTP auth config at request time."""
+    if not auth_type:
+        return
+    from oswg.core.http_auth import AuthError, build_auth
+
+    try:
+        build_auth(auth_type, auth_user, auth_pass)
+    except AuthError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
 async def execute_scrape(job_id: str) -> dict:
     """Execute keyword scraping job."""
     job = await job_manager.get_job_status(job_id)
@@ -64,6 +76,9 @@ async def execute_scrape(job_id: str) -> dict:
         js_render=config_data.get("js_render", False),
         extract_emails=config_data.get("extract_emails", False),
         extract_usernames=config_data.get("extract_usernames", False),
+        auth_type=config_data.get("auth_type"),
+        auth_user=config_data.get("auth_user"),
+        auth_pass=config_data.get("auth_pass"),
         storage_state=_parse_session_text(config_data.get("storage_state")),
     )
     scraper.cookie_jar = _parse_cookie_text(config_data.get("cookie_file")) + scraper.cookie_jar
@@ -128,6 +143,7 @@ async def scrape_keywords(
     """Scrape keywords from a website URL."""
     try:
         _parse_session_text(request.storage_state)
+        _validate_auth(request.auth_type, request.auth_user, request.auth_pass)
         config = {
             "url": request.url,
             "urls": request.urls,
@@ -143,6 +159,9 @@ async def scrape_keywords(
             "cookie_file": request.cookie_file,
             "storage_state": request.storage_state,
             "proxy": request.proxy,
+            "auth_type": request.auth_type,
+            "auth_user": request.auth_user,
+            "auth_pass": request.auth_pass,
             "allow_subdomains": request.allow_subdomains,
             "include_paths": request.include_paths,
             "exclude_patterns": request.exclude_patterns,

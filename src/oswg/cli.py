@@ -106,6 +106,18 @@ def validate_crawl_strategy(value: str) -> str:
     return value.lower()
 
 
+def validate_auth_type(value: str | None) -> str | None:
+    """Validate --auth-type value."""
+    if value is None:
+        return None
+    normalized = value.lower()
+    if normalized not in ("basic", "digest", "ntlm"):
+        raise typer.BadParameter(
+            f"Unknown auth type '{value}' (expected basic, digest, or ntlm)"
+        )
+    return normalized
+
+
 def parse_cookies(values: list[str] | None) -> dict[str, str] | None:
     """Parse repeatable 'name=value' flags into a cookies dict."""
     if not values:
@@ -360,6 +372,13 @@ def generate(
         help="Log in interactively in a browser before scraping. Requires 'pip install oswg[js]'.",
     ),
     proxy: str = typer.Option(None, "--proxy", help="Proxy for requests (e.g. http://127.0.0.1:8080 or socks5://127.0.0.1:9050)."),
+    auth_type: str = typer.Option(
+        None, "--auth-type",
+        help="HTTP authentication type: basic, digest, or ntlm (ntlm requires 'pip install oswg[auth]').",
+        callback=validate_auth_type,
+    ),
+    auth_user: str = typer.Option(None, "--auth-user", help="Username for HTTP authentication."),
+    auth_pass: str = typer.Option(None, "--auth-pass", help="Password for HTTP authentication."),
     merge: list[Path] = typer.Option(
         None, "--merge",
         help="Wordlist file(s) to merge, repeatable (one word per line).",
@@ -514,6 +533,14 @@ def generate(
     generator.scraper.crawl_strategy = crawl_strategy
     generator.scraper.js_render = js_render
     generator.scraper.proxy = proxy
+
+    if auth_type:
+        from oswg.core.http_auth import build_auth
+
+        generator.scraper.auth_type = auth_type
+        generator.scraper.auth_user = auth_user
+        generator.scraper.auth_pass = auth_pass
+        generator.scraper._auth = build_auth(auth_type, auth_user, auth_pass)
 
     primary_url = url[0]
     extra_urls = url[1:] if len(url) > 1 else []
@@ -704,6 +731,13 @@ def scrape(
         help="Log in interactively in a browser before scraping. Requires 'pip install oswg[js]'.",
     ),
     proxy: str = typer.Option(None, "--proxy", help="Proxy for requests (e.g. http://127.0.0.1:8080 or socks5://127.0.0.1:9050)."),
+    auth_type: str = typer.Option(
+        None, "--auth-type",
+        help="HTTP authentication type: basic, digest, or ntlm (ntlm requires 'pip install oswg[auth]').",
+        callback=validate_auth_type,
+    ),
+    auth_user: str = typer.Option(None, "--auth-user", help="Username for HTTP authentication."),
+    auth_pass: str = typer.Option(None, "--auth-pass", help="Password for HTTP authentication."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed scraping progress."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress output except errors."),
 ) -> None:
@@ -734,6 +768,9 @@ def scrape(
         js_render=js_render,
         extract_emails=emails,
         extract_usernames=usernames,
+        auth_type=auth_type,
+        auth_user=auth_user,
+        auth_pass=auth_pass,
         storage_state=session,
     )
     scraper.cookie_jar = _read_cookie_file(cookie_file) + scraper.cookie_jar

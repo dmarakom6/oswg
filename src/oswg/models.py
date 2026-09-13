@@ -109,6 +109,15 @@ class GenerateRequest(BaseRequest):
         ),
     )
     proxy: Optional[str] = Field(None, description="Proxy for requests (http/https/socks5).", max_length=200)
+    auth_type: Optional[str] = Field(
+        None, description="HTTP authentication type: basic, digest, or ntlm (ntlm requires oswg[auth])."
+    )
+    auth_user: Optional[str] = Field(
+        None, description="Username for HTTP authentication.", max_length=200
+    )
+    auth_pass: Optional[str] = Field(
+        None, description="Password for HTTP authentication. Never exported in metadata."
+    )
     merge_words: list[str] = Field(default=[], description="External words to merge and mutate.", max_length=100000)
     merge_max: int = Field(5000, description="Total cap on merged words.", ge=1, le=1000000)
     merge_builtin: bool = Field(False, description="Merge bundled bundled common passwords.")
@@ -159,6 +168,13 @@ class GenerateRequest(BaseRequest):
     def _validate_rule_format(cls, value: Optional[str]) -> Optional[str]:
         if value is not None and value not in ("jtr", "hashcat"):
             raise ValueError("must be one of: jtr, hashcat")
+        return value
+
+    @field_validator("auth_type")
+    @classmethod
+    def _validate_auth_type(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and value not in ("basic", "digest", "ntlm"):
+            raise ValueError("must be one of: basic, digest, ntlm")
         return value
 
     @field_validator("crawl_strategy")
@@ -233,12 +249,28 @@ class ScrapeRequest(BaseRequest):
         ),
     )
     proxy: Optional[str] = Field(None, description="Proxy for requests (http/https/socks5).", max_length=200)
+    auth_type: Optional[str] = Field(
+        None, description="HTTP authentication type: basic, digest, or ntlm (ntlm requires oswg[auth])."
+    )
+    auth_user: Optional[str] = Field(
+        None, description="Username for HTTP authentication.", max_length=200
+    )
+    auth_pass: Optional[str] = Field(
+        None, description="Password for HTTP authentication. Never exported in metadata."
+    )
 
     @field_validator("crawl_strategy")
     @classmethod
     def _validate_crawl_strategy(cls, value: str) -> str:
         if value not in ("bfs", "dfs"):
             raise ValueError("must be one of: bfs, dfs")
+        return value
+
+    @field_validator("auth_type")
+    @classmethod
+    def _validate_auth_type(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and value not in ("basic", "digest", "ntlm"):
+            raise ValueError("must be one of: basic, digest, ntlm")
         return value
 
 

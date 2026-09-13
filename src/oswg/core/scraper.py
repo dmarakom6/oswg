@@ -65,6 +65,9 @@ class Scraper:
         storage_state: dict | None = None,
         extract_emails: bool = False,
         extract_usernames: bool = False,
+        auth_type: str | None = None,
+        auth_user: str | None = None,
+        auth_pass: str | None = None,
     ):
         if crawl_strategy not in ("bfs", "dfs"):
             raise ValueError(f"Unknown crawl strategy '{crawl_strategy}' (expected 'bfs' or 'dfs')")
@@ -92,6 +95,15 @@ class Scraper:
         self.js_render = js_render
         self.extract_emails = extract_emails
         self.extract_usernames = extract_usernames
+        self.auth_type = auth_type
+        self.auth_user = auth_user
+        self.auth_pass = auth_pass
+        if auth_type:
+            from oswg.core.http_auth import build_auth
+
+            self._auth = build_auth(auth_type, auth_user, auth_pass)
+        else:
+            self._auth = None
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
@@ -162,6 +174,7 @@ class Scraper:
                 headers=self._headers,
                 cookies=self._cookies,
                 proxy=self.proxy,
+                auth=self._auth,
             ) as client:
                 response = await client.get(robots_url)
                 response.raise_for_status()
@@ -240,6 +253,7 @@ class Scraper:
             headers=self._headers,
             cookies=self._cookies,
             proxy=self.proxy,
+            auth=self._auth,
         ) as client:
             first_request = True
             while queue and len(self.visited_urls) < self.max_pages:
@@ -347,6 +361,7 @@ class Scraper:
             headers=self._headers,
             cookies=self._cookies,
             proxy=self.proxy,
+            auth=self._auth,
         ) as client:
             first_request = True
             while queue and len(self.visited_urls) < self.max_pages:
@@ -545,11 +560,19 @@ class Scraper:
 
             extra_headers = dict(self.headers or {})
             extra_headers.pop("User-Agent", None)
+            http_credentials = None
+            if self.auth_type:
+                from oswg.core.http_auth import playwright_credentials
+
+                http_credentials = playwright_credentials(
+                    self.auth_type, self.auth_user, self.auth_pass
+                )
             self._js_context = await self._js_browser.new_context(
                 user_agent=self.user_agent or ROBOTS_USER_AGENT,
                 ignore_https_errors=True,
                 extra_http_headers=extra_headers or None,
                 storage_state=self.storage_state or None,
+                http_credentials=http_credentials,
             )
             if self.cookies or self.cookie_jar:
                 await self._js_context.add_cookies(self._playwright_cookies())
@@ -632,6 +655,7 @@ class Scraper:
                 headers=self._headers,
                 cookies=self._cookies,
                 proxy=self.proxy,
+                auth=self._auth,
             ) as client:
                 response = await client.get(sitemap_url)
                 response.raise_for_status()

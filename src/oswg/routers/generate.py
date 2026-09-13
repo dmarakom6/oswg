@@ -36,6 +36,18 @@ def _parse_session_text(text: str | None) -> dict | None:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
+def _validate_auth(auth_type: str | None, auth_user: str | None, auth_pass: str | None) -> None:
+    """Validate HTTP auth config at request time."""
+    if not auth_type:
+        return
+    from oswg.core.http_auth import AuthError, build_auth
+
+    try:
+        build_auth(auth_type, auth_user, auth_pass)
+    except AuthError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
 def _resolve_merge_words(request: GenerateRequest) -> list[str]:
     """Combine uploaded words with bundled/rockyou lists for merging."""
     from oswg.core.wordlists import detect_rockyou, iter_builtin, iter_wordlist
@@ -90,6 +102,16 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.js_render = config_data.get("js_render", False)
     generator.scraper.extract_emails = config_data.get("extract_emails", False)
     generator.scraper.extract_usernames = config_data.get("extract_usernames", False)
+    auth_type = config_data.get("auth_type")
+    if auth_type:
+        from oswg.core.http_auth import build_auth
+
+        generator.scraper.auth_type = auth_type
+        generator.scraper.auth_user = config_data.get("auth_user")
+        generator.scraper.auth_pass = config_data.get("auth_pass")
+        generator.scraper._auth = build_auth(
+            auth_type, config_data.get("auth_user"), config_data.get("auth_pass")
+        )
 
     await job_manager.update_progress(job_id, 20.0, "Scraping website...")
 
@@ -204,6 +226,7 @@ async def generate_wordlist(
     """Generate a targeted wordlist from a website URL."""
     try:
         _parse_session_text(request.storage_state)
+        _validate_auth(request.auth_type, request.auth_user, request.auth_pass)
         config = {
             "url": request.url,
             "urls": request.urls,
@@ -234,6 +257,9 @@ async def generate_wordlist(
             "cookie_file": request.cookie_file,
             "storage_state": request.storage_state,
             "proxy": request.proxy,
+            "auth_type": request.auth_type,
+            "auth_user": request.auth_user,
+            "auth_pass": request.auth_pass,
             "allow_subdomains": request.allow_subdomains,
             "include_paths": request.include_paths,
             "exclude_patterns": request.exclude_patterns,

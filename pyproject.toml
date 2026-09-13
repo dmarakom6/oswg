@@ -59,6 +59,9 @@ dev = [
 js = [
     "playwright>=1.40.0",
 ]
+auth = [
+    "httpx-ntlm>=0.4.0",
+]
 
 [project.scripts]
 oswg = "oswg.cli:app"

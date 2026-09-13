@@ -64,6 +64,11 @@ oswg scrape https://example.com --emails
 # Extract usernames to a separate sidecar list (never merged into the wordlist)
 oswg generate https://example.com --username -o wordlist.txt   # -> wordlist.usernames.txt
 oswg scrape https://example.com --username
+
+# HTTP authentication (basic/digest built-in; ntlm needs 'pip install oswg[auth]')
+# Composes with --cookie/--cookie-file/--session-file for sites that need both layers.
+oswg generate https://intranet.example.com --auth-type basic --auth-user alice --auth-pass s3cret
+oswg scrape https://intranet.example.com --auth-type digest --auth-user alice --auth-pass s3cret
 ```
 
 ### Health checks

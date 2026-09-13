@@ -5,6 +5,7 @@
 	import SegmentedControl from './SegmentedControl.svelte';
 	import KeyValueList from './KeyValueList.svelte';
 	import AuthField from './AuthField.svelte';
+	import HttpAuthField from './HttpAuthField.svelte';
 	import StringList from './StringList.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
 	import { isValidUrl } from '$lib/utils/validators';
@@ -26,6 +27,9 @@
 	let cookies = $state<{ name: string; value: string }[]>([]);
 	let cookieFile = $state('');
 	let sessionState = $state('');
+	let authType = $state<'' | 'basic' | 'digest' | 'ntlm'>('');
+	let authUser = $state('');
+	let authPass = $state('');
 	let proxy = $state('');
 	let useSitemap = $state(false);
 	let allowSubdomains = $state(false);
@@ -66,6 +70,7 @@
 				cookie_file: cookieFile,
 				storage_state: sessionState,
 				...((proxy.trim().length > 0) ? { proxy: proxy.trim() } : {}),
+				...(authType ? { auth_type: authType, auth_user: authUser.trim(), auth_pass: authPass } : {}),
 				retention_seconds: retentionSeconds
 			});
 
@@ -205,6 +210,16 @@
 					cookies = v.cookies;
 					cookieFile = v.cookieFile;
 					sessionState = v.sessionState;
+				}}
+			/>
+			<HttpAuthField
+				authType={authType}
+				authUser={authUser}
+				authPass={authPass}
+				onchange={(v) => {
+					authType = v.authType;
+					authUser = v.authUser;
+					authPass = v.authPass;
 				}}
 			/>
 			<StringList

@@ -40,6 +40,9 @@ export interface GenerateRequest {
 	cookie_file?: string;
 	storage_state?: string;
 	proxy?: string;
+	auth_type?: 'basic' | 'digest' | 'ntlm';
+	auth_user?: string;
+	auth_pass?: string;
 	merge_words?: string[];
 	merge_max?: number;
 	merge_builtin?: boolean;
@@ -81,6 +84,9 @@ export interface ScrapeRequest {
 	cookie_file?: string;
 	storage_state?: string;
 	proxy?: string;
+	auth_type?: 'basic' | 'digest' | 'ntlm';
+	auth_user?: string;
+	auth_pass?: string;
 	retention_seconds?: number;
 }
 

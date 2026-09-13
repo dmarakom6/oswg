@@ -62,6 +62,7 @@ async def execute_scrape(job_id: str) -> dict:
         exclude_patterns=config_data.get("exclude_patterns", []),
         crawl_strategy=config_data.get("crawl_strategy", "bfs"),
         js_render=config_data.get("js_render", False),
+        extract_emails=config_data.get("extract_emails", False),
         storage_state=_parse_session_text(config_data.get("storage_state")),
     )
     scraper.cookie_jar = _parse_cookie_text(config_data.get("cookie_file")) + scraper.cookie_jar
@@ -79,6 +80,9 @@ async def execute_scrape(job_id: str) -> dict:
     await job_manager.update_progress(job_id, 70.0, "Processing keywords...")
 
     keywords = content.keywords
+    if config_data.get("extract_emails", False) and content.emails:
+        existing = {kw.lower() for kw in keywords}
+        keywords = keywords + [e for e in content.emails if e.lower() not in existing]
 
     await job_manager.update_progress(job_id, 85.0, "Saving keywords...")
 
@@ -100,6 +104,7 @@ async def execute_scrape(job_id: str) -> dict:
         "meta_description": content.meta_description,
         "crawl_strategy": config_data.get("crawl_strategy", "bfs"),
         "screenshot_count": screenshot_count,
+        **({"email_count": len(content.emails)} if content.emails else {}),
     }
 
 
@@ -138,6 +143,7 @@ async def scrape_keywords(
             "exclude_patterns": request.exclude_patterns,
             "crawl_strategy": request.crawl_strategy,
             "js_render": request.js_render,
+            "extract_emails": request.extract_emails,
         }
 
         job_id = await job_manager.create_job(

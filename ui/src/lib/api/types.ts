@@ -12,6 +12,7 @@ export interface GenerateRequest {
 	exclude_patterns?: string[];
 	crawl_strategy?: 'bfs' | 'dfs';
 	js_render?: boolean;
+	extract_emails?: boolean;
 	size: number;
 	max_pages: number;
 	min_length: number;
@@ -66,6 +67,7 @@ export interface ScrapeRequest {
 	exclude_patterns?: string[];
 	crawl_strategy?: 'bfs' | 'dfs';
 	js_render?: boolean;
+	extract_emails?: boolean;
 	max_pages: number;
 	timeout?: number;
 	respect_robots?: boolean;
@@ -120,6 +122,7 @@ export interface Job {
 	rule_format?: 'jtr' | 'hashcat' | null;
 	crawl_strategy?: 'bfs' | 'dfs' | null;
 	screenshot_count?: number | null;
+	email_count?: number | null;
 }
 
 export interface AppInfo {

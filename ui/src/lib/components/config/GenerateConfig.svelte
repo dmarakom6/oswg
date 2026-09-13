@@ -45,6 +45,7 @@
 	let excludePatterns = $state<string[]>([]);
 	let crawlStrategy = $state<'bfs' | 'dfs'>('bfs');
 	let jsRender = $state(false);
+	let extractEmails = $state(false);
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
 	let stopwordThreshold = $state(0.5);
@@ -101,6 +102,7 @@
 				exclude_patterns: excludePatterns,
 				crawl_strategy: crawlStrategy,
 				js_render: jsRender,
+				extract_emails: extractEmails,
 				size,
 				max_pages: maxPages,
 				min_length: minLength,
@@ -268,6 +270,8 @@
 			{:else}
 				<p class="text-xs text-muted-foreground">Render pages in a real browser for JS-driven sites. Saves a screenshot per page.</p>
 			{/if}
+			<ToggleSwitch checked={extractEmails} onchange={(v) => (extractEmails = v)} label="Extract email addresses" />
+			<p class="text-xs text-muted-foreground">Include full email addresses found on the target in the wordlist.</p>
 			<ToggleSwitch checked={deduplicate} onchange={(v) => (deduplicate = v)} label="Deduplicate" />
 			<p class="text-xs text-muted-foreground">Remove duplicate words from the output.</p>
 			<ToggleSwitch checked={filterStopwords} onchange={(v) => (filterStopwords = v)} label="Filter common words" />

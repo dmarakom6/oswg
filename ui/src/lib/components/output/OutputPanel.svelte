@@ -47,7 +47,8 @@
 					truncated_count: job.truncated_count,
 					rule_format: job.rule_format,
 					crawl_strategy: job.crawl_strategy,
-					screenshot_count: job.screenshot_count
+					screenshot_count: job.screenshot_count,
+					email_count: job.email_count
 				});
 				if (job.status === 'completed') {
 					stopPolling();
@@ -351,6 +352,11 @@
 								⚠ Truncated {currentJob.truncated_count.toLocaleString()} mutations to reach the target size.
 							</p>
 						</div>
+					{/if}
+					{#if currentJob.email_count && currentJob.email_count > 0}
+						<p class="text-xs text-muted-foreground">
+							{currentJob.email_count} email address{currentJob.email_count !== 1 ? 'es' : ''} found and included in the wordlist.
+						</p>
 					{/if}
 					<div class="flex items-center justify-between gap-2">
 						<SegmentedControl

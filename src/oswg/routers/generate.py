@@ -88,6 +88,7 @@ async def execute_generate(job_id: str) -> dict:
     generator.scraper.exclude_patterns = config_data.get("exclude_patterns", [])
     generator.scraper.crawl_strategy = config_data.get("crawl_strategy", "bfs")
     generator.scraper.js_render = config_data.get("js_render", False)
+    generator.scraper.extract_emails = config_data.get("extract_emails", False)
 
     await job_manager.update_progress(job_id, 20.0, "Scraping website...")
 
@@ -105,6 +106,7 @@ async def execute_generate(job_id: str) -> dict:
         filter_stopwords=config_data.get("filter_stopwords", True),
         stopword_threshold=config_data.get("stopword_threshold", 0.5),
         extra_stopwords=config_data.get("extra_stopwords", []),
+        extract_emails=config_data.get("extract_emails", False),
         common_years=config_data.get("common_years") or default_years(),
         special_chars=config_data.get("special_chars") or ["!", "@", "#", "$"],
         merge_words=config_data.get("merge_words", []),
@@ -177,6 +179,7 @@ async def execute_generate(job_id: str) -> dict:
         "rule_format": rule_format,
         "crawl_strategy": config_data.get("crawl_strategy", "bfs"),
         "screenshot_count": screenshot_count,
+        **({"email_count": result.email_count} if result.email_count else {}),
     }
 
 
@@ -230,6 +233,7 @@ async def generate_wordlist(
             "exclude_patterns": request.exclude_patterns,
             "crawl_strategy": request.crawl_strategy,
             "js_render": request.js_render,
+            "extract_emails": request.extract_emails,
             "merge_words": _resolve_merge_words(request),
             "merge_max": request.merge_max,
             "enable_random_combine": request.enable_random_combine,

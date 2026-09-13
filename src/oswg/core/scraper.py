@@ -63,6 +63,7 @@ class Scraper:
         crawl_strategy: str = "bfs",
         js_render: bool = False,
         storage_state: dict | None = None,
+        extract_emails: bool = False,
     ):
         if crawl_strategy not in ("bfs", "dfs"):
             raise ValueError(f"Unknown crawl strategy '{crawl_strategy}' (expected 'bfs' or 'dfs')")
@@ -88,6 +89,7 @@ class Scraper:
         self.exclude_patterns = [p for p in (exclude_patterns or []) if p]
         self.crawl_strategy = crawl_strategy
         self.js_render = js_render
+        self.extract_emails = extract_emails
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
@@ -265,6 +267,7 @@ class Scraper:
                     content.keywords.extend(page_content.keywords)
                     content.body_text.extend(page_content.body_text)
                     content.links_text.extend(page_content.links_text)
+                    content.emails.extend(page_content.emails)
                     self.page_word_sets.append(page_words)
                     if not content.title and page_content.title:
                         content.title = page_content.title
@@ -301,6 +304,7 @@ class Scraper:
                     continue
 
         content.keywords = self._deduplicate_and_rank(content.keywords)
+        content.emails = list(dict.fromkeys(e.lower() for e in content.emails))
         if on_progress:
             await self._emit_progress(
                 on_progress,
@@ -368,6 +372,7 @@ class Scraper:
                     all_content.keywords.extend(page_content.keywords)
                     all_content.body_text.extend(page_content.body_text)
                     all_content.links_text.extend(page_content.links_text)
+                    all_content.emails.extend(page_content.emails)
                     self.page_word_sets.append(page_words)
                     if not all_content.title and page_content.title:
                         all_content.title = page_content.title
@@ -404,6 +409,7 @@ class Scraper:
                     continue
 
         all_content.keywords = self._deduplicate_and_rank(all_content.keywords)
+        all_content.emails = list(dict.fromkeys(e.lower() for e in all_content.emails))
         if on_progress:
             await self._emit_progress(
                 on_progress,
@@ -431,10 +437,12 @@ class Scraper:
         screenshot: bytes | None = None
         if self.js_render:
             html, screenshot = await self._render_page(url)
+            raw_html = html
             soup = BeautifulSoup(html, "lxml")
         else:
             response = await client.get(url)
             response.raise_for_status()
+            raw_html = response.text
             soup = BeautifulSoup(response.text, "lxml")
 
         if screenshot is not None:
@@ -442,6 +450,11 @@ class Scraper:
 
         content = ScrapedContent(url=url)
         page_words: set[str] = set()
+
+        if self.extract_emails:
+            from oswg.core.emails import extract_emails
+
+            content.emails = extract_emails(raw_html)
 
         title_tag = soup.find("title")
         if title_tag:

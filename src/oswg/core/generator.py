@@ -34,6 +34,7 @@ class WordlistGenerator:
 
         self.scraper.min_word_length = config.min_word_length
         self.scraper.max_word_length = config.max_word_length
+        self.scraper.extract_emails = config.extract_emails
 
         if urls:
             scraped = await self.scraper.scrape_urls(
@@ -48,6 +49,11 @@ class WordlistGenerator:
             scraped, config, self.scraper.page_word_sets
         )
         base_words = list(words)
+
+        email_count = len(scraped.emails)
+        if config.extract_emails and scraped.emails:
+            existing = {w.lower() for w in base_words}
+            base_words[:0] = [e for e in scraped.emails if e.lower() not in existing]
 
         merged_count = 0
         if config.merge_words:
@@ -136,6 +142,7 @@ class WordlistGenerator:
             config=config,
             base_words=base_words,
             link_graph=self.scraper.link_graph,
+            email_count=email_count,
         )
 
     async def _ai_expand_base_words(

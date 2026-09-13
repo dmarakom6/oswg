@@ -46,6 +46,9 @@ class GenerateRequest(BaseRequest):
     js_render: bool = Field(
         default=False, description="Render pages with a real browser (JS) instead of plain HTTP. Requires oswg[js]."
     )
+    extract_emails: bool = Field(
+        default=False, description="Extract email addresses found on the target and include them in the wordlist."
+    )
     size: int = Field(10000, description="Target wordlist size.", ge=1, le=1000000)
     max_pages: int = Field(10, description="Maximum pages to scrape.", ge=1, le=100)
     min_length: int = Field(3, description="Minimum word length.", ge=1, le=32)
@@ -198,6 +201,9 @@ class ScrapeRequest(BaseRequest):
     js_render: bool = Field(
         default=False, description="Render pages with a real browser (JS) instead of plain HTTP. Requires oswg[js]."
     )
+    extract_emails: bool = Field(
+        default=False, description="Extract email addresses found on the target and include them in the output."
+    )
     max_pages: int = Field(10, description="Maximum pages to scrape.", ge=1, le=100)
     timeout: float = Field(30.0, description="HTTP request timeout in seconds.", ge=1.0, le=300.0)
     respect_robots: bool = Field(False, description="Respect robots.txt rules.")
@@ -276,6 +282,7 @@ class JobStatusResponse(BaseModel):
     rule_format: Optional[str] = None
     crawl_strategy: Optional[str] = None
     screenshot_count: Optional[int] = None
+    email_count: Optional[int] = None
 
 
 class JobListItem(BaseModel):

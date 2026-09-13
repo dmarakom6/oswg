@@ -33,6 +33,7 @@
 	let excludePatterns = $state<string[]>([]);
 	let crawlStrategy = $state<'bfs' | 'dfs'>('bfs');
 	let jsRender = $state(false);
+	let extractEmails = $state(false);
 	let submitting = $state(false);
 
 	let urlError = $derived(url.length > 0 && !isValidUrl(url) ? 'Enter a valid URL including protocol (https://)' : '');
@@ -51,6 +52,7 @@
 				exclude_patterns: excludePatterns,
 				crawl_strategy: crawlStrategy,
 				js_render: jsRender,
+				extract_emails: extractEmails,
 				max_pages: maxPages,
 				timeout,
 				respect_robots: respectRobots,
@@ -151,6 +153,8 @@
 			{:else}
 				<p class="text-xs text-muted-foreground">Render pages in a real browser for JS-driven sites. Saves a screenshot per page.</p>
 			{/if}
+			<ToggleSwitch checked={extractEmails} onchange={(v) => (extractEmails = v)} label="Extract email addresses" />
+			<p class="text-xs text-muted-foreground">Include full email addresses found on the target in the output.</p>
 			<NumberStepper
 				value={timeout}
 				onchange={(v) => (timeout = v)}

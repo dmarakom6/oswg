@@ -297,6 +297,10 @@ def generate(
         False, "--js-render",
         help="Render pages with a real browser (JS) instead of plain HTTP. Requires 'pip install oswg[js]'.",
     ),
+    emails: bool = typer.Option(
+        False, "--emails",
+        help="Extract email addresses found on the target and include them in the wordlist.",
+    ),
     no_filter_stopwords: bool = typer.Option(False, "--no-filter-stopwords", help="Disable common word filtering."),
     stopword_threshold: float = typer.Option(
         0.5, "--stopword-threshold",
@@ -427,6 +431,7 @@ def generate(
         filter_stopwords=not no_filter_stopwords,
         stopword_threshold=stopword_threshold,
         extra_stopwords=extra_stopwords,
+        extract_emails=emails,
         merge_words=collect_merge_words(merge, merge_builtin, merge_rockyou),
         merge_max=merge_max,
         enable_random_combine=random_combine,
@@ -579,6 +584,7 @@ def generate(
             "source_keywords": result.source_keywords,
             "total_mutations": result.total_mutations,
             "truncated_count": result.truncated_count,
+            **({"email_count": result.email_count} if result.email_count else {}),
         },
         config=config,
     )
@@ -625,6 +631,10 @@ def scrape(
     js_render: bool = typer.Option(
         False, "--js-render",
         help="Render pages with a real browser (JS) instead of plain HTTP. Requires 'pip install oswg[js]'.",
+    ),
+    emails: bool = typer.Option(
+        False, "--emails",
+        help="Extract email addresses found on the target and include them in the output.",
     ),
     output: Path = typer.Option(None, "--output", "-o", help="Save keywords to file."),
     format: str = typer.Option(
@@ -685,6 +695,7 @@ def scrape(
         exclude_patterns=exclude,
         crawl_strategy=crawl_strategy,
         js_render=js_render,
+        extract_emails=emails,
         storage_state=session,
     )
     scraper.cookie_jar = _read_cookie_file(cookie_file) + scraper.cookie_jar
@@ -700,6 +711,9 @@ def scrape(
         raise typer.Exit(code=1) from e
 
     keywords = content.keywords
+    if emails and content.emails:
+        existing = {kw.lower() for kw in keywords}
+        keywords = keywords + [e for e in content.emails if e.lower() not in existing]
 
     seed_host = url[0].split("//")[-1].split("/")[0]
     screenshot_paths = save_screenshots(scraper.screenshots, output if output else None, stem=seed_host)
@@ -715,7 +729,8 @@ def scrape(
                 "title": content.title,
                 "meta_description": content.meta_description,
             },
-            stats={"keywords_count": len(keywords), "crawl_strategy": crawl_strategy},
+            stats={"keywords_count": len(keywords), "crawl_strategy": crawl_strategy,
+                   **({"email_count": len(content.emails)} if content.emails else {})},
             config={
                 "max_pages": max_pages,
                 "sitemap": sitemap,

@@ -56,6 +56,10 @@ oswg generate https://example.com -o wordlist.json   # JSON with metadata
 oswg scrape https://example.com -o keywords.csv      # CSV
 oswg generate https://example.com -o wordlist.txt.gz # gzip-compressed
 oswg generate https://example.com -o wordlist.json --gzip  # any format + gzip
+
+# Include email addresses found on the target in the wordlist
+oswg generate https://example.com --emails -o wordlist.txt
+oswg scrape https://example.com --emails
 ```
 
 ### Health checks

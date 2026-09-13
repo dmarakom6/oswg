@@ -106,6 +106,7 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         rule_format=stats.get("rule_format"),
         crawl_strategy=stats.get("crawl_strategy"),
         screenshot_count=stats.get("screenshot_count"),
+        email_count=stats.get("email_count"),
     )
 
 

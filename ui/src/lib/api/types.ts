@@ -158,6 +158,8 @@ export interface JobPreview {
 	total_words: number;
 	preview: string[];
 	truncated: boolean;
+	usernames?: string[];
+	usernames_total?: number;
 }
 
 export interface JobRulePreview {

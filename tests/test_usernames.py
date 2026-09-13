@@ -111,6 +111,29 @@ def test_noise_rejected():
     assert _extract(html) == []
 
 
+def test_social_handles():
+    html = (
+        '<a href="https://instagram.com/john.doe">ig</a>'
+        '<a href="https://www.x.com/jdoe">x</a>'
+        '<a href="https://twitter.com/jdoe">tw</a>'
+        '<a href="https://github.com/jdoe">gh</a>'
+        '<a href="https://www.linkedin.com/in/jane-doe">li</a>'
+        '<a href="https://t.me/jdoe">tg</a>'
+        '<a href="https://www.reddit.com/user/jdoe">rd</a>'
+        '<a href="https://www.youtube.com/@jdoe">yt</a>'
+        '<a href="https://www.threads.net/@jane_doe">th</a>'
+        '<a href="https://instagram.com/explore/tags/cats">noise</a>'
+        '<a href="https://github.com/topics/python">noise2</a>'
+        '<a href="https://open.spotify.com/show/abc">not social</a>'
+    )
+    assert _extract(html) == [
+        "john.doe",
+        "jdoe",
+        "jane-doe",
+        "jane_doe",
+    ]
+
+
 # --- scraper integration --------------------------------------------------
 
 

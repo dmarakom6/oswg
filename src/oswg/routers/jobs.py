@@ -391,10 +391,21 @@ async def preview_job_result(job_id: str, limit: int = 100):
     total = len(lines)
     preview = [line.strip() for line in lines[:limit] if line.strip()]
 
+    usernames: list[str] = []
+    if file_manager.file_exists(job_id, ".usernames.txt"):
+        with open(
+            file_manager.get_file_path(job_id, ".usernames.txt"),
+            "r",
+            encoding="utf-8",
+        ) as f:
+            usernames = [line.strip() for line in f if line.strip()]
+
     return {
         "job_id": job_id,
         "mode": "wordlist",
         "total_words": total,
         "preview": preview,
         "truncated": total > limit,
+        "usernames": usernames,
+        "usernames_total": len(usernames),
     }

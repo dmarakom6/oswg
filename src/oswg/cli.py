@@ -551,6 +551,7 @@ def generate(
             usr_path = _sidecar_output_path(output.resolve(), "usernames")
             _, compress_usr = infer_export(output.resolve(), None, gzip_output)
             usr_path = with_gzip_suffix(usr_path, compress_usr)
+            usr_path.parent.mkdir(parents=True, exist_ok=True)
             usr_path.write_bytes(
                 render_bytes(result.usernames, "txt", compress=compress_usr)
             )
@@ -571,6 +572,7 @@ def generate(
         rules = generate_rules(config, format=rule_format)
         base_words = result.base_words
 
+        rules_path.parent.mkdir(parents=True, exist_ok=True)
         rules_path.write_bytes(render_bytes(rules, "txt", compress=compress_rules))
         base_path.write_bytes(render_bytes(base_words, "txt", compress=compress_rules))
 
@@ -762,6 +764,7 @@ def scrape(
             usr_path = _sidecar_output_path(output_path, "usernames")
             _, compress_usr = infer_export(output_path, None, gzip_output)
             usr_path = with_gzip_suffix(usr_path, compress_usr)
+            usr_path.parent.mkdir(parents=True, exist_ok=True)
             usr_path.write_bytes(
                 render_bytes(content.usernames, "txt", compress=compress_usr)
             )

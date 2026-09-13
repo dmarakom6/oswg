@@ -360,15 +360,27 @@
 						</p>
 					{/if}
 					{#if currentJob.username_count && currentJob.username_count > 0}
-						<p class="text-xs text-muted-foreground">
-							{currentJob.username_count} username{currentJob.username_count !== 1 ? 's' : ''} extracted to a separate list.
-						</p>
-						<button
-							onclick={() => downloadJob(currentJob.job_id, 'usernames', 'txt', downloadGzip)}
-							class="w-full rounded-md border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-						>
-							Download Usernames
-						</button>
+						<div class="space-y-2">
+							<div class="flex items-center justify-between">
+								<span class="text-xs font-medium text-foreground">Usernames</span>
+								<span class="text-xs text-muted-foreground">
+									{currentJob.username_count} username{currentJob.username_count !== 1 ? 's' : ''} · separate list
+								</span>
+							</div>
+							{#if preview?.usernames?.length}
+								<div class="max-h-28 overflow-y-auto rounded-md border border-border bg-muted/30 p-2 font-mono text-xs leading-relaxed text-foreground">
+									{#each preview.usernames as user}
+										<div>{user}</div>
+									{/each}
+								</div>
+							{/if}
+							<button
+								onclick={() => downloadJob(currentJob.job_id, 'usernames', 'txt', downloadGzip)}
+								class="w-full rounded-md border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+							>
+								Download Usernames
+							</button>
+						</div>
 					{/if}
 					<div class="flex items-center justify-between gap-2">
 						<SegmentedControl

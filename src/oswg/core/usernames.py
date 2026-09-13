@@ -1,7 +1,7 @@
 """Username extraction from a scraped page."""
 
 import re
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 from bs4 import BeautifulSoup
 
@@ -36,6 +36,24 @@ _DENYLIST = {
     "new",
     "search",
     "browse",
+    # Social-site reserved segments (first path element is not a handle).
+    "explore",
+    "reel",
+    "reels",
+    "stories",
+    "share",
+    "tagged",
+    "hashtag",
+    "intent",
+    "settings",
+    "followers",
+    "following",
+    "topics",
+    "lists",
+    "status",
+    "watch",
+    "playlist",
+    "channel",
 }
 
 _USERNAME_CHARS = re.compile(r"^[a-z0-9._-]+$")
@@ -123,8 +141,6 @@ def _from_profile_paths(links: list[str]) -> list[str]:
     """Usernames from profile-style same-domain URL paths."""
     result = []
     for url in links:
-        from urllib.parse import urlparse
-
         path = urlparse(url).path
         match = _PROFILE_PATH_RE.match(path) or _AT_PATH_RE.match(path)
         if match:
@@ -134,19 +150,58 @@ def _from_profile_paths(links: list[str]) -> list[str]:
     return result
 
 
+def _social_handle(host: str, path: str) -> str | None:
+    """Extract a handle from a known social-profile URL path, if any."""
+    host = host.lower()
+    if host.startswith("www."):
+        host = host[4:]
+
+    if host in ("instagram.com", "x.com", "twitter.com", "github.com", "t.me"):
+        match = re.match(r"^/([^/]+?)(?:/|$)", path)
+    elif host == "linkedin.com":
+        match = re.match(r"^/in/([^/]+?)(?:/|$)", path)
+    elif host == "reddit.com":
+        match = re.match(r"^/user/([^/]+?)(?:/|$)", path)
+    elif host == "youtube.com":
+        match = re.match(r"^/@([^/]+?)(?:/|$)", path)
+    elif host == "threads.net":
+        match = re.match(r"^/@/?([^/]+?)(?:/|$)", path)
+    else:
+        return None
+    return match.group(1) if match else None
+
+
+def _from_social_handles(soup: BeautifulSoup) -> list[str]:
+    """Usernames from off-domain social profile links."""
+    result = []
+    for a_tag in soup.find_all("a", href=True):
+        parsed = urlparse(a_tag["href"])
+        if parsed.scheme not in ("http", "https"):
+            continue
+        handle = _social_handle(parsed.netloc, parsed.path)
+        if handle is None:
+            continue
+        clean = _clean(handle)
+        if clean and clean not in result:
+            result.append(clean)
+    return result
+
+
 def extract_usernames(
     raw_html: str, soup: BeautifulSoup, links: list[str]
 ) -> list[str]:
     """Extract de-duplicated usernames from a page.
 
-    Sources: email local parts, author/creator metadata, and profile-style
-    URL path segments. Preserves first-seen order.
+    Sources: email local parts, author/creator metadata, profile-style
+    URL path segments, and off-domain social profile links. Preserves
+    first-seen order.
     """
     result = []
     for candidate in (
         _from_email_local_parts(raw_html)
         + _from_author_metadata(soup)
         + _from_profile_paths(links)
+        + _from_social_handles(soup)
     ):
         if candidate not in result:
             result.append(candidate)

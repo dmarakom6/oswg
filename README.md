@@ -60,6 +60,10 @@ oswg generate https://example.com -o wordlist.json --gzip  # any format + gzip
 # Include email addresses found on the target in the wordlist
 oswg generate https://example.com --emails -o wordlist.txt
 oswg scrape https://example.com --emails
+
+# Extract usernames to a separate sidecar list (never merged into the wordlist)
+oswg generate https://example.com --username -o wordlist.txt   # -> wordlist.usernames.txt
+oswg scrape https://example.com --username
 ```
 
 ### Health checks

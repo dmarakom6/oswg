@@ -46,6 +46,7 @@
 	let crawlStrategy = $state<'bfs' | 'dfs'>('bfs');
 	let jsRender = $state(false);
 	let extractEmails = $state(false);
+	let extractUsernames = $state(false);
 	let deduplicate = $state(true);
 	let filterStopwords = $state(true);
 	let stopwordThreshold = $state(0.5);
@@ -103,6 +104,7 @@
 				crawl_strategy: crawlStrategy,
 				js_render: jsRender,
 				extract_emails: extractEmails,
+				extract_usernames: extractUsernames,
 				size,
 				max_pages: maxPages,
 				min_length: minLength,
@@ -272,6 +274,8 @@
 			{/if}
 			<ToggleSwitch checked={extractEmails} onchange={(v) => (extractEmails = v)} label="Extract email addresses" />
 			<p class="text-xs text-muted-foreground">Include full email addresses found on the target in the wordlist.</p>
+			<ToggleSwitch checked={extractUsernames} onchange={(v) => (extractUsernames = v)} label="Extract usernames" />
+			<p class="text-xs text-muted-foreground">Save usernames to a separate sidecar list (not merged into the wordlist).</p>
 			<ToggleSwitch checked={deduplicate} onchange={(v) => (deduplicate = v)} label="Deduplicate" />
 			<p class="text-xs text-muted-foreground">Remove duplicate words from the output.</p>
 			<ToggleSwitch checked={filterStopwords} onchange={(v) => (filterStopwords = v)} label="Filter common words" />

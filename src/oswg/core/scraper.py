@@ -64,6 +64,7 @@ class Scraper:
         js_render: bool = False,
         storage_state: dict | None = None,
         extract_emails: bool = False,
+        extract_usernames: bool = False,
     ):
         if crawl_strategy not in ("bfs", "dfs"):
             raise ValueError(f"Unknown crawl strategy '{crawl_strategy}' (expected 'bfs' or 'dfs')")
@@ -90,6 +91,7 @@ class Scraper:
         self.crawl_strategy = crawl_strategy
         self.js_render = js_render
         self.extract_emails = extract_emails
+        self.extract_usernames = extract_usernames
         self.visited_urls: set[str] = set()
         self.page_word_sets: list[set[str]] = []
         self.failed_pages: list[tuple[str, str]] = []
@@ -268,6 +270,7 @@ class Scraper:
                     content.body_text.extend(page_content.body_text)
                     content.links_text.extend(page_content.links_text)
                     content.emails.extend(page_content.emails)
+                    content.usernames.extend(page_content.usernames)
                     self.page_word_sets.append(page_words)
                     if not content.title and page_content.title:
                         content.title = page_content.title
@@ -305,6 +308,7 @@ class Scraper:
 
         content.keywords = self._deduplicate_and_rank(content.keywords)
         content.emails = list(dict.fromkeys(e.lower() for e in content.emails))
+        content.usernames = list(dict.fromkeys(content.usernames))
         if on_progress:
             await self._emit_progress(
                 on_progress,
@@ -373,6 +377,7 @@ class Scraper:
                     all_content.body_text.extend(page_content.body_text)
                     all_content.links_text.extend(page_content.links_text)
                     all_content.emails.extend(page_content.emails)
+                    all_content.usernames.extend(page_content.usernames)
                     self.page_word_sets.append(page_words)
                     if not all_content.title and page_content.title:
                         all_content.title = page_content.title
@@ -410,6 +415,7 @@ class Scraper:
 
         all_content.keywords = self._deduplicate_and_rank(all_content.keywords)
         all_content.emails = list(dict.fromkeys(e.lower() for e in all_content.emails))
+        all_content.usernames = list(dict.fromkeys(all_content.usernames))
         if on_progress:
             await self._emit_progress(
                 on_progress,
@@ -497,6 +503,11 @@ class Scraper:
                 page_words.update(w.lower() for w in words)
 
         discovered_links = self._extract_links(soup, url)
+
+        if self.extract_usernames:
+            from oswg.core.usernames import extract_usernames
+
+            content.usernames = extract_usernames(raw_html, soup, discovered_links)
 
         return content, discovered_links, page_words
 

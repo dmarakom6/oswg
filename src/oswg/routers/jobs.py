@@ -107,6 +107,7 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         crawl_strategy=stats.get("crawl_strategy"),
         screenshot_count=stats.get("screenshot_count"),
         email_count=stats.get("email_count"),
+        username_count=stats.get("username_count"),
     )
 
 
@@ -139,7 +140,7 @@ async def download_job_result(
             detail=f"Job {job_id} is not completed (status: {job['status']})",
         )
 
-    if target not in ("rules", "base", "wordlist"):
+    if target not in ("rules", "base", "wordlist", "usernames"):
         raise HTTPException(status_code=400, detail=f"Unknown target '{target}'")
 
     if format not in FORMATS:
@@ -148,8 +149,12 @@ async def download_job_result(
             detail=f"Unknown format '{format}' (expected one of: {', '.join(FORMATS)})",
         )
 
-    if target in ("rules", "base"):
-        extension = ".rules" if target == "rules" else ".base.txt"
+    if target in ("rules", "base", "usernames"):
+        extension = {
+            "rules": ".rules",
+            "base": ".base.txt",
+            "usernames": ".usernames.txt",
+        }[target]
         if not file_manager.file_exists(job_id, extension):
             raise HTTPException(
                 status_code=404,
@@ -177,7 +182,14 @@ async def download_job_result(
         .splitlines()
     )
     metadata = _job_export_metadata(job)
-    data = render_bytes(words, fmt=format, metadata=metadata, compress=gzip)
+    extra = None
+    if format == "json" and file_manager.file_exists(job_id, ".usernames.txt"):
+        extra = {
+            "usernames": file_manager.get_file_path(job_id, ".usernames.txt")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        }
+    data = render_bytes(words, fmt=format, metadata=metadata, compress=gzip, extra=extra)
     extension = {"txt": ".txt", "json": ".json", "csv": ".csv"}[format]
     filename = f"oswg_{job_id}{extension}" + (".gz" if gzip else "")
     media_type = "application/gzip" if gzip else MEDIA_TYPES[format]

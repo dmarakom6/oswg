@@ -35,6 +35,7 @@ class WordlistGenerator:
         self.scraper.min_word_length = config.min_word_length
         self.scraper.max_word_length = config.max_word_length
         self.scraper.extract_emails = config.extract_emails
+        self.scraper.extract_usernames = config.extract_usernames
 
         if urls:
             scraped = await self.scraper.scrape_urls(
@@ -143,6 +144,7 @@ class WordlistGenerator:
             base_words=base_words,
             link_graph=self.scraper.link_graph,
             email_count=email_count,
+            usernames=scraped.usernames,
         )
 
     async def _ai_expand_base_words(

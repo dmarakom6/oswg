@@ -90,17 +90,20 @@ def render_bytes(
     fmt: str = "txt",
     metadata: dict | None = None,
     compress: bool = False,
+    extra: dict | None = None,
 ) -> bytes:
-    """Render words to bytes in the requested format, optionally gzipped."""
+    """Render words to bytes in the requested format, optionally gzipped.
+
+    ``extra`` (dict) is merged into the top level of JSON exports only.
+    """
     if fmt not in FORMATS:
         raise ValueError(f"Unknown export format '{fmt}' (expected one of: {', '.join(FORMATS)})")
 
     if fmt == "json":
-        text = json.dumps(
-            {"metadata": metadata or {}, "words": list(words)},
-            indent=2,
-            ensure_ascii=False,
-        ) + "\n"
+        payload = {"metadata": metadata or {}, "words": list(words)}
+        if extra:
+            payload.update(extra)
+        text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
     elif fmt == "csv":
         buffer = io.StringIO()
         writer = csv.writer(buffer, lineterminator="\n")

@@ -27,7 +27,7 @@ export const endpoints = {
 		api.download(`/api/v1/jobs/${jobId}/screenshot?page=${page}`),
 	downloadJob: (
 		jobId: string,
-		target: 'rules' | 'base' | 'wordlist' = 'rules',
+		target: 'rules' | 'base' | 'wordlist' | 'usernames' = 'rules',
 		format: DownloadFormat = 'txt',
 		gzip = false
 	) => api.download(`/api/v1/jobs/${jobId}/download?target=${target}&format=${format}&gzip=${gzip}`)

@@ -37,6 +37,13 @@ class FileManager:
             f.write("\n".join(base_words) + "\n")
         return rules_path
 
+    def save_usernames(self, job_id: str, usernames: list[str]) -> Path:
+        """Save extracted usernames to <job_id>.usernames.txt."""
+        file_path = self.get_file_path(job_id, ".usernames.txt")
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(usernames) + ("\n" if usernames else ""))
+        return file_path
+
     def save_json(self, job_id: str, data: dict) -> Path:
         """Save JSON data to file."""
         import json

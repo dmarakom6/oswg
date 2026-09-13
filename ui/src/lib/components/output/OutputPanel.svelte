@@ -48,7 +48,8 @@
 					rule_format: job.rule_format,
 					crawl_strategy: job.crawl_strategy,
 					screenshot_count: job.screenshot_count,
-					email_count: job.email_count
+					email_count: job.email_count,
+					username_count: job.username_count
 				});
 				if (job.status === 'completed') {
 					stopPolling();
@@ -91,7 +92,7 @@
 
 	async function downloadJob(
 		jobId: string,
-		target: 'rules' | 'base' | 'wordlist' = 'wordlist',
+		target: 'rules' | 'base' | 'wordlist' | 'usernames' = 'wordlist',
 		format: DownloadFormat = 'txt',
 		gzip = false
 	) {
@@ -357,6 +358,17 @@
 						<p class="text-xs text-muted-foreground">
 							{currentJob.email_count} email address{currentJob.email_count !== 1 ? 'es' : ''} found and included in the wordlist.
 						</p>
+					{/if}
+					{#if currentJob.username_count && currentJob.username_count > 0}
+						<p class="text-xs text-muted-foreground">
+							{currentJob.username_count} username{currentJob.username_count !== 1 ? 's' : ''} extracted to a separate list.
+						</p>
+						<button
+							onclick={() => downloadJob(currentJob.job_id, 'usernames', 'txt', downloadGzip)}
+							class="w-full rounded-md border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+						>
+							Download Usernames
+						</button>
 					{/if}
 					<div class="flex items-center justify-between gap-2">
 						<SegmentedControl

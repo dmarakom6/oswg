@@ -13,6 +13,7 @@ export interface GenerateRequest {
 	crawl_strategy?: 'bfs' | 'dfs';
 	js_render?: boolean;
 	extract_emails?: boolean;
+	extract_usernames?: boolean;
 	size: number;
 	max_pages: number;
 	min_length: number;
@@ -68,6 +69,7 @@ export interface ScrapeRequest {
 	crawl_strategy?: 'bfs' | 'dfs';
 	js_render?: boolean;
 	extract_emails?: boolean;
+	extract_usernames?: boolean;
 	max_pages: number;
 	timeout?: number;
 	respect_robots?: boolean;
@@ -123,6 +125,7 @@ export interface Job {
 	crawl_strategy?: 'bfs' | 'dfs' | null;
 	screenshot_count?: number | null;
 	email_count?: number | null;
+	username_count?: number | null;
 }
 
 export interface AppInfo {

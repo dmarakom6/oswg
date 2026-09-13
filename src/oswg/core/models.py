@@ -34,6 +34,7 @@ class ScrapedContent:
     body_text: list[str] = field(default_factory=list)
     links_text: list[str] = field(default_factory=list)
     emails: list[str] = field(default_factory=list)
+    usernames: list[str] = field(default_factory=list)
 
     @property
     def all_words(self) -> list[str]:
@@ -76,6 +77,7 @@ class GenerationConfig:
     stopword_threshold: float = 0.5
     extra_stopwords: list[str] = field(default_factory=list)
     extract_emails: bool = False
+    extract_usernames: bool = False
     merge_words: list[str] = field(default_factory=list)
     merge_max: int = 5000
     enable_random_combine: bool = False
@@ -105,3 +107,4 @@ class GenerationResult:
     base_words: list[str] = field(default_factory=list)
     link_graph: dict[str, list[str]] = field(default_factory=dict)
     email_count: int = 0
+    usernames: list[str] = field(default_factory=list)

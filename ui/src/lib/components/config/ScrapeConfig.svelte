@@ -34,6 +34,7 @@
 	let crawlStrategy = $state<'bfs' | 'dfs'>('bfs');
 	let jsRender = $state(false);
 	let extractEmails = $state(false);
+	let extractUsernames = $state(false);
 	let submitting = $state(false);
 
 	let urlError = $derived(url.length > 0 && !isValidUrl(url) ? 'Enter a valid URL including protocol (https://)' : '');
@@ -53,6 +54,7 @@
 				crawl_strategy: crawlStrategy,
 				js_render: jsRender,
 				extract_emails: extractEmails,
+				extract_usernames: extractUsernames,
 				max_pages: maxPages,
 				timeout,
 				respect_robots: respectRobots,
@@ -155,6 +157,8 @@
 			{/if}
 			<ToggleSwitch checked={extractEmails} onchange={(v) => (extractEmails = v)} label="Extract email addresses" />
 			<p class="text-xs text-muted-foreground">Include full email addresses found on the target in the output.</p>
+			<ToggleSwitch checked={extractUsernames} onchange={(v) => (extractUsernames = v)} label="Extract usernames" />
+			<p class="text-xs text-muted-foreground">Save usernames to a separate sidecar list (not merged into the output).</p>
 			<NumberStepper
 				value={timeout}
 				onchange={(v) => (timeout = v)}

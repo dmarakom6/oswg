@@ -63,6 +63,7 @@ async def execute_scrape(job_id: str) -> dict:
         crawl_strategy=config_data.get("crawl_strategy", "bfs"),
         js_render=config_data.get("js_render", False),
         extract_emails=config_data.get("extract_emails", False),
+        extract_usernames=config_data.get("extract_usernames", False),
         storage_state=_parse_session_text(config_data.get("storage_state")),
     )
     scraper.cookie_jar = _parse_cookie_text(config_data.get("cookie_file")) + scraper.cookie_jar
@@ -89,6 +90,9 @@ async def execute_scrape(job_id: str) -> dict:
     file_path = file_manager.save_words(job_id, keywords)
     file_manager.save_graph(job_id, scraper.link_graph)
 
+    if content.usernames:
+        file_manager.save_usernames(job_id, content.usernames)
+
     screenshot_count = 0
     for i, png in enumerate(scraper.screenshots):
         if png is not None:
@@ -105,6 +109,7 @@ async def execute_scrape(job_id: str) -> dict:
         "crawl_strategy": config_data.get("crawl_strategy", "bfs"),
         "screenshot_count": screenshot_count,
         **({"email_count": len(content.emails)} if content.emails else {}),
+        **({"username_count": len(content.usernames)} if content.usernames else {}),
     }
 
 
@@ -144,6 +149,7 @@ async def scrape_keywords(
             "crawl_strategy": request.crawl_strategy,
             "js_render": request.js_render,
             "extract_emails": request.extract_emails,
+            "extract_usernames": request.extract_usernames,
         }
 
         job_id = await job_manager.create_job(

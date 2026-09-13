@@ -202,6 +202,19 @@ def _rule_output_paths(output_path: Path) -> tuple[Path, Path]:
     return base.with_name(base.name + ".rules"), base.with_name(base.name + ".base.txt")
 
 
+def _sidecar_output_path(output_path: Path, label: str) -> Path:
+    """Derive <stem>.<label>.txt from the -o path."""
+    name = output_path.name
+    if name.endswith(".gz"):
+        name = name[:-3]
+    for suffix in (".txt", ".json", ".csv"):
+        if name.endswith(suffix):
+            name = name[: -len(suffix)]
+            break
+    base = output_path.with_name(name)
+    return base.with_name(f"{base.name}.{label}.txt")
+
+
 def collect_merge_words(
     merge_files: list[Path] | None,
     merge_builtin: bool,
@@ -300,6 +313,10 @@ def generate(
     emails: bool = typer.Option(
         False, "--emails",
         help="Extract email addresses found on the target and include them in the wordlist.",
+    ),
+    usernames: bool = typer.Option(
+        False, "--username",
+        help="Extract usernames found on the target to a separate sidecar list (not merged into the wordlist).",
     ),
     no_filter_stopwords: bool = typer.Option(False, "--no-filter-stopwords", help="Disable common word filtering."),
     stopword_threshold: float = typer.Option(
@@ -432,6 +449,7 @@ def generate(
         stopword_threshold=stopword_threshold,
         extra_stopwords=extra_stopwords,
         extract_emails=emails,
+        extract_usernames=usernames,
         merge_words=collect_merge_words(merge, merge_builtin, merge_rockyou),
         merge_max=merge_max,
         enable_random_combine=random_combine,
@@ -529,6 +547,18 @@ def generate(
         screenshot_paths = save_screenshots(generator.scraper.screenshots, output.resolve())
         print_screenshots_summary(screenshot_paths, quiet=quiet)
 
+        if result.usernames:
+            usr_path = _sidecar_output_path(output.resolve(), "usernames")
+            _, compress_usr = infer_export(output.resolve(), None, gzip_output)
+            usr_path = with_gzip_suffix(usr_path, compress_usr)
+            usr_path.write_bytes(
+                render_bytes(result.usernames, "txt", compress=compress_usr)
+            )
+            if not quiet:
+                print_success(
+                    f"Saved {len(result.usernames)} usernames to {usr_path}"
+                )
+
     if rule_format:
         output_path = output.resolve()
         _, compress_rules = infer_export(output_path, None, gzip_output)
@@ -585,6 +615,7 @@ def generate(
             "total_mutations": result.total_mutations,
             "truncated_count": result.truncated_count,
             **({"email_count": result.email_count} if result.email_count else {}),
+            **({"username_count": len(result.usernames)} if result.usernames else {}),
         },
         config=config,
     )
@@ -635,6 +666,10 @@ def scrape(
     emails: bool = typer.Option(
         False, "--emails",
         help="Extract email addresses found on the target and include them in the output.",
+    ),
+    usernames: bool = typer.Option(
+        False, "--username",
+        help="Extract usernames found on the target to a separate sidecar list.",
     ),
     output: Path = typer.Option(None, "--output", "-o", help="Save keywords to file."),
     format: str = typer.Option(
@@ -696,6 +731,7 @@ def scrape(
         crawl_strategy=crawl_strategy,
         js_render=js_render,
         extract_emails=emails,
+        extract_usernames=usernames,
         storage_state=session,
     )
     scraper.cookie_jar = _read_cookie_file(cookie_file) + scraper.cookie_jar
@@ -721,6 +757,19 @@ def scrape(
 
     if output:
         output_path = output.resolve()
+
+        if content.usernames:
+            usr_path = _sidecar_output_path(output_path, "usernames")
+            _, compress_usr = infer_export(output_path, None, gzip_output)
+            usr_path = with_gzip_suffix(usr_path, compress_usr)
+            usr_path.write_bytes(
+                render_bytes(content.usernames, "txt", compress=compress_usr)
+            )
+            if not quiet:
+                print_success(
+                    f"Saved {len(content.usernames)} usernames to {usr_path}"
+                )
+
         metadata = build_metadata(
             version=__version__,
             source={
@@ -730,7 +779,8 @@ def scrape(
                 "meta_description": content.meta_description,
             },
             stats={"keywords_count": len(keywords), "crawl_strategy": crawl_strategy,
-                   **({"email_count": len(content.emails)} if content.emails else {})},
+                   **({"email_count": len(content.emails)} if content.emails else {}),
+                   **({"username_count": len(content.usernames)} if content.usernames else {})},
             config={
                 "max_pages": max_pages,
                 "sitemap": sitemap,
@@ -755,6 +805,11 @@ def scrape(
             else:
                 print_keywords_preview(keywords)
             print_info(f"Total: {len(keywords)} unique keywords extracted")
+            if content.usernames:
+                console.print("")
+                print_info(f"Usernames ({len(content.usernames)}):")
+                for u in content.usernames:
+                    console.print(u)
 
 
 @app.command()

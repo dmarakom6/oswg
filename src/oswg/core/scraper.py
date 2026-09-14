@@ -320,7 +320,7 @@ class Scraper:
                         )
                     continue
 
-        content.keywords = self._deduplicate_and_rank(content.keywords)
+        content.keywords, content.keyword_counts = self._deduplicate_and_rank(content.keywords)
         content.emails = list(dict.fromkeys(e.lower() for e in content.emails))
         content.usernames = list(dict.fromkeys(content.usernames))
         if on_progress:
@@ -428,7 +428,7 @@ class Scraper:
                         )
                     continue
 
-        all_content.keywords = self._deduplicate_and_rank(all_content.keywords)
+        all_content.keywords, all_content.keyword_counts = self._deduplicate_and_rank(all_content.keywords)
         all_content.emails = list(dict.fromkeys(e.lower() for e in all_content.emails))
         all_content.usernames = list(dict.fromkeys(all_content.usernames))
         if on_progress:
@@ -676,7 +676,7 @@ class Scraper:
         max_len = self.max_word_length
         return re.findall(rf"[a-zA-Z]{{{min_len},{max_len}}}", text)
 
-    def _deduplicate_and_rank(self, words: list[str]) -> list[str]:
-        """Deduplicate and rank words by frequency."""
+    def _deduplicate_and_rank(self, words: list[str]) -> tuple[list[str], dict[str, int]]:
+        """Deduplicate and rank words by frequency, returning the counts too."""
         counter = Counter(word.lower() for word in words)
-        return [word for word, _ in counter.most_common()]
+        return [word for word, _ in counter.most_common()], dict(counter)

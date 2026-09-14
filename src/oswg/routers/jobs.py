@@ -297,6 +297,40 @@ async def get_job_graph(job_id: str):
 
 
 @router.get(
+    "/jobs/{job_id}/word-counts",
+    responses={
+        404: {"model": ErrorResponse, "description": "Job or word counts not found"},
+    },
+)
+async def get_job_word_counts(job_id: str, limit: int = 200):
+    """Return word frequencies for a completed job's keyword cloud."""
+    job = await job_manager.get_job_status(job_id)
+
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    if job["status"] != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Job {job_id} is not completed (status: {job['status']})",
+        )
+
+    counts_path = file_manager.get_file_path(job_id, ".word-counts.json")
+    if not counts_path.exists():
+        raise HTTPException(
+            status_code=404, detail=f"Word counts for job {job_id} not found"
+        )
+
+    counts: dict[str, int] = json.loads(counts_path.read_text(encoding="utf-8"))
+    words = [
+        {"word": word, "count": count}
+        for word, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:limit]
+    ]
+
+    return {"job_id": job_id, "total": len(counts), "words": words}
+
+
+@router.get(
     "/jobs/{job_id}/screenshot",
     responses={
         404: {"model": ErrorResponse, "description": "Job or screenshot not found"},

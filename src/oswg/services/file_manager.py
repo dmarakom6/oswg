@@ -44,6 +44,15 @@ class FileManager:
             f.write("\n".join(usernames) + ("\n" if usernames else ""))
         return file_path
 
+    def save_word_counts(self, job_id: str, counts: dict[str, int]) -> Path:
+        """Save a word -> count mapping to <job_id>.word-counts.json."""
+        import json
+
+        file_path = self.get_file_path(job_id, ".word-counts.json")
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(counts, f)
+        return file_path
+
     def save_json(self, job_id: str, data: dict) -> Path:
         """Save JSON data to file."""
         import json

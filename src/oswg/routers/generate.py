@@ -190,6 +190,9 @@ async def execute_generate(job_id: str) -> dict:
     if result.usernames:
         file_manager.save_usernames(job_id, result.usernames)
 
+    if result.base_word_counts:
+        file_manager.save_word_counts(job_id, result.base_word_counts)
+
     screenshot_count = 0
     for i, png in enumerate(generator.scraper.screenshots):
         if png is not None:

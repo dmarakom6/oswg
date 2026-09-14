@@ -191,6 +191,17 @@ export interface CrawlGraph {
 	edges: [string, string][];
 }
 
+export interface WordCount {
+	word: string;
+	count: number;
+}
+
+export interface WordCounts {
+	job_id: string;
+	total: number;
+	words: WordCount[];
+}
+
 export interface WSJobMessage {
 	job_id: string;
 	status: JobStatus;

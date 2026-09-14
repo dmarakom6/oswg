@@ -3,33 +3,51 @@
 	import SegmentedControl from '../config/SegmentedControl.svelte';
 	import CrawlGraph from './CrawlGraph.svelte';
 	import CoverageMap from './CoverageMap.svelte';
-	import type { CrawlGraph as CrawlGraphType } from '$lib/api/types';
+	import KeywordCloud from './KeywordCloud.svelte';
+	import type { CrawlGraph as CrawlGraphType, WordCounts } from '$lib/api/types';
 
 	let { jobId, onclose }: { jobId: string; onclose: () => void } = $props();
 
 	let graph = $state<CrawlGraphType | null>(null);
-	let error = $state('');
-	let loaded = $state(false);
-	let view = $state<'coverage' | 'tree'>('coverage');
+	let wordCounts = $state<WordCounts | null>(null);
+	let graphError = $state(false);
+	let wordsError = $state(false);
+	let view = $state<'coverage' | 'tree' | 'cloud'>('coverage');
 
 	$effect(() => {
 		let cancelled = false;
-		endpoints.getGraph(jobId)
+		endpoints
+			.getGraph(jobId)
 			.then((g) => {
-				if (!cancelled) {
-					graph = g;
-					loaded = true;
-				}
+				if (!cancelled) graph = g;
 			})
 			.catch(() => {
-				if (!cancelled) {
-					error = 'Crawl graph unavailable';
-					loaded = true;
-				}
+				if (!cancelled) graphError = true;
+			});
+		endpoints
+			.getWordCounts(jobId)
+			.then((w) => {
+				if (!cancelled) wordCounts = w;
+			})
+			.catch(() => {
+				if (!cancelled) wordsError = true;
 			});
 		return () => {
 			cancelled = true;
 		};
+	});
+
+	const options = $derived.by(() => {
+		const opts: { value: string; label: string }[] = [];
+		if (graph) opts.push({ value: 'coverage', label: 'Coverage' }, { value: 'tree', label: 'Tree' });
+		if (wordCounts?.words?.length) opts.push({ value: 'cloud', label: 'Cloud' });
+		return opts;
+	});
+
+	$effect(() => {
+		if (options.length && !options.some((o) => o.value === view)) {
+			view = options[0].value as typeof view;
+		}
 	});
 </script>
 
@@ -60,32 +78,34 @@
 			>✕</button>
 		</div>
 
-		{#if graph}
+		{#if options.length > 1}
 			<div class="flex justify-center border-b border-border py-2">
 				<SegmentedControl
 					value={view}
-					onchange={(v) => (view = v as 'coverage' | 'tree')}
-					options={[
-						{ value: 'coverage', label: 'Coverage' },
-						{ value: 'tree', label: 'Tree' }
-					]}
+					onchange={(v) => (view = v as 'coverage' | 'tree' | 'cloud')}
+					{options}
 				/>
 			</div>
-			<div class="flex-1 overflow-auto p-4">
-				{#if view === 'coverage'}
-					<CoverageMap {graph} />
-				{:else}
-					<CrawlGraph {jobId} {graph} />
-				{/if}
-			</div>
-		{:else if error}
-			<div class="flex flex-1 items-center justify-center p-4">
-				<p class="text-sm text-destructive">{error}</p>
-			</div>
-		{:else}
-			<div class="flex flex-1 items-center justify-center p-4">
-				<p class="text-sm text-muted-foreground">Loading crawl graph…</p>
-			</div>
 		{/if}
+
+		<div class="flex-1 overflow-auto p-4">
+			{#if options.length === 0}
+				<div class="flex h-full items-center justify-center">
+					<p class="text-sm text-muted-foreground">
+						{#if graphError && wordsError}
+							No visualization data available for this job.
+						{:else}
+							Loading…
+						{/if}
+					</p>
+				</div>
+			{:else if view === 'coverage'}
+				<CoverageMap {graph} />
+			{:else if view === 'tree'}
+				<CrawlGraph {jobId} {graph} />
+			{:else}
+				<KeywordCloud words={wordCounts?.words ?? []} />
+			{/if}
+		</div>
 	</div>
 </div>

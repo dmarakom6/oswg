@@ -9,6 +9,7 @@ import type {
 	JobListItem,
 	JobPreviewResult,
 	CrawlGraph,
+	WordCounts,
 	AppInfo,
 	DownloadFormat
 } from './types';
@@ -23,6 +24,8 @@ export const endpoints = {
 	clearJobs: () => api.post<{ cleared: number }>('/api/v1/jobs/clear', {}),
 	previewJob: (jobId: string, limit = 200) => api.get<JobPreviewResult>(`/api/v1/jobs/${jobId}/preview?limit=${limit}`),
 	getGraph: (jobId: string) => api.get<CrawlGraph>(`/api/v1/jobs/${jobId}/graph`),
+	getWordCounts: (jobId: string, limit = 200) =>
+		api.get<WordCounts>(`/api/v1/jobs/${jobId}/word-counts?limit=${limit}`),
 	getScreenshot: (jobId: string, page: number) =>
 		api.download(`/api/v1/jobs/${jobId}/screenshot?page=${page}`),
 	downloadJob: (

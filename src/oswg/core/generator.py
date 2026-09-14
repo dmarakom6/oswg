@@ -134,6 +134,13 @@ class WordlistGenerator:
                 file=sys.stderr,
             )
 
+        final_set = set(mutations)
+        base_word_counts: dict[str, int] = {}
+        for base, group in zip(base_words, groups):
+            produced = sum(1 for m in group if m in final_set)
+            if produced:
+                base_word_counts[base] = produced
+
         return GenerationResult(
             words=mutations,
             source_keywords=len(words),
@@ -145,6 +152,7 @@ class WordlistGenerator:
             link_graph=self.scraper.link_graph,
             email_count=email_count,
             usernames=scraped.usernames,
+            base_word_counts=base_word_counts,
         )
 
     async def _ai_expand_base_words(

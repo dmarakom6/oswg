@@ -35,6 +35,7 @@ class ScrapedContent:
     links_text: list[str] = field(default_factory=list)
     emails: list[str] = field(default_factory=list)
     usernames: list[str] = field(default_factory=list)
+    keyword_counts: dict[str, int] = field(default_factory=dict)
 
     @property
     def all_words(self) -> list[str]:
@@ -108,3 +109,4 @@ class GenerationResult:
     link_graph: dict[str, list[str]] = field(default_factory=dict)
     email_count: int = 0
     usernames: list[str] = field(default_factory=list)
+    base_word_counts: dict[str, int] = field(default_factory=dict)

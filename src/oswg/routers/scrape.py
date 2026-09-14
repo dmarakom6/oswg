@@ -108,6 +108,9 @@ async def execute_scrape(job_id: str) -> dict:
     if content.usernames:
         file_manager.save_usernames(job_id, content.usernames)
 
+    if content.keyword_counts:
+        file_manager.save_word_counts(job_id, content.keyword_counts)
+
     screenshot_count = 0
     for i, png in enumerate(scraper.screenshots):
         if png is not None:

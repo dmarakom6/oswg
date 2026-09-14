@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { currentJobForTab, jobsStore } from '$lib/stores/jobs';
 	import { endpoints } from '$lib/api/endpoints';
-	import CrawlGraph from './CrawlGraph.svelte';
+	import VisualizeModal from './VisualizeModal.svelte';
 	import SegmentedControl from '../config/SegmentedControl.svelte';
 	import ToggleSwitch from '../config/ToggleSwitch.svelte';
 	import type { ActiveTab, DownloadFormat, JobPreviewResult } from '$lib/api/types';
@@ -22,6 +22,7 @@
 	let pollJobId: string | null = null;
 	let preview = $state<JobPreviewResult | null>(null);
 	let viewingScreenshot = $state<number | null>(null);
+	let visualizeOpen = $state(false);
 	let downloadFormat = $state<DownloadFormat>('txt');
 	let downloadGzip = $state(false);
 	const screenshotUrl = (jobId: string, page: number) => `/api/v1/jobs/${jobId}/screenshot?page=${page}`;
@@ -210,7 +211,18 @@
 				<span class="text-sm font-medium text-foreground">
 					{isDone ? (currentJob.status === 'completed' ? 'Complete' : 'Failed') : 'Processing'}
 				</span>
-				<span class="font-mono text-sm text-muted-foreground">{Math.round(currentJob.progress)}%</span>
+				<div class="flex items-center gap-3">
+					{#if currentJob.status === 'completed' && currentJob.type !== 'mutate'}
+						<button
+							type="button"
+							onclick={() => (visualizeOpen = true)}
+							class="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+						>
+							Visualize
+						</button>
+					{/if}
+					<span class="font-mono text-sm text-muted-foreground">{Math.round(currentJob.progress)}%</span>
+				</div>
 			</div>
 
 			<div class="h-2 overflow-hidden rounded-full bg-muted">
@@ -240,9 +252,6 @@
 		</div>
 
 		{#if currentJob.status === 'completed'}
-			{#if currentJob.type !== 'mutate'}
-				<CrawlGraph jobId={currentJob.job_id} />
-			{/if}
 			{#if currentJob.screenshot_count && currentJob.screenshot_count > 0}
 				<div class="space-y-2">
 					<div class="flex items-center justify-between">
@@ -464,6 +473,10 @@
 			</div>
 		</div>
 	</div>
+{/if}
+
+{#if visualizeOpen && currentJob}
+	<VisualizeModal jobId={currentJob.job_id} onclose={() => (visualizeOpen = false)} />
 {/if}
 
 <style>

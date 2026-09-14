@@ -2,7 +2,10 @@
 	import { endpoints } from '$lib/api/endpoints';
 	import type { CrawlGraph } from '$lib/api/types';
 
-	let { jobId }: { jobId: string } = $props();
+	let {
+		jobId,
+		graph: graphProp = null
+	}: { jobId: string; graph?: CrawlGraph | null } = $props();
 
 	let graph = $state<CrawlGraph | null>(null);
 	let error = $state('');
@@ -15,6 +18,10 @@
 	const PAD = 10;
 
 	$effect(() => {
+		if (graphProp) {
+			graph = graphProp;
+			return;
+		}
 		if (!jobId) return;
 		let cancelled = false;
 		endpoints.getGraph(jobId)

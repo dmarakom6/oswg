@@ -1,6 +1,7 @@
 """Wordlist generator that combines scraping and mutations."""
 
 import inspect
+from collections import Counter
 from typing import Callable
 
 from oswg.core.ai import AICompleter, AIError, resolve_ai_config
@@ -134,12 +135,12 @@ class WordlistGenerator:
                 file=sys.stderr,
             )
 
-        final_set = set(mutations)
+        source_freq = Counter(w.lower() for w in scraped.all_words)
         base_word_counts: dict[str, int] = {}
-        for base, group in zip(base_words, groups):
-            produced = sum(1 for m in group if m in final_set)
-            if produced:
-                base_word_counts[base] = produced
+        for base in base_words:
+            count = source_freq.get(base.lower(), 0)
+            if count:
+                base_word_counts[base] = count
 
         return GenerationResult(
             words=mutations,

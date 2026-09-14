@@ -64,16 +64,16 @@ async def test_scraper_captures_keyword_counts():
 # --- generator computes mutation-family sizes -----------------------------
 
 
-async def test_generator_base_word_families():
+async def test_generator_base_word_frequencies():
     with _serving() as base:
         config = GenerationConfig(target_size=50, min_word_length=1)
         result = await WordlistGenerator().generate(base, config)
     assert result.base_word_counts
     assert all(v >= 1 for v in result.base_word_counts.values())
     assert set(result.base_word_counts) <= set(result.base_words)
-    # The most productive base word appears in the wordlist the most.
-    biggest = max(result.base_word_counts, key=result.base_word_counts.get)
-    assert biggest in result.words or any(biggest in w for w in result.words)
+    # Weights reflect real source frequency, so they must vary (not a flat cloud).
+    assert len(set(result.base_word_counts.values())) > 1
+    assert max(result.base_word_counts.values()) >= 2
 
 
 # --- API endpoint ---------------------------------------------------------

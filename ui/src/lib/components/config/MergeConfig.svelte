@@ -1,6 +1,7 @@
 <script lang="ts">
 	import NumberStepper from './NumberStepper.svelte';
 	import ToggleSwitch from './ToggleSwitch.svelte';
+	import DropZone from './DropZone.svelte';
 	import { DEFAULTS, LIMITS } from '$lib/constants';
 	import { notifications } from '$lib/stores/notifications';
 
@@ -28,32 +29,14 @@
 		onchange({ ...value });
 	}
 
-	async function handleFiles(e: Event) {
-		const input = e.currentTarget as HTMLInputElement;
-		const files = Array.from(input.files ?? []);
+	function handleDrop(files: { name: string; words: string[] }[]) {
 		if (!files.length) return;
-
-		const words: string[] = [];
-		const names: string[] = [];
-		for (const file of files) {
-			if (!file.name.endsWith('.txt')) {
-				notifications.add('error', `Skipped ${file.name} - only .txt files are accepted`);
-				continue;
-			}
-			const text = await file.text();
-			words.push(...text.split('\n').map((l) => l.trim()).filter((l) => l.length > 0));
-			names.push(file.name);
-		}
-		if (!words.length) {
-			input.value = '';
-			return;
-		}
-
+		const names = files.map((f) => f.name);
+		const words = files.flatMap((f) => f.words);
 		value.merge_words = [...value.merge_words, ...words];
 		fileNames = [...fileNames, ...names];
 		emit();
 		notifications.add('success', `Merged ${words.length} words from ${names.length} file(s)`);
-		input.value = '';
 	}
 
 	function removeFile(index: number) {
@@ -69,16 +52,7 @@
 	<p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Merge external wordlists</p>
 
 	<div class="space-y-1.5">
-		<label class="cursor-pointer text-xs text-primary hover:text-primary/80">
-			Upload .txt wordlist(s)
-			<input
-				type="file"
-				accept=".txt,text/plain"
-				multiple
-				onchange={handleFiles}
-				class="hidden"
-			/>
-		</label>
+		<DropZone onFiles={handleDrop} multiple label="Drop .txt wordlist(s) here or click to browse" />
 		{#if fileNames.length > 0}
 			<span class="ml-2 text-xs text-success">✓ {fileNames.length} file(s) uploaded</span>
 		{/if}

@@ -4,6 +4,7 @@
 	import TabBar from '$lib/components/layout/TabBar.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import ShortcutsDialog from '$lib/components/layout/ShortcutsDialog.svelte';
+	import Toaster from '$lib/components/layout/Toaster.svelte';
 	import { theme } from '$lib/stores/theme';
 	import { activeTab } from '$lib/stores/tabs';
 	import { focusUrlSignal, helpOpen, runSignal } from '$lib/stores/shortcuts';
@@ -54,9 +55,16 @@
 			helpOpen.set(false);
 		}
 	}
+function handleWindowDragOver(e: DragEvent) {
+		e.preventDefault();
+	}
+
+	function handleWindowDrop(e: DragEvent) {
+		e.preventDefault();
+	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} ondragover={handleWindowDragOver} ondrop={handleWindowDrop} />
 
 <div class="flex h-screen flex-col">
 	<Header />
@@ -70,3 +78,4 @@
 </div>
 
 <ShortcutsDialog />
+<Toaster />

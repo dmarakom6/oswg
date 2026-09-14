@@ -9,6 +9,7 @@
 	import { activeTab } from '$lib/stores/tabs';
 	import { runSignal } from '$lib/stores/shortcuts';
 	import { modLabel } from '$lib/shortcuts';
+	import DropZone from './DropZone.svelte';
 
 	let { onResult }: { onResult: (result: { words: string[]; count: number; source_count: number }) => void } = $props();
 
@@ -48,24 +49,15 @@
 			: ''
 	);
 
-	async function handleFileUpload(e: Event) {
-		const input = e.currentTarget as HTMLInputElement;
-		const file = input.files?.[0];
+	async function handleDrop(
+		files: { name: string; words: string[] }[]
+	) {
+		const file = files[0];
 		if (!file) return;
-
-		if (!file.name.endsWith('.txt')) {
-			notifications.add('error', 'Only .txt files are accepted');
-			input.value = '';
-			return;
-		}
-
-		const text = await file.text();
-		const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-		const deduped = [...new Set(lines)];
+		const deduped = [...new Set(file.words)];
 		wordsInput = deduped.join('\n');
 		fileName = file.name;
 		notifications.add('success', `Loaded ${deduped.length} unique words from ${file.name}`);
-		input.value = '';
 	}
 
 	function clearFile() {
@@ -123,15 +115,7 @@
 				<p class="text-xs text-muted-foreground">
 					{words.length} words · {uniqueWords.length} unique
 				</p>
-				<label class="cursor-pointer text-xs text-primary hover:text-primary/80">
-					Upload .txt
-					<input
-						type="file"
-						accept=".txt,text/plain"
-						onchange={handleFileUpload}
-						class="hidden"
-					/>
-				</label>
+				<DropZone onFiles={handleDrop} compact label="Upload .txt / drop here" />
 			</div>
 			{#if fileName}
 				<div class="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-2 py-1">

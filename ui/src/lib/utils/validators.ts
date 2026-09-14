@@ -18,6 +18,17 @@ export function parseWordsInput(input: string): string[] {
 		.filter((w) => w.length > 0);
 }
 
+/** Soft cap for drag & dropped wordlists, to avoid loading huge files into the UI. */
+export const MAX_DROP_WORDS = 1_000_000;
+export const MAX_DROP_BYTES = 20 * 1024 * 1024; // 20 MB
+
+export function parseWordlistText(text: string): string[] {
+	return text
+		.split('\n')
+		.map((w) => w.trim())
+		.filter((w) => w.length > 0);
+}
+
 export function formatNumber(n: number): string {
 	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
 	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;

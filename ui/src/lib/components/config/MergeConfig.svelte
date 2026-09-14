@@ -3,7 +3,6 @@
 	import ToggleSwitch from './ToggleSwitch.svelte';
 	import DropZone from './DropZone.svelte';
 	import { DEFAULTS, LIMITS } from '$lib/constants';
-	import { notifications } from '$lib/stores/notifications';
 
 	let {
 		value,
@@ -36,7 +35,6 @@
 		value.merge_words = [...value.merge_words, ...words];
 		fileNames = [...fileNames, ...names];
 		emit();
-		notifications.add('success', `Merged ${words.length} words from ${names.length} file(s)`);
 	}
 
 	function removeFile(index: number) {

@@ -5,7 +5,6 @@
 	import { DEFAULTS, LIMITS } from '$lib/constants';
 	import { parseWordsInput } from '$lib/utils/validators';
 	import { endpoints } from '$lib/api/endpoints';
-	import { notifications } from '$lib/stores/notifications';
 	import { activeTab } from '$lib/stores/tabs';
 	import { runSignal } from '$lib/stores/shortcuts';
 	import { modLabel } from '$lib/shortcuts';
@@ -30,9 +29,11 @@
 	let randomCombineSeed = $state('');
 	let submitting = $state(false);
 	let fileName = $state<string | null>(null);
+	let lastHandledRun = 0;
 
 	$effect(() => {
-		if ($runSignal > 0 && $activeTab === 'mutate') {
+		if ($runSignal > 0 && $runSignal !== lastHandledRun && $activeTab === 'mutate') {
+			lastHandledRun = $runSignal;
 			handleSubmit();
 		}
 	});
@@ -57,7 +58,6 @@
 		const deduped = [...new Set(file.words)];
 		wordsInput = deduped.join('\n');
 		fileName = file.name;
-		notifications.add('success', `Loaded ${deduped.length} unique words from ${file.name}`);
 	}
 
 	function clearFile() {
@@ -88,9 +88,7 @@
 			});
 
 			onResult(result);
-			notifications.add('success', `Generated ${result.count} mutations`);
-		} catch (err) {
-			notifications.add('error', err instanceof Error ? err.message : 'Mutation failed');
+		} catch {
 		} finally {
 			submitting = false;
 		}

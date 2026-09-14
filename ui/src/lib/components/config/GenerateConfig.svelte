@@ -13,7 +13,6 @@
 	import { endpoints } from '$lib/api/endpoints';
 	import { jobsStore } from '$lib/stores/jobs';
 	import { connectJobWs } from '$lib/websocket/job-ws';
-	import { notifications } from '$lib/stores/notifications';
 	import { jsAvailable } from '$lib/stores/capabilities';
 	import { activeTab } from '$lib/stores/tabs';
 	import { focusUrlSignal, runSignal } from '$lib/stores/shortcuts';
@@ -97,8 +96,11 @@
 			: ''
 	);
 
+	let lastHandledRun = 0;
+
 	$effect(() => {
-		if ($runSignal > 0 && $activeTab === 'generate') {
+		if ($runSignal > 0 && $runSignal !== lastHandledRun && $activeTab === 'generate') {
+			lastHandledRun = $runSignal;
 			handleSubmit();
 		}
 	});
@@ -187,9 +189,7 @@
 				});
 			});
 
-			notifications.add('success', 'Wordlist generation started');
-		} catch (err) {
-			notifications.add('error', err instanceof Error ? err.message : 'Failed to start generation');
+			} catch {
 		} finally {
 			submitting = false;
 		}

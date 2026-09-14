@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { MAX_DROP_BYTES, MAX_DROP_WORDS, formatFileSize, parseWordlistText } from '$lib/utils/validators';
-	import { notifications } from '$lib/stores/notifications';
+	import { MAX_DROP_BYTES, MAX_DROP_WORDS, parseWordlistText } from '$lib/utils/validators';
 
 	let {
 		onFiles,
@@ -25,25 +24,10 @@
 
 		const results: { name: string; words: string[] }[] = [];
 		for (const file of files) {
-			if (!file.name.toLowerCase().endsWith('.txt')) {
-				notifications.add('error', `Skipped ${file.name} - only .txt files are accepted`);
-				continue;
-			}
-			if (file.size > MAX_DROP_BYTES) {
-				notifications.add(
-					'error',
-					`Skipped ${file.name} - too large (${formatFileSize(file.size)}; max ${formatFileSize(MAX_DROP_BYTES)})`
-				);
-				continue;
-			}
+			if (!file.name.toLowerCase().endsWith('.txt')) continue;
+			if (file.size > MAX_DROP_BYTES) continue;
 			const words = parseWordlistText(await file.text());
-			if (words.length > MAX_DROP_WORDS) {
-				notifications.add(
-					'error',
-					`Skipped ${file.name} - too many words (${words.length.toLocaleString()}; max ${MAX_DROP_WORDS.toLocaleString()})`
-				);
-				continue;
-			}
+			if (words.length > MAX_DROP_WORDS) continue;
 			results.push({ name: file.name, words });
 		}
 
@@ -100,11 +84,7 @@
 		>
 			{dragActive ? 'Drop to upload…' : label}
 		</label>
-		{#if !compact}
-			<p class="text-[11px] text-muted-foreground">
-				.txt, one word per line · or <span class="underline">click to browse</span>
-			</p>
-		{/if}
+
 		<input
 			bind:this={inputRef}
 			id="drop-zone-file"

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { currentJobForTab, jobsStore } from '$lib/stores/jobs';
 	import { endpoints } from '$lib/api/endpoints';
-	import { notifications } from '$lib/stores/notifications';
 	import CrawlGraph from './CrawlGraph.svelte';
 	import SegmentedControl from '../config/SegmentedControl.svelte';
 	import ToggleSwitch from '../config/ToggleSwitch.svelte';
@@ -105,7 +104,6 @@
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch {
-			notifications.add('error', 'Download failed');
 		}
 	}
 
@@ -136,9 +134,7 @@
 	}
 
 	function copyToClipboard(text: string) {
-		navigator.clipboard.writeText(text).then(() => {
-			notifications.add('success', 'Copied to clipboard');
-		});
+		navigator.clipboard.writeText(text);
 	}
 </script>
 

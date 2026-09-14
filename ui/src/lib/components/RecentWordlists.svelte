@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { endpoints } from '$lib/api/endpoints';
-	import { notifications } from '$lib/stores/notifications';
 	import type { JobListItem } from '$lib/api/types';
 
 	let recentJobs = $state<JobListItem[]>([]);
@@ -14,7 +13,6 @@
 		try {
 			recentJobs = await endpoints.listJobs();
 		} catch {
-			notifications.add('error', 'Failed to load recent wordlists');
 		} finally {
 			loading = false;
 		}
@@ -24,9 +22,7 @@
 		try {
 			await endpoints.clearJobs();
 			recentJobs = [];
-			notifications.add('success', 'Cleared all wordlists');
 		} catch {
-			notifications.add('error', 'Failed to clear wordlists');
 		}
 	}
 
@@ -57,7 +53,6 @@
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch {
-			notifications.add('error', 'Download failed');
 		}
 	}
 

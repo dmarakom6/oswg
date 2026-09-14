@@ -4,7 +4,6 @@
 	import TabBar from '$lib/components/layout/TabBar.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import ShortcutsDialog from '$lib/components/layout/ShortcutsDialog.svelte';
-	import Toaster from '$lib/components/layout/Toaster.svelte';
 	import { theme } from '$lib/stores/theme';
 	import { activeTab } from '$lib/stores/tabs';
 	import { focusUrlSignal, helpOpen, runSignal } from '$lib/stores/shortcuts';
@@ -78,4 +77,3 @@ function handleWindowDragOver(e: DragEvent) {
 </div>
 
 <ShortcutsDialog />
-<Toaster />

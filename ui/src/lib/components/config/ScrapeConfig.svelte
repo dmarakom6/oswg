@@ -12,7 +12,6 @@
 	import { endpoints } from '$lib/api/endpoints';
 	import { jobsStore } from '$lib/stores/jobs';
 	import { connectJobWs } from '$lib/websocket/job-ws';
-	import { notifications } from '$lib/stores/notifications';
 	import { jsAvailable } from '$lib/stores/capabilities';
 	import { activeTab } from '$lib/stores/tabs';
 	import { focusUrlSignal, runSignal } from '$lib/stores/shortcuts';
@@ -47,8 +46,11 @@
 	let urlError = $derived(url.length > 0 && !isValidUrl(url) ? 'Enter a valid URL including protocol (https://)' : '');
 	let canSubmit = $derived(url.length > 0 && isValidUrl(url) && !submitting);
 
+	let lastHandledRun = 0;
+
 	$effect(() => {
-		if ($runSignal > 0 && $activeTab === 'scrape') {
+		if ($runSignal > 0 && $runSignal !== lastHandledRun && $activeTab === 'scrape') {
+			lastHandledRun = $runSignal;
 			handleSubmit();
 		}
 	});
@@ -105,9 +107,7 @@
 				});
 			});
 
-			notifications.add('success', 'Scraping started');
-		} catch (err) {
-			notifications.add('error', err instanceof Error ? err.message : 'Failed to start scraping');
+			} catch {
 		} finally {
 			submitting = false;
 		}

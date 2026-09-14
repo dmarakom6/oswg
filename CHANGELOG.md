@@ -2,6 +2,69 @@
 
 <!-- version list -->
 
+## v0.6.0 (2026-09-14)
+
+### Bug Fixes
+
+- Consolidate auth inputs into one Authentication field
+  ([`101e092`](https://github.com/dmarakom6/oswg/commit/101e092ce037987ec91edd1ec8413e7e17eab861))
+
+- Find usernames via social handles + surface them in the UI
+  ([`824b2b4`](https://github.com/dmarakom6/oswg/commit/824b2b48cadd2a196075ae7fd0f41e1bce94adc6))
+
+- Infinite job submission loop from keyboard shortcut; remove toasts
+  ([`f453881`](https://github.com/dmarakom6/oswg/commit/f453881ec80d9fba42798dbb196fb94083f9023d))
+
+- Make crawl graph nodes readable
+  ([`109ab5f`](https://github.com/dmarakom6/oswg/commit/109ab5fa3ab30f30ecf0ab785ce9c33163c2e043))
+
+### Chores
+
+- Move reverse-leet toggle to Advanced section
+  ([`ca2d1e2`](https://github.com/dmarakom6/oswg/commit/ca2d1e2df528ac2feb7f7c926329298311c1b71b))
+
+### Features
+
+- Add crawl strategy (BFS/DFS) and crawl graph visualization
+  ([`f500993`](https://github.com/dmarakom6/oswg/commit/f50099391823ee156dd7ba1a004ef95c1fa69579))
+
+- Authentication support via session cookies.txt import
+  ([`83b7f82`](https://github.com/dmarakom6/oswg/commit/83b7f829dd3d1cf120635b91d34a18c21235473b))
+
+- Drag & drop word list upload + toast notifications
+  ([`c73378a`](https://github.com/dmarakom6/oswg/commit/c73378af55d87838c70787914a784aebe9f321eb))
+
+- Extract email addresses with --emails
+  ([`a7142f1`](https://github.com/dmarakom6/oswg/commit/a7142f19c374cb78841c340137c96d77492f4f62))
+
+- Extract usernames with --username
+  ([`546ce55`](https://github.com/dmarakom6/oswg/commit/546ce55b757c6e067afc2d601b9978a6105f076b))
+
+- HTTP authentication via --auth-type basic|digest|ntlm
+  ([`369ef89`](https://github.com/dmarakom6/oswg/commit/369ef89bec108d555ea1642010f940fd429636ea))
+
+- Interactive login to capture authenticated sessions
+  ([`8584038`](https://github.com/dmarakom6/oswg/commit/8584038220fbaea6b0b450731f878f507c040122))
+
+- JS rendering with per-page screenshots
+  ([`1e2a758`](https://github.com/dmarakom6/oswg/commit/1e2a7589aa1ccb99e2e8d86e7b60f3458d42f382))
+
+- JSON/CSV/gzip exports for wordlists
+  ([`79cfe2b`](https://github.com/dmarakom6/oswg/commit/79cfe2b31a991af8e5d85a5174b5a500ecdef779))
+
+- Keyboard shortcuts (tabs, run, focus URL, help dialog)
+  ([`de29e29`](https://github.com/dmarakom6/oswg/commit/de29e29c638a7186af40a3593798565075bb6f0e))
+
+- Liveness and readiness health endpoints
+  ([`888eea9`](https://github.com/dmarakom6/oswg/commit/888eea9e8c6a2d8980e119c3c70957034a3dcc18))
+
+- Make sitemap mode pure and exclusive with discovery strategy
+  ([`b8bf093`](https://github.com/dmarakom6/oswg/commit/b8bf093cbd29ad7b3c784173b63a63535b82c837))
+
+- Scraper coverage map in a Visualize modal
+  ([`c32ad63`](https://github.com/dmarakom6/oswg/commit/c32ad63ca6c2f7679d4c60658c23566db3a88373))
+
+
 ## v0.5.0 (2026-09-08)
 
 

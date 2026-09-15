@@ -5,15 +5,17 @@
 	import CoverageMap from './CoverageMap.svelte';
 	import KeywordCloud from './KeywordCloud.svelte';
 	import FrequencyChart from './FrequencyChart.svelte';
-	import type { CrawlGraph as CrawlGraphType, WordCounts } from '$lib/api/types';
+	import MutationTreeView from './MutationTreeView.svelte';
+	import type { CrawlGraph as CrawlGraphType, MutationTree, WordCounts } from '$lib/api/types';
 
 	let { jobId, onclose }: { jobId: string; onclose: () => void } = $props();
 
 	let graph = $state<CrawlGraphType | null>(null);
 	let wordCounts = $state<WordCounts | null>(null);
+	let mutationTree = $state<MutationTree | null>(null);
 	let graphError = $state(false);
 	let wordsError = $state(false);
-	let view = $state<'coverage' | 'tree' | 'cloud' | 'frequencies'>('coverage');
+	let view = $state<'coverage' | 'tree' | 'cloud' | 'frequencies' | 'mutations'>('coverage');
 
 	$effect(() => {
 		let cancelled = false;
@@ -33,6 +35,14 @@
 			.catch(() => {
 				if (!cancelled) wordsError = true;
 			});
+		endpoints
+			.getMutationTree(jobId)
+			.then((t) => {
+				if (!cancelled) mutationTree = t;
+			})
+			.catch(() => {
+				// only generate jobs have a mutation tree
+			});
 		return () => {
 			cancelled = true;
 		};
@@ -42,6 +52,7 @@
 		const opts: { value: string; label: string }[] = [];
 		if (graph) opts.push({ value: 'coverage', label: 'Coverage' }, { value: 'tree', label: 'Tree' });
 		if (wordCounts?.words?.length) opts.push({ value: 'cloud', label: 'Cloud' }, { value: 'frequencies', label: 'Frequencies' });
+		if (mutationTree && Object.keys(mutationTree.tree).length) opts.push({ value: 'mutations', label: 'Mutations' });
 		return opts;
 	});
 
@@ -83,7 +94,7 @@
 			<div class="flex justify-center border-b border-border py-2">
 				<SegmentedControl
 					value={view}
-					onchange={(v) => (view = v as 'coverage' | 'tree' | 'cloud' | 'frequencies')}
+					onchange={(v) => (view = v as 'coverage' | 'tree' | 'cloud' | 'frequencies' | 'mutations')}
 					{options}
 				/>
 			</div>
@@ -106,6 +117,8 @@
 				<CrawlGraph {jobId} {graph} />
 			{:else if view === 'frequencies'}
 				<FrequencyChart words={wordCounts?.words ?? []} />
+			{:else if view === 'mutations' && mutationTree}
+				<MutationTreeView tree={mutationTree} />
 			{:else}
 				<KeywordCloud words={wordCounts?.words ?? []} />
 			{/if}

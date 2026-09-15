@@ -193,6 +193,9 @@ async def execute_generate(job_id: str) -> dict:
     if result.base_word_counts:
         file_manager.save_word_counts(job_id, result.base_word_counts)
 
+    if result.mutation_tree:
+        file_manager.save_mutation_tree(job_id, result.mutation_tree)
+
     screenshot_count = 0
     for i, png in enumerate(generator.scraper.screenshots):
         if png is not None:

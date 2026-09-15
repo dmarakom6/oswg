@@ -142,6 +142,13 @@ class WordlistGenerator:
             if count:
                 base_word_counts[base] = count
 
+        final_set = set(mutations)
+        mutation_tree: dict[str, list[str]] = {}
+        for base, group in zip(base_words, groups):
+            survivors = [m for m in group if m in final_set]
+            if survivors:
+                mutation_tree[base] = survivors
+
         return GenerationResult(
             words=mutations,
             source_keywords=len(words),
@@ -154,6 +161,7 @@ class WordlistGenerator:
             email_count=email_count,
             usernames=scraped.usernames,
             base_word_counts=base_word_counts,
+            mutation_tree=mutation_tree,
         )
 
     async def _ai_expand_base_words(

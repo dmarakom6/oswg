@@ -202,6 +202,11 @@ export interface WordCounts {
 	words: WordCount[];
 }
 
+export interface MutationTree {
+	job_id: string;
+	tree: Record<string, string[]>;
+}
+
 export interface WSJobMessage {
 	job_id: string;
 	status: JobStatus;

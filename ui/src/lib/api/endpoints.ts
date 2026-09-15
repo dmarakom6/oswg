@@ -10,6 +10,7 @@ import type {
 	JobPreviewResult,
 	CrawlGraph,
 	WordCounts,
+	MutationTree,
 	AppInfo,
 	DownloadFormat
 } from './types';
@@ -26,6 +27,8 @@ export const endpoints = {
 	getGraph: (jobId: string) => api.get<CrawlGraph>(`/api/v1/jobs/${jobId}/graph`),
 	getWordCounts: (jobId: string, limit = 200) =>
 		api.get<WordCounts>(`/api/v1/jobs/${jobId}/word-counts?limit=${limit}`),
+	getMutationTree: (jobId: string, limit = 200) =>
+		api.get<MutationTree>(`/api/v1/jobs/${jobId}/mutation-tree?limit=${limit}`),
 	getScreenshot: (jobId: string, page: number) =>
 		api.download(`/api/v1/jobs/${jobId}/screenshot?page=${page}`),
 	downloadJob: (

@@ -110,3 +110,4 @@ class GenerationResult:
     email_count: int = 0
     usernames: list[str] = field(default_factory=list)
     base_word_counts: dict[str, int] = field(default_factory=dict)
+    mutation_tree: dict[str, list[str]] = field(default_factory=dict)

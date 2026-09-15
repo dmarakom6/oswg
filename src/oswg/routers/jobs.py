@@ -331,6 +331,37 @@ async def get_job_word_counts(job_id: str, limit: int = 200):
 
 
 @router.get(
+    "/jobs/{job_id}/mutation-tree",
+    responses={
+        404: {"model": ErrorResponse, "description": "Job or mutation tree not found"},
+    },
+)
+async def get_job_mutation_tree(job_id: str, limit: int = 200):
+    """Return a generate job's mutation tree (base word -> surviving variants)."""
+    job = await job_manager.get_job_status(job_id)
+
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    if job["status"] != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Job {job_id} is not completed (status: {job['status']})",
+        )
+
+    tree_path = file_manager.get_file_path(job_id, ".mutation-tree.json")
+    if not tree_path.exists():
+        raise HTTPException(
+            status_code=404, detail=f"Mutation tree for job {job_id} not found"
+        )
+
+    tree: dict[str, list[str]] = json.loads(tree_path.read_text(encoding="utf-8"))
+    ordered = sorted(tree.items(), key=lambda kv: (-len(kv[1]), kv[0]))[:limit]
+
+    return {"job_id": job_id, "tree": dict(ordered)}
+
+
+@router.get(
     "/jobs/{job_id}/screenshot",
     responses={
         404: {"model": ErrorResponse, "description": "Job or screenshot not found"},

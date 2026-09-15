@@ -53,6 +53,15 @@ class FileManager:
             json.dump(counts, f)
         return file_path
 
+    def save_mutation_tree(self, job_id: str, tree: dict[str, list[str]]) -> Path:
+        """Save a base-word -> variants mapping to <job_id>.mutation-tree.json."""
+        import json
+
+        file_path = self.get_file_path(job_id, ".mutation-tree.json")
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(tree, f)
+        return file_path
+
     def save_json(self, job_id: str, data: dict) -> Path:
         """Save JSON data to file."""
         import json

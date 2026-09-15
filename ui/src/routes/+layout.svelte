@@ -42,7 +42,11 @@
 				const previous = lastStatus.get(job.job_id);
 				lastStatus.set(job.job_id, job.status);
 				if (previous !== 'pending' && previous !== 'processing') continue;
-				if (!terminal(job.status) || !document.hidden) continue;
+				if (!terminal(job.status)) continue;
+				if (!document.hidden) {
+					console.debug('[notify] finished while visible:', job.job_id);
+					continue;
+				}
 				fire(job);
 			}
 		});

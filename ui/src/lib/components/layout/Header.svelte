@@ -59,15 +59,20 @@
 			aria-pressed={notify.enabled}
 			aria-label={notifyTitle}
 		>
-			{#if notify.enabled}
-				<svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
-					<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-				</svg>
-			{:else}
-				<svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
-					<path d="M20 18.69L7.84 6.14 5.27 3.49 4 4.76l2.8 2.8v.01c-.52.99-.8 2.16-.8 3.42v5l-2 2v1h13.24l2.52 2.52L20 18.69zM12 22c1.11 0 2-.89 2-2h-4c0 1.11.89 2 2 2zm6-7.32V11c0-3.08-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S11.5 3.17 11.5 4v.68c-.15.03-.29.08-.42.12L18 14.68z" />
-				</svg>
-			{/if}
+			<span class="flex h-6 w-6 items-center justify-center">
+				{#if notify.enabled}
+					<svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
+						<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+					</svg>
+				{:else}
+					<svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
+						<path d="M20 18.69L7.84 6.14 5.27 3.49 4 4.76l2.8 2.8v.01c-.52.99-.8 2.16-.8 3.42v5l-2 2v1h13.24l2.52 2.52L20 18.69zM12 22c1.11 0 2-.89 2-2h-4c0 1.11.89 2 2 2zm6-7.32V11c0-3.08-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S11.5 3.17 11.5 4v.68c-.15.03-.29.08-.42.12L18 14.68z" />
+					</svg>
+				{/if}
+			</span>
+			<span class="hidden sm:inline">
+				{notify.enabled ? 'On' : 'Off'}
+			</span>
 		</button>
 
 		<button

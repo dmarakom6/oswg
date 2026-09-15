@@ -23,16 +23,25 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 }
 
 export function showNotification(title: string, body: string, tag?: string): boolean {
-	if (!notificationsSupported() || Notification.permission !== 'granted') return false;
+	if (!notificationsSupported()) {
+		console.debug('[notify] skipped: unsupported (needs localhost or HTTPS)');
+		return false;
+	}
+	if (Notification.permission !== 'granted') {
+		console.debug('[notify] skipped: permission is', Notification.permission);
+		return false;
+	}
 	try {
 		const notification = new Notification(title, { body, tag, icon: '/favicon.svg' });
 		notification.onclick = () => {
 			window.focus();
 			notification.close();
 		};
+		console.debug('[notify] shown:', title);
 		return true;
-	} catch {
+	} catch (error) {
 		// Mobile browsers throw a TypeError for the Notification constructor.
+		console.debug('[notify] constructor threw:', error);
 		return false;
 	}
 }

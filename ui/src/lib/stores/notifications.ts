@@ -38,7 +38,11 @@ function createNotificationStore() {
 			});
 		},
 		notify(title: string, body: string, tag?: string) {
-			if (get(store).enabled) showNotification(title, body, tag);
+			if (get(store).enabled) {
+				showNotification(title, body, tag);
+			} else {
+				console.debug('[notify] skipped: notifications are off');
+			}
 		}
 	};
 }

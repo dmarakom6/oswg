@@ -11,6 +11,7 @@
 	import { loadJsAvailability } from '$lib/stores/capabilities';
 	import { jobsStore } from '$lib/stores/jobs';
 	import { browserNotifications } from '$lib/stores/notifications';
+	import { get } from 'svelte/store';
 	import type { ActiveTab } from '$lib/api/types';
 
 	let { children } = $props();
@@ -18,25 +19,48 @@
 	theme.init();
 	loadJsAvailability();
 
-	// Notify (when the tab is hidden) as jobs finish or fail.
+	// Notify (only while the tab is hidden) as jobs finish or fail.
 	$effect(() => {
 		const lastStatus = new Map<string, string>();
-		return jobsStore.subscribe((jobs) => {
+		const notified = new Set<string>();
+
+		function fire(job: { job_id: string; status: string; error_message?: string | null }) {
+			notified.add(job.job_id);
+			browserNotifications.notify(
+				job.status === 'completed' ? 'Wordlist ready' : 'Job failed',
+				job.status === 'completed'
+					? 'Your wordlist finished generating.'
+					: (job.error_message ?? 'The job failed.'),
+				job.job_id
+			);
+		}
+
+		const terminal = (status?: string) => status === 'completed' || status === 'failed';
+
+		const unsub = jobsStore.subscribe((jobs) => {
 			for (const job of jobs.values()) {
 				const previous = lastStatus.get(job.job_id);
 				lastStatus.set(job.job_id, job.status);
 				if (previous !== 'pending' && previous !== 'processing') continue;
-				if (job.status !== 'completed' && job.status !== 'failed') continue;
-				if (!document.hidden) continue;
-				browserNotifications.notify(
-					job.status === 'completed' ? 'Wordlist ready' : 'Job failed',
-					job.status === 'completed'
-						? 'Your wordlist finished generating.'
-						: (job.error_message ?? 'The job failed.'),
-					job.job_id
-				);
+				if (!terminal(job.status) || !document.hidden) continue;
+				fire(job);
 			}
 		});
+
+		// Catch up: if a job finished while the tab was visible, notify when the
+		// user switches away.
+		const onVisibility = () => {
+			if (!document.hidden) return;
+			for (const job of get(jobsStore).values()) {
+				if (terminal(job.status) && !notified.has(job.job_id)) fire(job);
+			}
+		};
+		document.addEventListener('visibilitychange', onVisibility);
+
+		return () => {
+			unsub();
+			document.removeEventListener('visibilitychange', onVisibility);
+		};
 	});
 
 	const TAB_KEYS: Record<string, ActiveTab> = {

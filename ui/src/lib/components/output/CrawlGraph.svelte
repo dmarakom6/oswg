@@ -10,12 +10,25 @@
 	let graph = $state<CrawlGraph | null>(null);
 	let error = $state('');
 	let selected = $state<string | null>(null);
+	let containerRef = $state<HTMLDivElement | null>(null);
+	let availableHeight = $state(0);
 
 	const NODE_W = 140;
 	const NODE_H = 26;
 	const NODE_STEP = NODE_W + 44;
 	const LEVEL_GAP = 90;
 	const PAD = 10;
+
+	$effect(() => {
+		if (!containerRef) return;
+		const ro = new ResizeObserver((entries) => {
+			for (const entry of entries) {
+				availableHeight = entry.contentRect.height;
+			}
+		});
+		ro.observe(containerRef);
+		return () => ro.disconnect();
+	});
 
 	$effect(() => {
 		if (graphProp) {
@@ -93,14 +106,18 @@
 		const maxLevel = Math.max(...byLevel.keys(), 0);
 		const maxWidth = Math.max(...[...byLevel.values()].map((v) => v.length), 1);
 		const width = Math.max(320, maxWidth * NODE_STEP + PAD * 2);
-		const height = maxLevel * LEVEL_GAP + NODE_H + PAD * 2;
+		const gap =
+			availableHeight > 0
+				? Math.max(LEVEL_GAP, (availableHeight - NODE_H - PAD * 2) / Math.max(1, maxLevel))
+				: LEVEL_GAP;
+		const height = Math.max(maxLevel * gap + NODE_H + PAD * 2, availableHeight);
 
 		const pos = new Map<string, { x: number; y: number }>();
 		for (const [lvl, ids] of byLevel) {
 			const total = ids.length;
 			const startX = (width - total * NODE_STEP) / 2;
 			ids.forEach((id, i) => {
-				pos.set(id, { x: startX + i * NODE_STEP, y: PAD + lvl * LEVEL_GAP });
+				pos.set(id, { x: startX + i * NODE_STEP, y: PAD + lvl * gap });
 			});
 		}
 
@@ -112,7 +129,7 @@
 	});
 </script>
 
-<div class="space-y-2">
+<div class="flex h-full flex-col gap-2">
 	<div class="flex items-center justify-between">
 		<span class="text-xs font-medium text-foreground">Crawl graph</span>
 		{#if graph}
@@ -125,7 +142,7 @@
 	{#if error}
 		<p class="text-xs text-destructive">{error}</p>
 	{:else if layout.width > 0}
-		<div class="overflow-x-auto rounded-md border border-border bg-muted/20 p-2">
+		<div bind:this={containerRef} class="min-h-0 flex-1 overflow-auto rounded-md border border-border bg-muted/20 p-2">
 			<svg width={layout.width} height={layout.height} class="block">
 				{#each layout.edges as e}
 					<line x1={e.x + NODE_W / 2} y1={e.y + NODE_H} x2={e.x2 + NODE_W / 2} y2={e.y2} stroke="currentColor" class="text-muted-foreground/40" stroke-width="1" />

@@ -4,6 +4,7 @@
 	import CrawlGraph from './CrawlGraph.svelte';
 	import CoverageMap from './CoverageMap.svelte';
 	import KeywordCloud from './KeywordCloud.svelte';
+	import FrequencyChart from './FrequencyChart.svelte';
 	import type { CrawlGraph as CrawlGraphType, WordCounts } from '$lib/api/types';
 
 	let { jobId, onclose }: { jobId: string; onclose: () => void } = $props();
@@ -12,7 +13,7 @@
 	let wordCounts = $state<WordCounts | null>(null);
 	let graphError = $state(false);
 	let wordsError = $state(false);
-	let view = $state<'coverage' | 'tree' | 'cloud'>('coverage');
+	let view = $state<'coverage' | 'tree' | 'cloud' | 'frequencies'>('coverage');
 
 	$effect(() => {
 		let cancelled = false;
@@ -40,7 +41,7 @@
 	const options = $derived.by(() => {
 		const opts: { value: string; label: string }[] = [];
 		if (graph) opts.push({ value: 'coverage', label: 'Coverage' }, { value: 'tree', label: 'Tree' });
-		if (wordCounts?.words?.length) opts.push({ value: 'cloud', label: 'Cloud' });
+		if (wordCounts?.words?.length) opts.push({ value: 'cloud', label: 'Cloud' }, { value: 'frequencies', label: 'Frequencies' });
 		return opts;
 	});
 
@@ -82,7 +83,7 @@
 			<div class="flex justify-center border-b border-border py-2">
 				<SegmentedControl
 					value={view}
-					onchange={(v) => (view = v as 'coverage' | 'tree' | 'cloud')}
+					onchange={(v) => (view = v as 'coverage' | 'tree' | 'cloud' | 'frequencies')}
 					{options}
 				/>
 			</div>
@@ -103,6 +104,8 @@
 				<CoverageMap {graph} />
 			{:else if view === 'tree'}
 				<CrawlGraph {jobId} {graph} />
+			{:else if view === 'frequencies'}
+				<FrequencyChart words={wordCounts?.words ?? []} />
 			{:else}
 				<KeywordCloud words={wordCounts?.words ?? []} />
 			{/if}

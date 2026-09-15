@@ -23,9 +23,13 @@
 	$effect(() => {
 		const lastStatus = new Map<string, string>();
 		const notified = new Set<string>();
+		let originalTitle: string | null = null;
 
 		function fire(job: { job_id: string; status: string; error_message?: string | null }) {
 			notified.add(job.job_id);
+			const label = job.status === 'completed' ? '● Done' : '● Failed';
+			if (originalTitle === null) originalTitle = document.title;
+			document.title = `${label} — OSWG`;
 			browserNotifications.notify(
 				job.status === 'completed' ? 'Wordlist ready' : 'Job failed',
 				job.status === 'completed'
@@ -52,9 +56,15 @@
 		});
 
 		// Catch up: if a job finished while the tab was visible, notify when the
-		// user switches away.
+		// user switches away. Restore the title when they come back.
 		const onVisibility = () => {
-			if (!document.hidden) return;
+			if (!document.hidden) {
+				if (originalTitle !== null) {
+					document.title = originalTitle;
+					originalTitle = null;
+				}
+				return;
+			}
 			for (const job of get(jobsStore).values()) {
 				if (terminal(job.status) && !notified.has(job.job_id)) fire(job);
 			}
@@ -115,6 +125,10 @@ function handleWindowDragOver(e: DragEvent) {
 </script>
 
 <svelte:window onkeydown={handleKeydown} ondragover={handleWindowDragOver} ondrop={handleWindowDrop} />
+
+<svelte:head>
+	<title>OSWG</title>
+</svelte:head>
 
 <div class="flex h-screen flex-col">
 	<Header />

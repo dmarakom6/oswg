@@ -9,12 +9,35 @@
 	import { focusUrlSignal, helpOpen, runSignal } from '$lib/stores/shortcuts';
 	import { isMod, isTyping } from '$lib/shortcuts';
 	import { loadJsAvailability } from '$lib/stores/capabilities';
+	import { jobsStore } from '$lib/stores/jobs';
+	import { browserNotifications } from '$lib/stores/notifications';
 	import type { ActiveTab } from '$lib/api/types';
 
 	let { children } = $props();
 
 	theme.init();
 	loadJsAvailability();
+
+	// Notify (when the tab is hidden) as jobs finish or fail.
+	$effect(() => {
+		const lastStatus = new Map<string, string>();
+		return jobsStore.subscribe((jobs) => {
+			for (const job of jobs.values()) {
+				const previous = lastStatus.get(job.job_id);
+				lastStatus.set(job.job_id, job.status);
+				if (previous !== 'pending' && previous !== 'processing') continue;
+				if (job.status !== 'completed' && job.status !== 'failed') continue;
+				if (!document.hidden) continue;
+				browserNotifications.notify(
+					job.status === 'completed' ? 'Wordlist ready' : 'Job failed',
+					job.status === 'completed'
+						? 'Your wordlist finished generating.'
+						: (job.error_message ?? 'The job failed.'),
+					job.job_id
+				);
+			}
+		});
+	});
 
 	const TAB_KEYS: Record<string, ActiveTab> = {
 		'1': 'generate',

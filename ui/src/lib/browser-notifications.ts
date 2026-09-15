@@ -32,7 +32,7 @@ export function showNotification(title: string, body: string, tag?: string): boo
 		return false;
 	}
 	try {
-		const notification = new Notification(title, { body, tag, icon: '/favicon.svg' });
+		const notification = new Notification(title, { body, tag });
 		notification.onclick = () => {
 			window.focus();
 			notification.close();

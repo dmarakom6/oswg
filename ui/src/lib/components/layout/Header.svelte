@@ -52,7 +52,7 @@
 			type="button"
 			onclick={toggleNotifications}
 			disabled={!notifySupported || notifyBlocked}
-			class="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm transition-colors
+			class="flex w-[38px] items-center justify-center rounded-md border border-border py-1.5 text-sm transition-colors
 				{notify.enabled ? 'text-primary' : 'text-muted-foreground'}
 				hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-40"
 			title={notifyTitle}
@@ -69,9 +69,6 @@
 						<path d="M20 18.69L7.84 6.14 5.27 3.49 4 4.76l2.8 2.8v.01c-.52.99-.8 2.16-.8 3.42v5l-2 2v1h13.24l2.52 2.52L20 18.69zM12 22c1.11 0 2-.89 2-2h-4c0 1.11.89 2 2 2zm6-7.32V11c0-3.08-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S11.5 3.17 11.5 4v.68c-.15.03-.29.08-.42.12L18 14.68z" />
 					</svg>
 				{/if}
-			</span>
-			<span class="hidden sm:inline">
-				{notify.enabled ? 'On' : 'Off'}
 			</span>
 		</button>
 

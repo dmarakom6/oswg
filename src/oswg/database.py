@@ -234,6 +234,7 @@ class Database:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
             await db.commit()
+        self._url_history_cache = None
 
     async def cleanup_expired_jobs(self) -> list[str]:
         """Delete expired jobs and return their IDs."""
@@ -247,6 +248,7 @@ class Database:
                     (datetime.utcnow().isoformat(),),
                 )
                 await db.commit()
+            self._url_history_cache = None
 
         return job_ids
 

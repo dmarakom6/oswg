@@ -55,3 +55,12 @@ async def test_url_history_filters_by_q(client):
 async def test_url_history_empty(client):
     resp = await client.get("/api/v1/jobs/url-history")
     assert resp.json()["urls"] == []
+
+
+async def test_url_history_invalidated_on_delete(client):
+    await _seed_job("a", "https://example.com/a")
+    assert len((await client.get("/api/v1/jobs/url-history")).json()["urls"]) == 1
+
+    await db.delete_job("a")
+    assert db._url_history_cache is None
+    assert (await client.get("/api/v1/jobs/url-history")).json()["urls"] == []

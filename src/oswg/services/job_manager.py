@@ -7,6 +7,7 @@ from typing import Callable, Optional
 from oswg.config import settings
 from oswg.database import db
 from oswg.models import JobStatus, JobType
+from oswg.services.file_manager import file_manager
 from oswg.services.progress import progress_tracker
 
 
@@ -113,9 +114,15 @@ class JobManager:
         """Delete a job from the database."""
         await db.delete_job(job_id)
 
+    async def clear_all_jobs(self) -> list[str]:
+        """Delete every job row, returning the deleted ids."""
+        return await db.clear_all_jobs()
+
     async def cleanup_expired(self) -> list[str]:
-        """Clean up expired jobs and files."""
+        """Delete expired jobs and their files."""
         expired_ids = await db.cleanup_expired_jobs()
+        for job_id in expired_ids:
+            file_manager.delete_file(job_id)
         return expired_ids
 
 

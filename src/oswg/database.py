@@ -192,6 +192,7 @@ class Database:
             self._url_history_loading = False
 
     async def _load_url_history(self) -> list[dict]:
+        now = datetime.utcnow().isoformat()
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute(
@@ -199,9 +200,11 @@ class Database:
                 SELECT json_extract(config, '$.url') AS url, COUNT(*) AS cnt
                 FROM jobs
                 WHERE json_extract(config, '$.url') IS NOT NULL
+                  AND expires_at > ?
                 GROUP BY url
                 ORDER BY cnt DESC, MAX(created_at) DESC
-                """
+                """,
+                (now,),
             ) as cursor:
                 rows = await cursor.fetchall()
         return [{"url": row["url"], "count": row["cnt"]} for row in rows]
@@ -235,6 +238,17 @@ class Database:
             await db.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
             await db.commit()
         self._url_history_cache = None
+
+    async def clear_all_jobs(self) -> list[str]:
+        """Delete every job row, returning the deleted ids."""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT id FROM jobs") as cursor:
+                rows = await cursor.fetchall()
+            await db.execute("DELETE FROM jobs")
+            await db.commit()
+        self._url_history_cache = None
+        return [row["id"] for row in rows]
 
     async def cleanup_expired_jobs(self) -> list[str]:
         """Delete expired jobs and return their IDs."""

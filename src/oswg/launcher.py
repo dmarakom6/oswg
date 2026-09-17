@@ -49,6 +49,9 @@ def _create_app(static_path: Path):
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         await db.init()
+        from oswg.services.job_manager import job_manager
+
+        await job_manager.cleanup_expired()
         yield
 
     app = FastAPI(

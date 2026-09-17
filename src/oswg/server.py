@@ -15,6 +15,9 @@ from oswg.services.progress import progress_tracker
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
     await db.init()
+    from oswg.services.job_manager import job_manager
+
+    await job_manager.cleanup_expired()
     yield
 
 

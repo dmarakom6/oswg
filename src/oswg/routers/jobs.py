@@ -30,11 +30,10 @@ router = APIRouter()
 )
 async def clear_jobs():
     """Clear all jobs and their files."""
-    jobs = await job_manager.get_active_jobs()
-    for job in jobs:
-        file_manager.delete_file(job["id"])
-        await job_manager.delete_job(job["id"])
-    return {"cleared": len(jobs)}
+    job_ids = await job_manager.clear_all_jobs()
+    for job_id in job_ids:
+        file_manager.delete_file(job_id)
+    return {"cleared": len(job_ids)}
 
 
 @router.get(

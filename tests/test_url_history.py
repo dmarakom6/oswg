@@ -64,3 +64,30 @@ async def test_url_history_invalidated_on_delete(client):
     await db.delete_job("a")
     assert db._url_history_cache is None
     assert (await client.get("/api/v1/jobs/url-history")).json()["urls"] == []
+
+
+async def test_clear_all_jobs_deletes_everything(client):
+    await _seed_job("a", "https://example.com/a")
+    await _seed_job("b", "https://example.com/b")
+
+    resp = await client.post("/api/v1/jobs/clear")
+    assert resp.status_code == 200
+    assert resp.json()["cleared"] == 2
+    assert db._url_history_cache is None
+    assert (await client.get("/api/v1/jobs/url-history")).json()["urls"] == []
+
+
+async def test_url_history_excludes_expired(client, monkeypatch):
+    await _seed_job("a", "https://example.com/a")
+    # Force the job's expiry into the past.
+    import aiosqlite
+
+    async with aiosqlite.connect(db.db_path) as conn:
+        await conn.execute(
+            "UPDATE jobs SET expires_at = ? WHERE id = 'a'",
+            ("2000-01-01T00:00:00",),
+        )
+        await conn.commit()
+    db._url_history_cache = None
+
+    assert (await client.get("/api/v1/jobs/url-history")).json()["urls"] == []

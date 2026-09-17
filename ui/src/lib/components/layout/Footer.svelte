@@ -15,7 +15,7 @@
 	});
 </script>
 
-<footer class="flex items-center justify-between border-t border-border bg-card px-6 py-2 text-xs text-muted-foreground">
+<footer class="flex items-center justify-between border-t border-border bg-card px-4 py-2 text-xs text-muted-foreground sm:px-6">
 	<span>OSWG v{version}</span>
 	<div class="flex items-center gap-4">
 		<button
@@ -27,6 +27,6 @@
 			Shortcuts
 			<kbd class="rounded bg-background px-1 text-[10px] text-foreground">?</kbd>
 		</button>
-		<span>MIT License</span>
+		<span class="hidden sm:inline">MIT License</span>
 	</div>
 </footer>

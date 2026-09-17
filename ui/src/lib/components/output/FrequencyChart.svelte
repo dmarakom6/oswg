@@ -25,7 +25,7 @@
 		<div class="space-y-1.5 rounded-md border border-border bg-muted/20 p-3">
 			{#each sorted as item (item.word)}
 				<div class="flex items-center gap-2" title="{item.word} · {item.count}×">
-					<span class="w-28 shrink-0 truncate text-right font-mono text-xs text-foreground">
+					<span class="w-20 shrink-0 truncate text-right font-mono text-xs text-foreground sm:w-28">
 						{item.word}
 					</span>
 					<div class="h-4 flex-1 overflow-hidden rounded bg-muted/50">

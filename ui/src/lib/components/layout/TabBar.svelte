@@ -10,7 +10,7 @@
 		<button
 			role="tab"
 			aria-selected={activeTab === tab.id}
-			class="relative px-6 py-3 text-sm font-medium transition-colors
+			class="relative flex-1 px-3 py-3 text-sm font-medium transition-colors sm:flex-none sm:px-6
 				{activeTab === tab.id
 				? 'text-primary'
 				: 'text-muted-foreground hover:text-foreground'}"
@@ -18,7 +18,7 @@
 		>
 			{tab.label}
 			{#if tab.shortcut}
-				<kbd class="ml-2 rounded border border-border bg-muted/40 px-1 text-[10px] text-muted-foreground">
+				<kbd class="ml-2 hidden rounded border border-border bg-muted/40 px-1 text-[10px] text-muted-foreground sm:inline">
 					{tab.shortcut}
 				</kbd>
 			{/if}

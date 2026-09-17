@@ -12,12 +12,12 @@
 	} = $props();
 </script>
 
-<div class="inline-flex rounded-md border border-border {disabled ? 'opacity-50' : ''}">
+<div class="inline-flex max-w-full overflow-x-auto rounded-md border border-border {disabled ? 'opacity-50' : ''}">
 	{#each options as opt}
 		<button
 			type="button"
 			disabled={disabled}
-			class="px-3 py-1.5 text-sm transition-colors first:rounded-l-md last:rounded-r-md
+			class="shrink-0 whitespace-nowrap px-3 py-1.5 text-sm transition-colors first:rounded-l-md last:rounded-r-md
 				{disabled ? 'cursor-not-allowed'
 				: value === opt.value
 				? 'bg-primary text-primary-foreground'

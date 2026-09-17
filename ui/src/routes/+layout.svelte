@@ -130,7 +130,7 @@ function handleWindowDragOver(e: DragEvent) {
 	<title>OSWG</title>
 </svelte:head>
 
-<div class="flex h-screen flex-col">
+<div class="flex h-dvh flex-col">
 	<Header />
 	<TabBar activeTab={$activeTab} onchange={(t) => activeTab.set(t)} />
 

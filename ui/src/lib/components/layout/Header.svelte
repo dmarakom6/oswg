@@ -41,7 +41,7 @@
 	);
 </script>
 
-<header class="flex items-center justify-between border-b border-border bg-card px-6 py-3">
+<header class="flex items-center justify-between border-b border-border bg-card px-4 py-3 sm:px-6">
 	<div class="flex items-center gap-3">
 		<span class="font-mono text-lg font-semibold text-primary">OSWG</span>
 		<span class="hidden text-sm text-muted-foreground sm:inline">Oddly Specific Wordlist Generator</span>

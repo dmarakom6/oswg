@@ -66,19 +66,19 @@
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape') onclose(); }} />
 
 <div
-	class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-	role="presentation"
-	onclick={(e) => {
-		if (e.target === e.currentTarget) onclose();
-	}}
->
-	<div
-		class="flex h-[85vh] w-[min(1100px,95vw)] flex-col overflow-hidden rounded-lg border border-border bg-background shadow-xl"
-		role="dialog"
-		tabindex="-1"
-		aria-modal="true"
-		aria-label="Visualizations"
+		class="fixed inset-0 z-50 flex flex-col bg-black/60"
+		role="presentation"
+		onclick={(e) => {
+			if (e.target === e.currentTarget) onclose();
+		}}
 	>
+		<div
+			class="flex h-full w-full flex-col overflow-hidden rounded-none border border-border bg-background shadow-xl sm:h-[85vh] sm:w-[min(1100px,95vw)] sm:self-center sm:rounded-lg"
+			role="dialog"
+			tabindex="-1"
+			aria-modal="true"
+			aria-label="Visualizations"
+		>
 		<div class="flex items-center justify-between border-b border-border px-4 py-3">
 			<h2 class="text-sm font-semibold text-foreground">Visualizations</h2>
 			<button

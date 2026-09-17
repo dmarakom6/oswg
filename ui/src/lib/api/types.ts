@@ -207,6 +207,15 @@ export interface MutationTree {
 	tree: Record<string, string[]>;
 }
 
+export interface UrlHistoryEntry {
+	url: string;
+	count: number;
+}
+
+export interface UrlHistory {
+	urls: UrlHistoryEntry[];
+}
+
 export interface WSJobMessage {
 	job_id: string;
 	status: JobStatus;

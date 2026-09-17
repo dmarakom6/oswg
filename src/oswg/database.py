@@ -1,5 +1,6 @@
 """SQLite database layer for OSWG API."""
 
+import asyncio
 import json
 import time
 from datetime import datetime, timedelta
@@ -18,10 +19,15 @@ class Database:
     def __init__(self, db_path: Optional[Path] = None):
         self.db_path = db_path or settings.database_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._url_history_cache: Optional[tuple[float, list[dict]]] = None
+        self._url_history_ttl = 30.0
+        self._url_history_loading = False
 
     async def init(self) -> None:
         """Initialize database schema."""
         async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
+            await db.execute("PRAGMA busy_timeout=5000")
             await db.execute(
                 """
                 CREATE TABLE IF NOT EXISTS jobs (
@@ -87,6 +93,14 @@ class Database:
                 ),
             )
             await db.commit()
+        url = (config or {}).get("url")
+        if url and self._url_history_cache is not None:
+            _, urls = self._url_history_cache
+            found = next((u for u in urls if u["url"] == url), None)
+            if found:
+                found["count"] += 1
+            else:
+                urls.append({"url": url, "count": 1})
 
     async def update_job_status(
         self,
@@ -148,6 +162,49 @@ class Database:
                 if row:
                     return dict(row)
                 return None
+
+    async def url_history(self, q: Optional[str] = None, limit: int = 10) -> list[dict]:
+        """Return distinct primary URLs from jobs, by usage count then recency.
+
+        The full list is cached; new jobs update it incrementally and a
+        stale cache is refreshed in the background, so reads are fast.
+        """
+        now = time.monotonic()
+        if self._url_history_cache is None:
+            self._url_history_cache = (now, await self._load_url_history())
+        elif (
+            now - self._url_history_cache[0] > self._url_history_ttl
+            and not self._url_history_loading
+        ):
+            self._url_history_loading = True
+            asyncio.create_task(self._refresh_url_history())
+
+        urls = self._url_history_cache[1]
+        if q:
+            needle = q.lower()
+            urls = [u for u in urls if needle in u["url"].lower()]
+        return urls[:limit]
+
+    async def _refresh_url_history(self) -> None:
+        try:
+            self._url_history_cache = (time.monotonic(), await self._load_url_history())
+        finally:
+            self._url_history_loading = False
+
+    async def _load_url_history(self) -> list[dict]:
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                """
+                SELECT json_extract(config, '$.url') AS url, COUNT(*) AS cnt
+                FROM jobs
+                WHERE json_extract(config, '$.url') IS NOT NULL
+                GROUP BY url
+                ORDER BY cnt DESC, MAX(created_at) DESC
+                """
+            ) as cursor:
+                rows = await cursor.fetchall()
+        return [{"url": row["url"], "count": row["cnt"]} for row in rows]
 
     async def get_expired_jobs(self) -> list[dict]:
         """Get all expired jobs."""

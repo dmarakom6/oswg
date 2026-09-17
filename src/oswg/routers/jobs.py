@@ -13,6 +13,7 @@ from oswg.core.export import (
     compress_bytes,
     render_bytes,
 )
+from oswg.database import db
 from oswg.models import ErrorResponse, JobListItem, JobStatusResponse
 from oswg.services.file_manager import file_manager
 from oswg.services.job_manager import job_manager
@@ -63,6 +64,18 @@ async def list_jobs():
             )
         )
     return result
+
+
+@router.get(
+    "/jobs/url-history",
+    responses={
+        500: {"model": ErrorResponse, "description": "Failed to load URL history"},
+    },
+)
+async def get_url_history(q: str = "", limit: int = 10):
+    """Return recently used primary URLs for autocomplete."""
+    urls = await db.url_history(q=q or None, limit=min(max(limit, 1), 50))
+    return {"urls": urls}
 
 
 @router.get(

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SegmentedControl from './SegmentedControl.svelte';
+	import DropZone from './DropZone.svelte';
 	import { endpoints } from '$lib/api/endpoints';
 	import { jobsStore } from '$lib/stores/jobs';
 	import { connectJobWs } from '$lib/websocket/job-ws';
@@ -140,6 +141,13 @@
 				rows="6"
 				class="w-full resize-y rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 			></textarea>
+			<DropZone
+				onFiles={(files) => {
+					if (files[0]) wordlistText = files[0].words.join('\n');
+				}}
+				compact
+				label="Upload .txt wordlist / drop here"
+			/>
 		{/if}
 	</div>
 

@@ -11,6 +11,7 @@ class JobType(str, Enum):
     GENERATE = "generate"
     SCRAPE = "scrape"
     MUTATE = "mutate"
+    TEST = "test"
 
 
 class JobStatus(str, Enum):
@@ -274,6 +275,24 @@ class ScrapeRequest(BaseRequest):
         return value
 
 
+class TestRequest(BaseRequest):
+    tool: str = Field(..., description="Tool to run: hashcat, john, hydra, medusa, ncrack, gobuster, aircrack-ng.")
+    wordlist_job_id: Optional[str] = Field(
+        None, description="Reference a completed job's wordlist instead of pasting one."
+    )
+    wordlist_text: Optional[str] = Field(
+        None, description="Pasted wordlist (one word per line).", max_length=2_000_000
+    )
+    mode: Optional[int] = Field(None, description="Hashcat hash mode (0=MD5, 1000=NTLM).")
+    hashes_text: Optional[str] = Field(None, description="Pasted hashes (hashcat/john).", max_length=2_000_000)
+    users_text: Optional[str] = Field(None, description="Pasted usernames (hydra/medusa/ncrack).", max_length=2_000_000)
+    rules_text: Optional[str] = Field(None, description="Pasted cracker rules (one per line).", max_length=2_000_000)
+    host: Optional[str] = Field(None, description="Target host (hydra/medusa/ncrack).", max_length=200)
+    service: Optional[str] = Field(None, description="Service, e.g. ssh (hydra/medusa/ncrack).", max_length=50)
+    url: Optional[str] = Field(None, description="Base URL (gobuster).", max_length=300)
+    capture_text: Optional[str] = Field(None, description="Pasted capture data (aircrack-ng).", max_length=2_000_000)
+
+
 class MutateRequest(BaseModel):
     words: list[str] = Field(..., description="Words to mutate.", min_length=1)
     enable_leet: bool = Field(True, description="Enable l33t speak mutations.")
@@ -333,6 +352,7 @@ class JobListItem(BaseModel):
     expires_at: datetime
     ttl_seconds: int
     file_size_bytes: Optional[int] = None
+    url: Optional[str] = None
 
 
 class MutateResponse(BaseModel):

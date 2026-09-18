@@ -82,7 +82,8 @@
 
 	const steps = {
 		generate: ['Connecting', 'Scraping website', 'Generating mutations', 'Saving wordlist', 'Finalizing'],
-		scrape: ['Connecting', 'Scraping website', 'Processing keywords', 'Saving results', 'Finalizing']
+		scrape: ['Connecting', 'Scraping website', 'Processing keywords', 'Saving results', 'Finalizing'],
+		test: ['Preparing inputs', 'Running tool', 'Saving results', 'Finalizing']
 	};
 
 	function getStepIndex(progress: number, type: string): number {
@@ -212,7 +213,7 @@
 					{isDone ? (currentJob.status === 'completed' ? 'Complete' : 'Failed') : 'Processing'}
 				</span>
 				<div class="flex items-center gap-3">
-					{#if currentJob.status === 'completed' && currentJob.type !== 'mutate'}
+					{#if currentJob.status === 'completed' && (currentJob.type === 'generate' || currentJob.type === 'scrape')}
 						<button
 							type="button"
 							onclick={() => (visualizeOpen = true)}
@@ -252,6 +253,36 @@
 		</div>
 
 		{#if currentJob.status === 'completed'}
+			{#if currentJob.type === 'test'}
+				{#if preview && preview.mode === 'test'}
+					<div class="flex flex-col gap-3" style="animation: fade-in 300ms ease">
+						<div class="flex items-baseline justify-between">
+							<span class="text-sm font-medium text-foreground">
+								{preview.tool} result
+							</span>
+							<span class="font-mono text-xs text-muted-foreground">
+								{preview.found} found
+							</span>
+						</div>
+						{#if preview.entries.length > 0}
+							<div class="max-h-72 overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+								{#each preview.entries as entry (entry.hash ?? entry.user ?? entry.path ?? entry.key)}
+									<div class="flex items-center justify-between gap-2 py-0.5 font-mono text-xs">
+										<span class="truncate text-muted-foreground">
+											{entry.hash ?? entry.user ?? entry.path ?? 'key'}
+										</span>
+										<span class="shrink-0 text-primary">
+											{entry.password ?? entry.status ?? entry.key}
+										</span>
+									</div>
+								{/each}
+							</div>
+						{:else}
+							<p class="text-xs text-muted-foreground">No results found.</p>
+						{/if}
+					</div>
+				{/if}
+			{:else}
 			{#if currentJob.screenshot_count && currentJob.screenshot_count > 0}
 				<div class="space-y-2">
 					<div class="flex items-center justify-between">
@@ -332,7 +363,7 @@
 						</div>
 					</div>
 				</div>
-			{:else if preview}
+			{:else if preview && preview.mode === 'wordlist'}
 				<div class="mt-auto flex flex-col gap-3 border-t border-border pt-4" style="animation: fade-in 300ms ease">
 					<div>
 						<div class="mb-2 flex items-center justify-between">
@@ -406,6 +437,7 @@
 						Download Wordlist
 					</button>
 				</div>
+			{/if}
 			{/if}
 		{:else if currentJob.status === 'failed'}
 			<div class="mt-auto flex flex-col gap-3 border-t border-border pt-4" style="animation: fade-in 300ms ease">

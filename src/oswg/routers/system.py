@@ -48,7 +48,13 @@ async def health():
 @router.get("/api/v1/info")
 async def info():
     """App version and optional-feature availability for the web UI."""
-    return {"version": __version__, "js_available": _js_available()}
+    from oswg.core.test_runner import available
+
+    return {
+        "version": __version__,
+        "js_available": _js_available(),
+        "test_tools": available(),
+    }
 
 
 @router.get("/health/ready")

@@ -80,7 +80,8 @@
 	const TAB_KEYS: Record<string, ActiveTab> = {
 		'1': 'generate',
 		'2': 'scrape',
-		'3': 'mutate'
+		'3': 'mutate',
+		'4': 'test'
 	};
 
 	function handleKeydown(e: KeyboardEvent) {

@@ -2,6 +2,7 @@
 	import GenerateConfig from '$lib/components/config/GenerateConfig.svelte';
 	import ScrapeConfig from '$lib/components/config/ScrapeConfig.svelte';
 	import MutateConfig from '$lib/components/config/MutateConfig.svelte';
+	import TestConfig from '$lib/components/config/TestConfig.svelte';
 	import OutputPanel from '$lib/components/output/OutputPanel.svelte';
 	import RecentWordlists from '$lib/components/RecentWordlists.svelte';
 	import SegmentedControl from '$lib/components/config/SegmentedControl.svelte';
@@ -112,6 +113,9 @@
 			</div>
 			<div class:hidden={$activeTab !== 'mutate'}>
 				<MutateConfig onResult={(r) => (mutateResult = r)} />
+			</div>
+			<div class:hidden={$activeTab !== 'test'}>
+				<TestConfig />
 			</div>
 		</div>
 		<RecentWordlists />

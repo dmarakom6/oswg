@@ -68,6 +68,12 @@ export const SHORTCUTS: Shortcut[] = [
 		hint: '3'
 	},
 	{
+		id: 'switch-test',
+		keys: ['4'],
+		description: 'Switch to the Test tab',
+		hint: '4'
+	},
+	{
 		id: 'run',
 		keys: keys(modLabel(), 'Enter'),
 		description: 'Run the active tab (Generate / Scrape / Mutate)',

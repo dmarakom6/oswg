@@ -43,7 +43,7 @@ def _create_app(static_path: Path):
     from fastapi.middleware.cors import CORSMiddleware
 
     from oswg.database import db
-    from oswg.routers import generate, jobs, mutate, scrape, system
+    from oswg.routers import generate, jobs, mutate, scrape, system, test
     from oswg.services.progress import progress_tracker
 
     @asynccontextmanager
@@ -73,6 +73,7 @@ def _create_app(static_path: Path):
     app.include_router(scrape.router, prefix="/api/v1", tags=["scrape"])
     app.include_router(mutate.router, prefix="/api/v1", tags=["mutate"])
     app.include_router(jobs.router, prefix="/api/v1", tags=["jobs"])
+    app.include_router(test.router, prefix="/api/v1", tags=["test"])
     app.include_router(system.router, tags=["system"])
 
     if (static_path / "index.html").exists():

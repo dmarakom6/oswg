@@ -1,7 +1,7 @@
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
-export type JobType = 'generate' | 'scrape' | 'mutate';
+export type JobType = 'generate' | 'scrape' | 'mutate' | 'test';
 export type ThemeMode = 'system' | 'light' | 'dark';
-export type ActiveTab = 'generate' | 'scrape' | 'mutate';
+export type ActiveTab = 'generate' | 'scrape' | 'mutate' | 'test';
 
 export interface GenerateRequest {
 	url: string;
@@ -137,6 +137,7 @@ export interface Job {
 export interface AppInfo {
 	version: string;
 	js_available: boolean;
+	test_tools?: Record<string, boolean>;
 }
 
 export type DownloadFormat = 'txt' | 'json' | 'csv';
@@ -156,6 +157,40 @@ export interface JobListItem {
 	expires_at: string;
 	ttl_seconds: number;
 	file_size_bytes: number | null;
+	url?: string | null;
+}
+
+export interface TestRequest {
+	tool: string;
+	wordlist_job_id?: string;
+	wordlist_text?: string;
+	mode?: number;
+	hashes_text?: string;
+	users_text?: string;
+	rules_text?: string;
+	host?: string;
+	service?: string;
+	url?: string;
+	capture_text?: string;
+	retention_seconds?: number;
+}
+
+export interface TestEntry {
+	hash?: string;
+	user?: string;
+	password?: string;
+	path?: string;
+	status?: string;
+	key?: string;
+}
+
+export interface TestPreview {
+	job_id: string;
+	mode: 'test';
+	tool: string;
+	kind: string;
+	found: number;
+	entries: TestEntry[];
 }
 
 export interface JobPreview {
@@ -182,7 +217,7 @@ export interface JobRulePreview {
 	base_path: string;
 }
 
-export type JobPreviewResult = JobPreview | JobRulePreview;
+export type JobPreviewResult = JobPreview | JobRulePreview | TestPreview;
 
 export interface CrawlGraph {
 	job_id: string;

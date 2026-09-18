@@ -104,14 +104,15 @@ def pip_target(extra: str) -> str:
 
 
 def detect() -> dict:
+    from oswg.core.test_runner import available as test_available
+
     return {
         "venv": in_venv(),
         "frozen": is_frozen(),
         "js": has_module("playwright"),
         "chromium": chromium_installed(),
         "auth": has_module("httpx_ntlm"),
-        "hashcat": tool("hashcat"),
-        "john": tool("john"),
+        "test_tools": test_available(),
     }
 
 

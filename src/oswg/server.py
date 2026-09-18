@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from oswg.config import settings
 from oswg.database import db
-from oswg.routers import generate, jobs, mutate, scrape, system
+from oswg.routers import generate, jobs, mutate, scrape, system, test
 from oswg.services.progress import progress_tracker
 
 
@@ -40,6 +40,7 @@ app.include_router(generate.router, prefix=settings.api_prefix, tags=["generate"
 app.include_router(scrape.router, prefix=settings.api_prefix, tags=["scrape"])
 app.include_router(mutate.router, prefix=settings.api_prefix, tags=["mutate"])
 app.include_router(jobs.router, prefix=settings.api_prefix, tags=["jobs"])
+app.include_router(test.router, prefix=settings.api_prefix, tags=["test"])
 app.include_router(system.router, tags=["system"])
 
 

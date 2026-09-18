@@ -51,5 +51,6 @@ export const RETENTION_OPTIONS = [
 export const TABS = [
 	{ id: 'generate' as const, label: 'Generate', shortcut: '1' },
 	{ id: 'scrape' as const, label: 'Scrape', shortcut: '2' },
-	{ id: 'mutate' as const, label: 'Mutate', shortcut: '3' }
+	{ id: 'mutate' as const, label: 'Mutate', shortcut: '3' },
+	{ id: 'test' as const, label: 'Test', shortcut: '4' }
 ];

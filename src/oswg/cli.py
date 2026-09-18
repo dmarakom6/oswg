@@ -1073,12 +1073,14 @@ def setup_cmd(
         f"[dim]Environment: {'venv' if status['venv'] else 'system'} · "
         f"{'frozen build (pip installs unavailable)' if status['frozen'] else 'pip installs available'}[/dim]"
     )
+    tools = status["test_tools"]
     console.print(
-        f"[dim]Test tools: hashcat {'✓' if status['hashcat'] else '✗'} · "
-        f"john {'✓' if status['john'] else '✗'}[/dim]"
+        "[dim]Test tools (for 'oswg test'): "
+        + ", ".join(f"{name} {'✓' if ok else '✗'}" for name, ok in tools.items())
+        + "[/dim]"
     )
-    if not status["hashcat"]:
-        console.print(f"[dim]  install with: {setup_mod.hashcat_hint()}[/dim]")
+    if not tools.get("hashcat"):
+        console.print(f"[dim]  hashcat install hint: {setup_mod.hashcat_hint()}[/dim]")
 
     if check:
         raise typer.Exit(code=1 if missing else 0)

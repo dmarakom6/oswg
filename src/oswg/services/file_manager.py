@@ -98,6 +98,15 @@ class FileManager:
         """Check if a file exists."""
         return self.get_file_path(job_id, extension).exists()
 
+    def save_test_result(self, job_id: str, data: dict) -> Path:
+        """Save a test run's result to <job_id>.test.json."""
+        import json
+
+        file_path = self.get_file_path(job_id, ".test.json")
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        return file_path
+
     def delete_file(self, job_id: str, extension: str = ".txt") -> bool:
         """Delete a file."""
         file_path = self.get_file_path(job_id, extension)

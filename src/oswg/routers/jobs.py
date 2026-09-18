@@ -50,6 +50,11 @@ async def list_jobs():
         file_size = None
         if job["status"] == "completed" and file_manager.file_exists(job["id"]):
             file_size = file_manager.get_file_size(job["id"])
+        url = None
+        try:
+            url = json.loads(job["config"]).get("url")
+        except (ValueError, TypeError):
+            pass
         result.append(
             JobListItem(
                 job_id=job["id"],
@@ -60,6 +65,7 @@ async def list_jobs():
                 expires_at=expires_at,
                 ttl_seconds=ttl,
                 file_size_bytes=file_size,
+                url=url,
             )
         )
     return result
@@ -426,6 +432,22 @@ async def preview_job_result(job_id: str, limit: int = 100):
             stats = json.loads(job["result_stats"])
         except (ValueError, TypeError):
             stats = {}
+
+    if job["type"] == "test":
+        result_path = file_manager.get_file_path(job_id, ".test.json")
+        if not result_path.exists():
+            raise HTTPException(
+                status_code=404, detail=f"Test result for job {job_id} not found"
+            )
+        result = json.loads(result_path.read_text(encoding="utf-8"))
+        return {
+            "job_id": job_id,
+            "mode": "test",
+            "tool": result.get("tool"),
+            "kind": result.get("kind"),
+            "found": result.get("found", 0),
+            "entries": result.get("entries", []),
+        }
 
     rule_format = stats.get("rule_format")
 

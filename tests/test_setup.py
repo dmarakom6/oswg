@@ -74,3 +74,4 @@ def test_detect_shape(monkeypatch):
     assert d["chromium"] is True
     assert d["venv"] is True
     assert d["frozen"] is False
+    assert set(d["test_tools"]) == {"hashcat", "john", "hydra", "medusa", "ncrack", "gobuster", "aircrack-ng"}

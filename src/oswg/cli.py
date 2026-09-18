@@ -1115,5 +1115,73 @@ def setup_cmd(
     _setup_row("HTTP auth (NTLM)", "oswg[auth]", status["auth"], setup_mod.SIZE_MB["auth"])
 
 
+def _print_test_result(result: dict) -> None:
+    from rich.table import Table
+
+    console.print("")
+    table = Table(title=f"oswg test ({result['tool']})")
+    kind = result["kind"]
+    if kind == "hash":
+        table.add_column("Hash", style="dim")
+        table.add_column("Password", style="green")
+        for entry in result["entries"]:
+            table.add_row(entry.get("hash", ""), entry["password"])
+    elif kind == "login":
+        table.add_column("User", style="cyan")
+        table.add_column("Password", style="green")
+        for entry in result["entries"]:
+            table.add_row(entry["user"], entry["password"])
+    elif kind == "path":
+        table.add_column("Path", style="cyan")
+        table.add_column("Status", style="yellow")
+        for entry in result["entries"]:
+            table.add_row(entry["path"], entry["status"])
+    elif kind == "key":
+        table.add_column("Key", style="green")
+        for entry in result["entries"]:
+            table.add_row(entry["key"])
+    console.print(table)
+    print_info(f"Found {result['found']}")
+
+
+@app.command(name="test")
+def test_cmd(
+    wordlist: Path = typer.Argument(..., help="Wordlist to test (or the .base.txt from --rule-format)."),
+    tool: str = typer.Option(
+        ...,
+        "--tool",
+        help="Tool to run: hashcat, john, hydra, medusa, ncrack, gobuster, aircrack-ng.",
+    ),
+    hashes: Path = typer.Option(None, "--hashes", help="Hash file (hashcat/john)."),
+    mode: int = typer.Option(None, "--mode", help="Hashcat hash mode (e.g. 0=MD5, 1000=NTLM)."),
+    rules: Path = typer.Option(None, "--rules", help="Cracker rules file (from --rule-format)."),
+    users: Path = typer.Option(None, "--users", help="Usernames file (hydra/medusa/ncrack)."),
+    host: str = typer.Option(None, "--host", help="Target host (hydra/medusa/ncrack)."),
+    service: str = typer.Option(None, "--service", help="Service, e.g. ssh (hydra/medusa/ncrack)."),
+    url: str = typer.Option(None, "--url", help="Base URL (gobuster)."),
+    capture: Path = typer.Option(None, "--capture", help="PCAP capture file (aircrack-ng)."),
+) -> None:
+    """Test a wordlist against a target with an external cracking tool."""
+    from oswg.core.test_runner import TestToolError, run
+
+    inputs = {
+        "wordlist": wordlist,
+        "hashes": hashes,
+        "mode": mode,
+        "rules": rules,
+        "users": users,
+        "host": host,
+        "service": service,
+        "url": url,
+        "capture": capture,
+    }
+    try:
+        result = run(tool, inputs, on_line=lambda line: console.print(line, end=""))
+    except TestToolError as e:
+        print_error(str(e))
+        raise typer.Exit(code=1) from e
+    _print_test_result(result)
+
+
 if __name__ == "__main__":
     app()

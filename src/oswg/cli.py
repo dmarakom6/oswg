@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import typer
+from rich.markup import escape
 
 from oswg import __version__
 from oswg.cli_utils import (
@@ -1034,6 +1035,84 @@ def launch_ui(
 
     print_info("Starting OSWG dashboard...")
     start_server(host=host, port=port, open_browser=not no_browser)
+
+
+def _setup_row(label: str, spec: str, ok: bool, size_mb: int) -> None:
+    mark = "[green]✓[/green]" if ok else "[red]✗[/red]"
+    console.print(f"  {mark} {label}  [dim]({escape(spec)}, ~{size_mb} MB)[/dim]")
+
+
+@app.command(name="setup")
+def setup_cmd(
+    check: bool = typer.Option(False, "--check", help="Only report status; install nothing."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Install all missing extras without prompting."),
+) -> None:
+    """Install optional extras (JS rendering, HTTP auth) and check test tools."""
+    from oswg import setup as setup_mod
+
+    status = setup_mod.detect()
+
+    console.print("[bold]OSWG optional extras[/bold]")
+    _setup_row("JS rendering", "oswg[js]", status["js"], setup_mod.SIZE_MB["js"])
+    if status["js"]:
+        _setup_row("Chromium browser", "playwright install chromium", status["chromium"], setup_mod.SIZE_MB["chromium"])
+    _setup_row("HTTP auth (NTLM)", "oswg[auth]", status["auth"], setup_mod.SIZE_MB["auth"])
+    console.print("")
+
+    missing = []
+    if not status["js"]:
+        missing.append("js")
+    elif not status["chromium"]:
+        missing.append("chromium")
+    if not status["auth"]:
+        missing.append("auth")
+    missing_mb = sum(setup_mod.SIZE_MB[k] for k in missing)
+
+    console.print(f"[dim]Missing extras: {len(missing)} · estimated {missing_mb} MB on disk[/dim]")
+    console.print(
+        f"[dim]Environment: {'venv' if status['venv'] else 'system'} · "
+        f"{'frozen build (pip installs unavailable)' if status['frozen'] else 'pip installs available'}[/dim]"
+    )
+    console.print(
+        f"[dim]Test tools: hashcat {'✓' if status['hashcat'] else '✗'} · "
+        f"john {'✓' if status['john'] else '✗'}[/dim]"
+    )
+    if not status["hashcat"]:
+        console.print(f"[dim]  install with: {setup_mod.hashcat_hint()}[/dim]")
+
+    if check:
+        raise typer.Exit(code=1 if missing else 0)
+
+    if status["frozen"]:
+        print_warning("Frozen build — extras must be included at build time, not installed with pip.")
+        return
+
+    if not status["js"]:
+        if yes or typer.confirm(
+            f"Install 'oswg[js]' (JS rendering, ~{setup_mod.SIZE_MB['js']} MB package)?", default=False
+        ):
+            if setup_mod.install_js():
+                status = setup_mod.detect()
+    if status["js"] and not status["chromium"]:
+        if yes or typer.confirm(
+            f"Install the Playwright Chromium browser (~{setup_mod.SIZE_MB['chromium']} MB on disk)?",
+            default=False,
+        ):
+            if setup_mod.install_chromium():
+                status = setup_mod.detect()
+    if not status["auth"]:
+        if yes or typer.confirm(
+            f"Install 'oswg[auth]' (NTLM support, ~{setup_mod.SIZE_MB['auth']} MB)?", default=False
+        ):
+            if setup_mod.install_auth():
+                status = setup_mod.detect()
+
+    console.print("")
+    console.print("[bold]Result[/bold]")
+    _setup_row("JS rendering", "oswg[js]", status["js"], setup_mod.SIZE_MB["js"])
+    if status["js"]:
+        _setup_row("Chromium browser", "playwright install chromium", status["chromium"], setup_mod.SIZE_MB["chromium"])
+    _setup_row("HTTP auth (NTLM)", "oswg[auth]", status["auth"], setup_mod.SIZE_MB["auth"])
 
 
 if __name__ == "__main__":

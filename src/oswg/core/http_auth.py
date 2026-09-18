@@ -43,7 +43,7 @@ def build_auth(
     except ImportError as e:
         raise AuthError(
             "NTLM authentication requires the optional dependency. "
-            "Install with 'pip install oswg[auth]'."
+            "Run 'oswg setup' to install it."
         ) from e
     return HttpNtlmAuth(auth_user, auth_pass)
 

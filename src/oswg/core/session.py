@@ -29,8 +29,7 @@ async def interactive_login(
         from playwright.async_api import async_playwright
     except ImportError as e:
         raise RuntimeError(
-            "Interactive login requires Playwright. Install with "
-            "'pip install oswg[js]' then 'playwright install chromium'."
+            "Interactive login requires Playwright. Run 'oswg setup' to install it (Playwright + Chromium)."
         ) from e
 
     if on_prompt:

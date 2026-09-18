@@ -47,7 +47,7 @@ def test_build_auth_unknown_type():
 
 
 def test_build_auth_ntlm_requires_extra():
-    with pytest.raises(AuthError, match="oswg\\[auth\\]"):
+    with pytest.raises(AuthError, match="oswg setup"):
         build_auth("ntlm", "u", "p")
 
 

@@ -36,6 +36,13 @@ pip install oswg
 oswg ui
 ```
 
+Optional extras (JS rendering, NTLM auth) can be installed interactively with:
+
+```bash
+oswg setup            # shows what's missing and offers to install it
+oswg setup --check    # just report status
+```
+
 ## Usage
 
 ### CLI Mode

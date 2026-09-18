@@ -73,7 +73,7 @@
 			Sent alongside any cookies/session configured above.
 			{#if authType === 'ntlm'}
 				<span class="text-muted-foreground">
-					Requires the optional dependency. Install with <span class="font-mono">pip install 'oswg[auth]'</span>.
+					Requires the optional dependency. Run <span class="font-mono">oswg setup</span> to install it.
 				</span>
 			{/if}
 		</p>

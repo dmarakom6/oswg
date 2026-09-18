@@ -550,8 +550,7 @@ class Scraper:
             from playwright.async_api import async_playwright
         except ImportError as e:
             raise RuntimeError(
-                "JavaScript rendering requires Playwright. Install with "
-                "'pip install oswg[js]' then 'playwright install chromium'."
+                "JavaScript rendering requires Playwright. Run 'oswg setup' to install it (Playwright + Chromium)."
             ) from e
 
         if self._js_browser is None:

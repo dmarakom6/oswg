@@ -281,7 +281,7 @@
 			<ToggleSwitch checked={jsRender} onchange={(v) => (jsRender = v)} label="JavaScript rendering" disabled={!$jsAvailable} />
 			{#if !$jsAvailable}
 				<p class="text-xs text-muted-foreground">
-					Requires the optional dependency. Install with <span class="font-mono">pip install 'oswg[js]'</span> then <span class="font-mono">playwright install chromium</span>.
+					Requires the optional dependency. Run <span class="font-mono">oswg setup</span> to install JS rendering (Playwright + Chromium).
 				</p>
 			{:else}
 				<p class="text-xs text-muted-foreground">Render pages in a real browser for JS-driven sites. Saves a screenshot per page.</p>

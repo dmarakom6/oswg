@@ -105,10 +105,6 @@
 		extractUsernames = p.extract_usernames ?? false;
 	}
 
-	async function saveTemplate(name: string) {
-		await endpoints.saveTemplate({ name, type: 'scrape', config: buildPayload() as unknown as Record<string, unknown> });
-	}
-
 	async function handleSubmit() {
 		if (!canSubmit) return;
 		submitting = true;
@@ -151,7 +147,7 @@
 		<UrlInput value={url} focusSignal={$focusUrlSignal} onchange={(v) => (url = v)} error={urlError} />
 	</div>
 
-	<TemplatesBlock type="scrape" onApply={applyConfig} onSave={saveTemplate} />
+	<TemplatesBlock type="scrape" onApply={applyConfig} />
 
 	<div class="space-y-4">
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scope</h2>

@@ -218,10 +218,6 @@
 		extractUsernames = p.extract_usernames ?? false;
 	}
 
-	async function saveTemplate(name: string) {
-		await endpoints.saveTemplate({ name, type: 'generate', config: buildPayload() as unknown as Record<string, unknown> });
-	}
-
 	async function handleSubmit() {
 		if (!canSubmit) return;
 		submitting = true;
@@ -264,7 +260,7 @@
 		<UrlInput value={url} focusSignal={$focusUrlSignal} onchange={(v) => (url = v)} error={urlError} />
 	</div>
 
-	<TemplatesBlock type="generate" onApply={applyConfig} onSave={saveTemplate} />
+	<TemplatesBlock type="generate" onApply={applyConfig} />
 
 	<div class="space-y-4">
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scope</h2>

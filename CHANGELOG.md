@@ -2,6 +2,67 @@
 
 <!-- version list -->
 
+## v0.7.0 (2026-09-21)
+
+### Bug Fixes
+
+- Clear job cache properly for UI suggestions
+  ([`9c96231`](https://github.com/dmarakom6/oswg/commit/9c962313fd7947133278d3180654cd49fc873f50))
+
+- Clear wordlists wipes expired jobs and URL suggestions
+  ([`bede025`](https://github.com/dmarakom6/oswg/commit/bede025363378230b63b26927bf7c80ba584face))
+
+- Crawl tree fills modal height
+  ([`e158211`](https://github.com/dmarakom6/oswg/commit/e158211a24c636267d8e0521c959318718ccac65))
+
+- Generate keyword cloud weighted by source frequency, not family size
+  ([`1c68575`](https://github.com/dmarakom6/oswg/commit/1c685757c988df405d78a985e3e705b991e798f0))
+
+- Icon-only bell toggle, drop svg notification icon
+  ([`edb1864`](https://github.com/dmarakom6/oswg/commit/edb186417e7534cf08a7e6f86473d1e7919c75cc))
+
+- Notifications header button sizing + debug breadcrumbs
+  ([`0a099f3`](https://github.com/dmarakom6/oswg/commit/0a099f31202df6caecf67582db8466dee9bb1bef))
+
+- Notify on switch-away + svg bell icon
+  ([`6eeecce`](https://github.com/dmarakom6/oswg/commit/6eeecce5cb3bce76e31b924be83b0e91023d6a9e))
+
+### Features
+
+- Browser notifications when jobs finish
+  ([`d9cb15e`](https://github.com/dmarakom6/oswg/commit/d9cb15e5679671a7435e32c4cc174dcc0ea65e7e))
+
+- Keyword cloud visualization
+  ([`4593ee0`](https://github.com/dmarakom6/oswg/commit/4593ee0707c74a7a58556e959943a7f4a1f61ada))
+
+- Mutation tree visualization
+  ([`9b6b399`](https://github.com/dmarakom6/oswg/commit/9b6b399fda7e859c7de8a179e528a6cf75e13cc8))
+
+- Osgw test - run wordlists through external crack tools
+  ([`dc91b8a`](https://github.com/dmarakom6/oswg/commit/dc91b8a91dcd8f8356a00277b46be929d2161bbd))
+
+- Oswg setup - interactive extras installer
+  ([`21a147e`](https://github.com/dmarakom6/oswg/commit/21a147e7c1923ade3675d682bab876e906eb02ab))
+
+- Responsive mobile design
+  ([`54bf99c`](https://github.com/dmarakom6/oswg/commit/54bf99ccda4fe824132a01e32a5968f440196194))
+
+- Test tab for running wordlists through crack tools
+  ([`fa7f4b2`](https://github.com/dmarakom6/oswg/commit/fa7f4b246798492e9635ec9478ab49c35482977d))
+
+- Title flash fallback + app title
+  ([`1dd848c`](https://github.com/dmarakom6/oswg/commit/1dd848c83b544b5f877c778234e237d55c8a7e76))
+
+- Upload a wordlist file in the Test tab
+  ([`d7048e1`](https://github.com/dmarakom6/oswg/commit/d7048e19f61506cd8f4dcfdd66387937d1685ec9))
+
+- URL completion history
+  ([`3bbfedc`](https://github.com/dmarakom6/oswg/commit/3bbfedc9d98f107c24d4fb60ea516aaa58c8c7d5))
+
+- Word frequency chart in Visualize modal
+  ([`ae10be3`](https://github.com/dmarakom6/oswg/commit/ae10be329d48979b0bbff9a81d37f6a615a003ef))
+
+
 ## v0.6.0 (2026-09-14)
 
 ### Bug Fixes

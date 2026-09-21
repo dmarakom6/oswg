@@ -317,6 +317,15 @@ class MutateRequest(BaseModel):
     )
 
 
+class TemplateSaveRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, description="Template name.")
+    type: Optional[str] = Field(
+        None, description="Template type: generate or scrape (required unless from_job is set)."
+    )
+    config: Optional[dict] = Field(None, description="The full request config to save.")
+    from_job: Optional[str] = Field(None, description="Save a completed job's config instead.")
+
+
 class JobResponse(BaseModel):
     job_id: str
     status: JobStatus

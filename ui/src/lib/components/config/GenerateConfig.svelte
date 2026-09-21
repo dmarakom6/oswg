@@ -3,6 +3,7 @@
 	import NumberStepper from './NumberStepper.svelte';
 	import ToggleSwitch from './ToggleSwitch.svelte';
 	import SegmentedControl from './SegmentedControl.svelte';
+	import TemplatesBlock from './TemplatesBlock.svelte';
 	import KeyValueList from './KeyValueList.svelte';
 	import AuthField from './AuthField.svelte';
 	import HttpAuthField from './HttpAuthField.svelte';
@@ -11,6 +12,7 @@
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
 	import { isValidUrl } from '$lib/utils/validators';
 	import { endpoints } from '$lib/api/endpoints';
+	import type { GenerateRequest } from '$lib/api/types';
 	import { jobsStore } from '$lib/stores/jobs';
 	import { connectJobWs } from '$lib/websocket/job-ws';
 	import { jsAvailable } from '$lib/stores/capabilities';
@@ -105,67 +107,127 @@
 		}
 	});
 
+	function buildPayload(): GenerateRequest {
+		return {
+			url,
+			sitemap: useSitemap,
+			allow_subdomains: allowSubdomains,
+			include_paths: includePaths,
+			exclude_patterns: excludePatterns,
+			crawl_strategy: crawlStrategy,
+			js_render: jsRender,
+			extract_emails: extractEmails,
+			extract_usernames: extractUsernames,
+			size,
+			max_pages: maxPages,
+			min_length: minLength,
+			max_length: maxLength,
+			enable_leet: enableLeet,
+			enable_uppercase: enableUppercase,
+			enable_reverse_leet: enableReverseLeet,
+			enable_numbers: enableNumbers,
+			enable_special: enableSpecial,
+			leet_level: leetLevel,
+			deduplicate,
+			filter_stopwords: filterStopwords,
+			stopword_threshold: stopwordThreshold,
+			extra_stopwords: extraStopwords.split(',').map((w) => w.trim()).filter(Boolean),
+			common_years: commonYears,
+			...((enableSpecial && parsedSpecialChars.length > 0 && !specialCharsError) ? { special_chars: parsedSpecialChars } : {}),
+			timeout,
+			respect_robots: respectRobots,
+			...((userAgent.trim().length > 0) ? { user_agent: userAgent.trim() } : {}),
+			rate_limit: rateLimit,
+			jitter,
+			headers: Object.fromEntries(headers.filter((h) => h.name.trim()).map((h) => [h.name.trim(), h.value])),
+			cookies: Object.fromEntries(cookies.filter((c) => c.name.trim()).map((c) => [c.name.trim(), c.value])),
+			cookie_file: cookieFile,
+			storage_state: sessionState,
+			...((proxy.trim().length > 0) ? { proxy: proxy.trim() } : {}),
+			...(authType ? { auth_type: authType, auth_user: authUser.trim(), auth_pass: authPass } : {}),
+			merge_words: merge.merge_words,
+			merge_max: merge.merge_max,
+			merge_builtin: merge.merge_builtin,
+			merge_rockyou: merge.merge_rockyou,
+			rule_format: ruleFormat,
+			enable_random_combine: enableRandomCombine,
+			...((enableRandomCombine && randomCombineCount > 0) ? { random_combine_count: randomCombineCount } : {}),
+			...(enableRandomCombine && !combineSeedError && parsedCombineSeed !== undefined ? { random_combine_seed: parsedCombineSeed } : {}),
+			ai_enabled: aiEnabled,
+			...(aiEnabled
+				? {
+						ai_provider: aiProvider,
+						ai_model: aiModel.trim() || undefined,
+						ai_base_url: aiBaseUrl.trim() || undefined,
+						ai_max_words: aiMaxWords,
+						ai_words_per_word: aiWordsPerWord,
+						ai_max_concurrency: aiConcurrency
+					}
+				: {}),
+			retention_seconds: retentionSeconds
+		};
+	}
+
+	function applyConfig(payload: Record<string, unknown>) {
+		const p = payload as Partial<GenerateRequest>;
+		if (p.url) url = p.url;
+		if (p.size) size = p.size;
+		if (p.max_pages) maxPages = p.max_pages;
+		if (p.min_length) minLength = p.min_length;
+		if (p.max_length) maxLength = p.max_length;
+		enableLeet = p.enable_leet ?? true;
+		enableUppercase = p.enable_uppercase ?? true;
+		enableReverseLeet = p.enable_reverse_leet ?? false;
+		enableNumbers = p.enable_numbers ?? true;
+		enableSpecial = p.enable_special ?? false;
+		if (p.leet_level) leetLevel = p.leet_level;
+		deduplicate = p.deduplicate ?? true;
+		filterStopwords = p.filter_stopwords ?? true;
+		if (p.stopword_threshold) stopwordThreshold = p.stopword_threshold;
+		if (p.extra_stopwords) extraStopwords = p.extra_stopwords.join(', ');
+		if (p.common_years) years = p.common_years.join(', ');
+		if (p.special_chars) specialChars = p.special_chars.join(', ');
+		if (p.timeout) timeout = p.timeout;
+		respectRobots = p.respect_robots ?? false;
+		if (p.user_agent) userAgent = p.user_agent;
+		rateLimit = p.rate_limit ?? 0;
+		jitter = p.jitter ?? false;
+		if (p.headers) headers = Object.entries(p.headers).map(([name, value]) => ({ name, value }));
+		if (p.proxy) proxy = p.proxy;
+		if (p.merge_words) merge.merge_words = p.merge_words;
+		if (p.merge_max) merge.merge_max = p.merge_max;
+		merge.merge_builtin = p.merge_builtin ?? false;
+		merge.merge_rockyou = p.merge_rockyou ?? false;
+		enableRandomCombine = p.enable_random_combine ?? false;
+		if (p.random_combine_count) randomCombineCount = p.random_combine_count;
+		randomCombineSeed =
+			p.random_combine_seed !== undefined && p.random_combine_seed !== null
+				? String(p.random_combine_seed)
+				: '';
+		aiEnabled = p.ai_enabled ?? false;
+		if (p.ai_provider) aiProvider = p.ai_provider;
+		if (p.ai_model) aiModel = p.ai_model;
+		if (p.ai_base_url) aiBaseUrl = p.ai_base_url;
+		crawlStrategy = p.crawl_strategy ?? 'bfs';
+		useSitemap = p.sitemap ?? false;
+		allowSubdomains = p.allow_subdomains ?? false;
+		if (p.include_paths) includePaths = p.include_paths;
+		if (p.exclude_patterns) excludePatterns = p.exclude_patterns;
+		jsRender = p.js_render ?? false;
+		extractEmails = p.extract_emails ?? false;
+		extractUsernames = p.extract_usernames ?? false;
+	}
+
+	async function saveTemplate(name: string) {
+		await endpoints.saveTemplate({ name, type: 'generate', config: buildPayload() as unknown as Record<string, unknown> });
+	}
+
 	async function handleSubmit() {
 		if (!canSubmit) return;
 		submitting = true;
 
 		try {
-			const response = await endpoints.generate({
-				url,
-				sitemap: useSitemap,
-				allow_subdomains: allowSubdomains,
-				include_paths: includePaths,
-				exclude_patterns: excludePatterns,
-				crawl_strategy: crawlStrategy,
-				js_render: jsRender,
-				extract_emails: extractEmails,
-				extract_usernames: extractUsernames,
-				size,
-				max_pages: maxPages,
-				min_length: minLength,
-				max_length: maxLength,
-				enable_leet: enableLeet,
-				enable_uppercase: enableUppercase,
-				enable_reverse_leet: enableReverseLeet,
-				enable_numbers: enableNumbers,
-				enable_special: enableSpecial,
-				leet_level: leetLevel,
-				deduplicate,
-				filter_stopwords: filterStopwords,
-				stopword_threshold: stopwordThreshold,
-				extra_stopwords: extraStopwords.split(',').map(w => w.trim()).filter(Boolean),
-				common_years: commonYears,
-				...((enableSpecial && parsedSpecialChars.length > 0 && !specialCharsError) ? { special_chars: parsedSpecialChars } : {}),
-				timeout,
-				respect_robots: respectRobots,
-				...((userAgent.trim().length > 0) ? { user_agent: userAgent.trim() } : {}),
-				rate_limit: rateLimit,
-				jitter,
-				headers: Object.fromEntries(headers.filter(h => h.name.trim()).map(h => [h.name.trim(), h.value])),
-				cookies: Object.fromEntries(cookies.filter(c => c.name.trim()).map(c => [c.name.trim(), c.value])),
-				cookie_file: cookieFile,
-				storage_state: sessionState,
-				...((proxy.trim().length > 0) ? { proxy: proxy.trim() } : {}),
-				...(authType ? { auth_type: authType, auth_user: authUser.trim(), auth_pass: authPass } : {}),
-				merge_words: merge.merge_words,
-				merge_max: merge.merge_max,
-				merge_builtin: merge.merge_builtin,
-				merge_rockyou: merge.merge_rockyou,
-				rule_format: ruleFormat,
-				enable_random_combine: enableRandomCombine,
-				...((enableRandomCombine && randomCombineCount > 0) ? { random_combine_count: randomCombineCount } : {}),
-				...(enableRandomCombine && !combineSeedError && parsedCombineSeed !== undefined ? { random_combine_seed: parsedCombineSeed } : {}),
-				ai_enabled: aiEnabled,
-				...(aiEnabled ? {
-					ai_provider: aiProvider,
-					ai_model: aiModel.trim() || undefined,
-					ai_base_url: aiBaseUrl.trim() || undefined,
-					ai_max_words: aiMaxWords,
-					ai_words_per_word: aiWordsPerWord,
-					ai_max_concurrency: aiConcurrency
-				} : {}),
-				retention_seconds: retentionSeconds
-			});
+			const response = await endpoints.generate(buildPayload());
 
 			jobsStore.upsert({
 				job_id: response.job_id,
@@ -201,6 +263,8 @@
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Target</h2>
 		<UrlInput value={url} focusSignal={$focusUrlSignal} onchange={(v) => (url = v)} error={urlError} />
 	</div>
+
+	<TemplatesBlock type="generate" onApply={applyConfig} onSave={saveTemplate} />
 
 	<div class="space-y-4">
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scope</h2>

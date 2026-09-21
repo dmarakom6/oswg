@@ -35,6 +35,8 @@ export const api = {
 
 	get: <T>(path: string) => request<T>(path),
 
+	delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+
 	download: async (path: string): Promise<{ blob: Blob; filename: string }> => {
 		const res = await fetch(`${API_BASE}${path}`);
 		if (!res.ok) throw new ApiError(res.status, 'download_error', 'Download failed');

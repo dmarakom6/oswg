@@ -2,6 +2,7 @@
 	import { currentJobForTab, jobsStore } from '$lib/stores/jobs';
 	import { endpoints } from '$lib/api/endpoints';
 	import VisualizeModal from './VisualizeModal.svelte';
+	import SaveTemplateModal from './SaveTemplateModal.svelte';
 	import SegmentedControl from '../config/SegmentedControl.svelte';
 	import ToggleSwitch from '../config/ToggleSwitch.svelte';
 	import type { ActiveTab, DownloadFormat, JobPreviewResult } from '$lib/api/types';
@@ -23,6 +24,7 @@
 	let preview = $state<JobPreviewResult | null>(null);
 	let viewingScreenshot = $state<number | null>(null);
 	let visualizeOpen = $state(false);
+	let saveTemplateOpen = $state(false);
 	let downloadFormat = $state<DownloadFormat>('txt');
 	let downloadGzip = $state(false);
 	const screenshotUrl = (jobId: string, page: number) => `/api/v1/jobs/${jobId}/screenshot?page=${page}`;
@@ -214,6 +216,13 @@
 				</span>
 				<div class="flex items-center gap-3">
 					{#if currentJob.status === 'completed' && (currentJob.type === 'generate' || currentJob.type === 'scrape')}
+						<button
+							type="button"
+							onclick={() => (saveTemplateOpen = true)}
+							class="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+						>
+							Save
+						</button>
 						<button
 							type="button"
 							onclick={() => (visualizeOpen = true)}
@@ -509,6 +518,14 @@
 
 {#if visualizeOpen && currentJob}
 	<VisualizeModal jobId={currentJob.job_id} onclose={() => (visualizeOpen = false)} />
+{/if}
+
+{#if saveTemplateOpen && currentJob && (currentJob.type === 'generate' || currentJob.type === 'scrape')}
+	<SaveTemplateModal
+		jobId={currentJob.job_id}
+		jobType={currentJob.type}
+		onclose={() => (saveTemplateOpen = false)}
+	/>
 {/if}
 
 <style>

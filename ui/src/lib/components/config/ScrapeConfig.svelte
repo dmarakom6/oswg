@@ -7,9 +7,11 @@
 	import AuthField from './AuthField.svelte';
 	import HttpAuthField from './HttpAuthField.svelte';
 	import StringList from './StringList.svelte';
+	import TemplatesBlock from './TemplatesBlock.svelte';
 	import { DEFAULTS, LIMITS, RETENTION_OPTIONS } from '$lib/constants';
 	import { isValidUrl } from '$lib/utils/validators';
 	import { endpoints } from '$lib/api/endpoints';
+	import type { ScrapeRequest } from '$lib/api/types';
 	import { jobsStore } from '$lib/stores/jobs';
 	import { connectJobWs } from '$lib/websocket/job-ws';
 	import { jsAvailable } from '$lib/stores/capabilities';
@@ -55,35 +57,64 @@
 		}
 	});
 
+	function buildPayload(): ScrapeRequest {
+		return {
+			url,
+			sitemap: useSitemap,
+			allow_subdomains: allowSubdomains,
+			include_paths: includePaths,
+			exclude_patterns: excludePatterns,
+			crawl_strategy: crawlStrategy,
+			js_render: jsRender,
+			extract_emails: extractEmails,
+			extract_usernames: extractUsernames,
+			max_pages: maxPages,
+			timeout,
+			respect_robots: respectRobots,
+			...((userAgent.trim().length > 0) ? { user_agent: userAgent.trim() } : {}),
+			rate_limit: rateLimit,
+			jitter,
+			headers: Object.fromEntries(headers.filter((h) => h.name.trim()).map((h) => [h.name.trim(), h.value])),
+			cookies: Object.fromEntries(cookies.filter((c) => c.name.trim()).map((c) => [c.name.trim(), c.value])),
+			cookie_file: cookieFile,
+			storage_state: sessionState,
+			...((proxy.trim().length > 0) ? { proxy: proxy.trim() } : {}),
+			...(authType ? { auth_type: authType, auth_user: authUser.trim(), auth_pass: authPass } : {}),
+			retention_seconds: retentionSeconds
+		};
+	}
+
+	function applyConfig(payload: Record<string, unknown>) {
+		const p = payload as Partial<ScrapeRequest>;
+		if (p.url) url = p.url;
+		if (p.max_pages) maxPages = p.max_pages;
+		if (p.timeout) timeout = p.timeout;
+		respectRobots = p.respect_robots ?? false;
+		if (p.user_agent) userAgent = p.user_agent;
+		rateLimit = p.rate_limit ?? 0;
+		jitter = p.jitter ?? false;
+		if (p.headers) headers = Object.entries(p.headers).map(([name, value]) => ({ name, value }));
+		if (p.proxy) proxy = p.proxy;
+		crawlStrategy = p.crawl_strategy ?? 'bfs';
+		useSitemap = p.sitemap ?? false;
+		allowSubdomains = p.allow_subdomains ?? false;
+		if (p.include_paths) includePaths = p.include_paths;
+		if (p.exclude_patterns) excludePatterns = p.exclude_patterns;
+		jsRender = p.js_render ?? false;
+		extractEmails = p.extract_emails ?? false;
+		extractUsernames = p.extract_usernames ?? false;
+	}
+
+	async function saveTemplate(name: string) {
+		await endpoints.saveTemplate({ name, type: 'scrape', config: buildPayload() as unknown as Record<string, unknown> });
+	}
+
 	async function handleSubmit() {
 		if (!canSubmit) return;
 		submitting = true;
 
 		try {
-			const response = await endpoints.scrape({
-				url,
-				sitemap: useSitemap,
-				allow_subdomains: allowSubdomains,
-				include_paths: includePaths,
-				exclude_patterns: excludePatterns,
-				crawl_strategy: crawlStrategy,
-				js_render: jsRender,
-				extract_emails: extractEmails,
-				extract_usernames: extractUsernames,
-				max_pages: maxPages,
-				timeout,
-				respect_robots: respectRobots,
-				...((userAgent.trim().length > 0) ? { user_agent: userAgent.trim() } : {}),
-				rate_limit: rateLimit,
-				jitter,
-				headers: Object.fromEntries(headers.filter(h => h.name.trim()).map(h => [h.name.trim(), h.value])),
-				cookies: Object.fromEntries(cookies.filter(c => c.name.trim()).map(c => [c.name.trim(), c.value])),
-				cookie_file: cookieFile,
-				storage_state: sessionState,
-				...((proxy.trim().length > 0) ? { proxy: proxy.trim() } : {}),
-				...(authType ? { auth_type: authType, auth_user: authUser.trim(), auth_pass: authPass } : {}),
-				retention_seconds: retentionSeconds
-			});
+			const response = await endpoints.scrape(buildPayload());
 
 			jobsStore.upsert({
 				job_id: response.job_id,
@@ -119,6 +150,8 @@
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Target</h2>
 		<UrlInput value={url} focusSignal={$focusUrlSignal} onchange={(v) => (url = v)} error={urlError} />
 	</div>
+
+	<TemplatesBlock type="scrape" onApply={applyConfig} onSave={saveTemplate} />
 
 	<div class="space-y-4">
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scope</h2>

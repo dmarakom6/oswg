@@ -160,6 +160,24 @@ export interface JobListItem {
 	url?: string | null;
 }
 
+export interface TemplateInfo {
+	name: string;
+	type: 'generate' | 'scrape';
+	created_at: string;
+}
+
+export interface TemplateRecord extends TemplateInfo {
+	config: Record<string, unknown>;
+}
+
+export interface TemplatesResponse {
+	templates: TemplateInfo[];
+}
+
+export interface PresetsResponse {
+	presets: Record<string, Record<string, unknown>>;
+}
+
 export interface TestRequest {
 	tool: string;
 	wordlist_job_id?: string;

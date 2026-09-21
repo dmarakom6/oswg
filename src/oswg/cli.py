@@ -404,6 +404,10 @@ def generate(
         None, "--combine-seed",
         help="Seed for reproducible random combinations (same seed = same output).",
     ),
+    template: str = typer.Option(None, "--template", help="Load a saved template as the base config."),
+    preset: str = typer.Option(
+        None, "--preset", help="Apply a built-in preset: quick, standard, aggressive, extreme."
+    ),
     ai_completions: bool = typer.Option(
         False, "--ai-completions",
         help="Expand base words with AI-generated related words "
@@ -452,6 +456,32 @@ def generate(
         loaded = load_stopwords_file(stopwords_file)
         extra_stopwords = sorted(loaded)
 
+    base: dict = {}
+    if template or preset:
+        if template and preset:
+            print_error("Use either --template or --preset, not both")
+            raise typer.Exit(code=1)
+        if preset:
+            from oswg.core.presets import PRESETS
+
+            if preset not in PRESETS:
+                print_error(f"Unknown preset '{preset}' (expected one of: {', '.join(PRESETS)})")
+                raise typer.Exit(code=1)
+            base = PRESETS[preset]
+        else:
+            from oswg.services.template_store import template_store
+
+            record = template_store.get(template)
+            if not record:
+                print_error(f"Template '{template}' not found")
+                raise typer.Exit(code=1)
+            base = record.get("config") or {}
+
+        if not merge_builtin and "merge_builtin" in base:
+            merge_builtin = bool(base["merge_builtin"])
+        if not merge_rockyou and "merge_rockyou" in base:
+            merge_rockyou = bool(base["merge_rockyou"])
+
     config = GenerationConfig(
         target_size=size,
         min_word_length=min_length,
@@ -484,6 +514,9 @@ def generate(
         ai_max_concurrency=ai_concurrency,
         ai_timeout=ai_timeout,
     )
+
+    if base:
+        _apply_config_overlay(config, base, locals())
 
     if ai_completions:
         if not quiet:
@@ -630,7 +663,7 @@ def generate(
             )
             if result.truncated_count > 0:
                 print_warning(
-                    f"Truncated {result.truncated_count} mutations to reach target size ({size})."
+                    f"Truncated {result.truncated_count} mutations to reach target size ({config.target_size})."
                 )
             print_info("Dry run — no file written")
         return
@@ -662,7 +695,7 @@ def generate(
         )
         if result.truncated_count > 0:
             print_warning(
-                f"Truncated {result.truncated_count} mutations to reach target size ({size})."
+                f"Truncated {result.truncated_count} mutations to reach target size ({config.target_size})."
             )
         print_success(f"Wordlist saved to {written_path}")
 
@@ -1184,6 +1217,129 @@ def test_cmd(
         raise typer.Exit(code=1) from e
     _print_test_result(result)
 
+
+# Base keys applied from a --template/--preset config onto GenerationConfig,
+# only when the corresponding flag equals its default (so explicit flags win).
+_CONFIG_OVERLAY = (
+    ("size", "target_size", "size", 10000),
+    ("min_length", "min_word_length", "min_length", 3),
+    ("max_length", "max_word_length", "max_length", 32),
+    ("enable_leet", "enable_leet", "no_leet", False),
+    ("enable_uppercase", "enable_uppercase", "no_uppercase", False),
+    ("enable_reverse_leet", "enable_reverse_leet", "reverse_leet", False),
+    ("enable_numbers", "enable_numbers", "no_numbers", False),
+    ("enable_special", "enable_special", "special", False),
+    ("leet_level", "leet_level", "leet_level", 1),
+    ("deduplicate", "deduplicate", "no_deduplicate", False),
+    ("filter_stopwords", "filter_stopwords", "no_filter_stopwords", False),
+    ("stopword_threshold", "stopword_threshold", "stopword_threshold", 0.5),
+    ("enable_random_combine", "enable_random_combine", "random_combine", False),
+    ("random_combine_count", "random_combine_count", "combine_count", 1000),
+    ("random_combine_seed", "random_combine_seed", "combine_seed", None),
+    ("ai_enabled", "ai_enabled", "ai_completions", False),
+    ("ai_provider", "ai_provider", "ai_provider", "auto"),
+    ("ai_model", "ai_model", "ai_model", None),
+    ("ai_base_url", "ai_base_url", "ai_base_url", None),
+    ("ai_max_words", "ai_max_words", "ai_max_words", 1000),
+    ("ai_words_per_word", "ai_words_per_word", "ai_words_per_word", 3),
+    ("ai_max_concurrency", "ai_max_concurrency", "ai_concurrency", 2),
+    ("ai_timeout", "ai_timeout", "ai_timeout", 30.0),
+)
+
+
+def _apply_config_overlay(config, base: dict, flags: dict) -> None:
+    for base_key, field, flag_var, default in _CONFIG_OVERLAY:
+        if base_key in base and flags.get(flag_var) == default:
+            setattr(config, field, base[base_key])
+
+
+template_app = typer.Typer(help="Manage saved job templates.", no_args_is_help=True)
+
+
+@template_app.command("list")
+def template_list() -> None:
+    """List saved templates."""
+    from rich.table import Table
+
+    from oswg.services.template_store import template_store
+
+    templates = template_store.list()
+    if not templates:
+        print_info("No templates saved yet.")
+        return
+    table = Table(title="Saved templates")
+    table.add_column("Name", style="cyan")
+    table.add_column("Type")
+    table.add_column("Created")
+    for t in templates:
+        table.add_row(t["name"], t["type"], t["created_at"])
+    console.print(table)
+
+
+@template_app.command("save")
+def template_save(
+    name: str = typer.Argument(..., help="Template name."),
+    type: str = typer.Option(None, "--type", help="Template type: generate or scrape."),
+    from_job: str = typer.Option(None, "--from-job", help="Save a completed job's config."),
+    config_file: Path = typer.Option(None, "--config-file", help="JSON file with the request config."),
+) -> None:
+    """Save a template from a completed job or a JSON config file."""
+    import asyncio
+    import json
+
+    from oswg.database import db
+    from oswg.models import GenerateRequest, ScrapeRequest
+    from oswg.services.template_store import template_store
+
+    if from_job:
+        job = asyncio.run(db.get_job(from_job))
+        if not job:
+            print_error(f"Job {from_job} not found")
+            raise typer.Exit(code=1)
+        type_ = job["type"]
+        try:
+            config = json.loads(job["config"])
+        except (ValueError, TypeError) as e:
+            print_error("Stored job config is invalid")
+            raise typer.Exit(code=1) from e
+    elif config_file:
+        try:
+            config = json.loads(config_file.read_text())
+        except (ValueError, OSError) as e:
+            print_error(f"Could not read config file: {e}")
+            raise typer.Exit(code=1) from e
+        type_ = type
+    else:
+        print_error("Provide --from-job <job_id> or --config-file <file>")
+        raise typer.Exit(code=1)
+
+    if type_ not in ("generate", "scrape"):
+        print_error("type must be 'generate' or 'scrape'")
+        raise typer.Exit(code=1)
+    try:
+        (GenerateRequest if type_ == "generate" else ScrapeRequest).model_validate(config)
+    except Exception as e:
+        print_error(f"Invalid {type_} config: {e}")
+        raise typer.Exit(code=1) from e
+
+    record = template_store.save(name, type_, config)
+    print_success(f"Saved template '{name}' ({type_})")
+    print_info(f"Created {record['created_at']}")
+
+
+@template_app.command("delete")
+def template_delete(name: str = typer.Argument(..., help="Template name.")) -> None:
+    """Delete a saved template."""
+    from oswg.services.template_store import template_store
+
+    if template_store.delete(name):
+        print_success(f"Deleted template '{name}'")
+    else:
+        print_error(f"Template '{name}' not found")
+        raise typer.Exit(code=1)
+
+
+app.add_typer(template_app, name="template")
 
 if __name__ == "__main__":
     app()

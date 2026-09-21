@@ -96,6 +96,12 @@
 									<div>
 										<p class="font-mono text-xs text-foreground">{job.type}</p>
 										<p class="text-xs text-muted-foreground">{formatTime(job.created_at)}</p>
+										<p
+											class="select-all font-mono text-[10px] text-muted-foreground/60"
+											title="Job ID"
+										>
+											{job.job_id}
+										</p>
 									</div>
 								</div>
 								<div class="flex items-center gap-4">

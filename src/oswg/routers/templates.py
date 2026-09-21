@@ -84,6 +84,16 @@ async def get_template(name: str):
     return {"name": name, "type": record.get("type"), "config": record.get("config", {})}
 
 
+@router.delete("/templates")
+async def delete_all_templates():
+    """Delete all saved templates."""
+    deleted = 0
+    for record in template_store.list():
+        if template_store.delete(record["name"]):
+            deleted += 1
+    return {"deleted": deleted}
+
+
 @router.delete(
     "/templates/{name}",
     responses={

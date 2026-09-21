@@ -235,6 +235,13 @@
 				</div>
 			</div>
 
+			<p
+				class="mb-2 select-all font-mono text-[11px] text-muted-foreground/70"
+				title="Job ID (use with `oswg template save --from-job`)"
+			>
+				{currentJob.job_id}
+			</p>
+
 			<div class="h-2 overflow-hidden rounded-full bg-muted">
 				<div
 					class="h-full rounded-full transition-all duration-700 ease-out

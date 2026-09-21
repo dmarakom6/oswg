@@ -1,5 +1,8 @@
 """Tests for job templates and presets."""
 
+import asyncio
+import json
+
 import httpx
 import pytest
 from fastapi import FastAPI
@@ -115,6 +118,61 @@ async def test_presets_endpoint(client):
     resp = await client.get("/api/v1/presets")
     assert resp.status_code == 200
     assert set(resp.json()["presets"]) == {"quick", "standard", "aggressive", "extreme"}
+
+
+def test_extreme_preset_enables_advanced_options():
+    extreme = PRESETS["extreme"]
+    assert extreme["enable_reverse_leet"] is True
+    assert extreme["enable_special"] is True
+    assert extreme["enable_random_combine"] is True
+    assert extreme["random_combine_count"] == 50000
+    assert extreme["merge_builtin"] is True
+    assert extreme["merge_rockyou"] is True
+    assert extreme["merge_max"] == 4
+    assert "&" in extreme["special_chars"]
+
+
+async def test_delete_all_templates(client):
+    for name in ("t1", "t2"):
+        await client.post(
+            "/api/v1/templates",
+            json={"name": name, "type": "generate", "config": _gen_config()},
+        )
+    resp = await client.delete("/api/v1/templates")
+    assert resp.status_code == 200
+    assert resp.json()["deleted"] == 2
+    assert (await client.get("/api/v1/templates")).json()["templates"] == []
+
+
+def test_generate_request_config_roundtrip():
+    from oswg.cli import _generate_request_config
+    from oswg.core.models import GenerationConfig
+
+    config = GenerationConfig(target_size=5000, enable_special=True, leet_level=2)
+    request = _generate_request_config(config, "https://example.com", True, True)
+    assert request["size"] == 5000
+    assert request["url"] == "https://example.com"
+    assert request["enable_special"] is True
+    assert request["merge_builtin"] is True and request["merge_rockyou"] is True
+    GenerateRequest.model_validate(request)
+
+
+def test_record_cli_job_and_jobs_list(tmp_path, monkeypatch):
+    from oswg.cli import _record_cli_job
+    from oswg.database import db
+    from oswg.services.template_store import template_store
+
+    (tmp_path / "db").mkdir()
+    monkeypatch.setattr(db, "db_path", tmp_path / "db" / "oswg-cli-test.db")
+    monkeypatch.setattr(template_store, "path", tmp_path / "templates.json")
+
+    job_id = _record_cli_job("generate", _gen_config())
+    job = asyncio.run(db.get_job(job_id))
+    assert job["type"] == "generate"
+    assert job["status"] == "completed"
+
+    record = template_store.save("from-cli", "generate", json.loads(job["config"]))
+    assert record["name"] == "from-cli"
 
 
 def test_config_overlay_applies_base_when_flag_at_default():

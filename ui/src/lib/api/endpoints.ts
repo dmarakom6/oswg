@@ -44,6 +44,7 @@ export const endpoints = {
 		api.post<{ name: string; type: string; created_at: string }>('/api/v1/templates', body),
 	deleteTemplate: (name: string) =>
 		api.delete<{ deleted: boolean }>(`/api/v1/templates/${encodeURIComponent(name)}`),
+	deleteAllTemplates: () => api.delete<{ deleted: number }>('/api/v1/templates'),
 	getPresets: () => api.get<PresetsResponse>('/api/v1/presets'),
 	getScreenshot: (jobId: string, page: number) =>
 		api.download(`/api/v1/jobs/${jobId}/screenshot?page=${page}`),

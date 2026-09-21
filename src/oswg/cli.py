@@ -699,6 +699,13 @@ def generate(
             )
         print_success(f"Wordlist saved to {written_path}")
 
+        job_id = _record_cli_job(
+            "generate",
+            _generate_request_config(config, primary_url, merge_builtin, merge_rockyou),
+        )
+        if not quiet:
+            print_info(f"Job ID: {job_id}")
+
 
 @app.command()
 def scrape(
@@ -871,6 +878,32 @@ def scrape(
         )
         if not quiet:
             print_success(f"Saved {len(keywords)} keywords to {written_path}")
+
+        job_id = _record_cli_job(
+            "scrape",
+            {
+                "url": url[0],
+                "urls": url[1:] or None,
+                "max_pages": max_pages,
+                "timeout": timeout,
+                "respect_robots": respect_robots,
+                "user_agent": user_agent or None,
+                "rate_limit": rate_limit,
+                "jitter": jitter,
+                "headers": parse_headers(header),
+                "cookies": parse_cookies(cookie),
+                "sitemap": sitemap,
+                "crawl_strategy": crawl_strategy,
+                "js_render": js_render,
+                "allow_subdomains": allow_subdomains,
+                "include_paths": include_path,
+                "exclude_patterns": exclude,
+                "extract_emails": emails,
+                "extract_usernames": usernames,
+            },
+        )
+        if not quiet:
+            print_info(f"Job ID: {job_id}")
     else:
         if not quiet:
             if show_all:
@@ -1057,6 +1090,28 @@ def mutate(
             print_info(f"{len(input_words)} words -> {len(mutations)} unique mutations")
 
 
+@app.command(name="jobs")
+def list_jobs(limit: int = typer.Option(10, "--limit", help="Maximum jobs to show.", min=1, max=100)) -> None:
+    """List recent jobs (id, type, status, url)."""
+    import asyncio
+    import json
+
+    from oswg.database import db
+
+    async def _list() -> list[dict]:
+        await db.init()
+        return await db.get_active_jobs()
+
+    records = asyncio.run(_list())
+    if not records:
+        print_info("No jobs yet. Run `oswg generate` or `oswg scrape` to create one.")
+        return
+    print_success(f"Recent jobs ({len(records)}):")
+    for r in records[:limit]:
+        config = json.loads(r["config"]) if r.get("config") else {}
+        console.print(f"  {r['id']}  {r['type']:8}  {r['status']:9}  {config.get('url', '')}")
+
+
 @app.command(name="ui")
 def launch_ui(
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the server to."),
@@ -1233,6 +1288,8 @@ _CONFIG_OVERLAY = (
     ("deduplicate", "deduplicate", "no_deduplicate", False),
     ("filter_stopwords", "filter_stopwords", "no_filter_stopwords", False),
     ("stopword_threshold", "stopword_threshold", "stopword_threshold", 0.5),
+    ("special_chars", "special_chars", "special_chars", None),
+    ("merge_max", "merge_max", "merge_max", 5000),
     ("enable_random_combine", "enable_random_combine", "random_combine", False),
     ("random_combine_count", "random_combine_count", "combine_count", 1000),
     ("random_combine_seed", "random_combine_seed", "combine_seed", None),
@@ -1251,6 +1308,84 @@ def _apply_config_overlay(config, base: dict, flags: dict) -> None:
     for base_key, field, flag_var, default in _CONFIG_OVERLAY:
         if base_key in base and flags.get(flag_var) == default:
             setattr(config, field, base[base_key])
+
+
+def _get_job_init(job_id: str):
+    """Fetch a job, ensuring the DB schema exists first."""
+
+    import asyncio
+
+    from oswg.database import db
+
+    async def _run():
+        await db.init()
+        return await db.get_job(job_id)
+
+    return asyncio.run(_run())
+
+
+def _record_cli_job(job_type: str, config: dict) -> str:
+    """Persist a CLI run as a completed job so it can be saved as a template."""
+
+    import asyncio
+    import uuid
+
+    from oswg.config import settings
+    from oswg.database import db
+    from oswg.models import JobStatus, JobType
+
+    async def _run() -> str:
+        await db.init()
+        job_id = str(uuid.uuid4())
+        await db.create_job(
+            job_id,
+            JobType(job_type),
+            config,
+            settings.default_retention_seconds,
+        )
+        await db.update_job_status(job_id, JobStatus.COMPLETED, 100.0)
+        return job_id
+
+    return asyncio.run(_run())
+
+
+def _generate_request_config(config, url: str, merge_builtin: bool, merge_rockyou: bool) -> dict:
+    """Serialize a GenerationConfig into a GenerateRequest-shaped dict."""
+    return {
+        "url": url,
+        "size": config.target_size,
+        "min_length": config.min_word_length,
+        "max_length": config.max_word_length,
+        "enable_leet": config.enable_leet,
+        "enable_uppercase": config.enable_uppercase,
+        "enable_reverse_leet": config.enable_reverse_leet,
+        "enable_numbers": config.enable_numbers,
+        "enable_special": config.enable_special,
+        "leet_level": config.leet_level,
+        "common_years": config.common_years,
+        "special_chars": config.special_chars,
+        "deduplicate": config.deduplicate,
+        "filter_stopwords": config.filter_stopwords,
+        "stopword_threshold": config.stopword_threshold,
+        "extra_stopwords": config.extra_stopwords,
+        "extract_emails": config.extract_emails,
+        "extract_usernames": config.extract_usernames,
+        "merge_words": config.merge_words,
+        "merge_max": config.merge_max,
+        "merge_builtin": merge_builtin,
+        "merge_rockyou": merge_rockyou,
+        "enable_random_combine": config.enable_random_combine,
+        "random_combine_count": config.random_combine_count,
+        "random_combine_seed": config.random_combine_seed,
+        "ai_enabled": config.ai_enabled,
+        "ai_provider": config.ai_provider,
+        "ai_model": config.ai_model,
+        "ai_base_url": config.ai_base_url,
+        "ai_max_words": config.ai_max_words,
+        "ai_words_per_word": config.ai_words_per_word,
+        "ai_max_concurrency": config.ai_max_concurrency,
+        "ai_timeout": config.ai_timeout,
+    }
 
 
 template_app = typer.Typer(help="Manage saved job templates.", no_args_is_help=True)
@@ -1284,15 +1419,13 @@ def template_save(
     config_file: Path = typer.Option(None, "--config-file", help="JSON file with the request config."),
 ) -> None:
     """Save a template from a completed job or a JSON config file."""
-    import asyncio
     import json
 
-    from oswg.database import db
     from oswg.models import GenerateRequest, ScrapeRequest
     from oswg.services.template_store import template_store
 
     if from_job:
-        job = asyncio.run(db.get_job(from_job))
+        job = _get_job_init(from_job)
         if not job:
             print_error(f"Job {from_job} not found")
             raise typer.Exit(code=1)

@@ -44,6 +44,7 @@
 	let extractEmails = $state(false);
 	let extractUsernames = $state(false);
 	let submitting = $state(false);
+	let advancedOpen = $state(false);
 
 	let urlError = $derived(url.length > 0 && !isValidUrl(url) ? 'Enter a valid URL including protocol (https://)' : '');
 	let canSubmit = $derived(url.length > 0 && isValidUrl(url) && !submitting);
@@ -103,6 +104,7 @@
 		jsRender = p.js_render ?? false;
 		extractEmails = p.extract_emails ?? false;
 		extractUsernames = p.extract_usernames ?? false;
+		advancedOpen = true;
 	}
 
 	async function handleSubmit() {
@@ -147,7 +149,7 @@
 		<UrlInput value={url} focusSignal={$focusUrlSignal} onchange={(v) => (url = v)} error={urlError} />
 	</div>
 
-	<TemplatesBlock type="scrape" onApply={applyConfig} />
+	<TemplatesBlock onApply={applyConfig} />
 
 	<div class="space-y-4">
 		<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scope</h2>
@@ -185,7 +187,7 @@
 		</div>
 	</div>
 
-	<details class="space-y-4">
+	<details bind:open={advancedOpen} class="space-y-4">
 		<summary class="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none hover:text-foreground transition-colors">
 			Advanced
 		</summary>

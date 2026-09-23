@@ -66,6 +66,116 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: dist/${{ matrix.artifact_name }}
 
+  deb:
+    name: Build .deb
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: oswg-linux-x86_64
+          path: linux
+
+      - name: Build .deb
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [ -n "${{ github.event.inputs.tag }}" ]; then TAG="${{ github.event.inputs.tag }}"; fi
+          VERSION="${TAG#v}"
+          mkdir -p oswg-deb/DEBIAN oswg-deb/usr/bin
+          cp linux/oswg oswg-deb/usr/bin/oswg
+          chmod 755 oswg-deb/usr/bin/oswg
+          cat > oswg-deb/DEBIAN/control <<EOF
+          Package: oswg
+          Version: ${VERSION}
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Dimitris Marakomichelakis <dmarakom6@users.noreply.github.com>
+          Homepage: https://github.com/dmarakom6/oswg
+          Depends: libc6 (>= 2.17)
+          Description: Oddly Specific Wordlist Generator
+           Generate targeted wordlists from website content.
+          EOF
+          dpkg-deb --build oswg-deb oswg_${VERSION}_amd64.deb
+
+      - name: Verify .deb
+        run: dpkg-deb -I oswg_*.deb
+
+      - name: Upload .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: oswg-deb
+          path: oswg_*.deb
+
+  homebrew:
+    name: Update Homebrew tap
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      HOMEBREW_TOKEN: ${{ secrets.HOMEBREW_TOKEN }}
+    steps:
+      - name: Download macos binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: oswg-macos-*
+          path: bins
+
+      - name: Write formula
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [ -n "${{ github.event.inputs.tag }}" ]; then TAG="${{ github.event.inputs.tag }}"; fi
+          VERSION="${TAG#v}"
+          INTEL_SHA="$(shasum -a 256 bins/oswg-macos-x86_64/oswg | cut -d' ' -f1)"
+          ARM_SHA="$(shasum -a 256 bins/oswg-macos-arm64/oswg | cut -d' ' -f1)"
+          cat > osgw.rb <<'RUBY'
+          class Oswg < Formula
+            desc "Oddly Specific Wordlist Generator"
+            homepage "https://github.com/dmarakom6/oswg"
+            version "__VERSION__"
+            license "MIT"
+            on_macos do
+              if Hardware::CPU.intel?
+                url "https://github.com/dmarakom6/oswg/releases/download/__TAG__/osgw-macos-x86_64"
+                sha256 "__INTEL_SHA__"
+              else
+                url "https://github.com/dmarakom6/oswg/releases/download/__TAG__/osgw-macos-arm64"
+                sha256 "__ARM_SHA__"
+              end
+            end
+            def install
+              if Hardware::CPU.intel?
+                bin.install "osgw-macos-x86_64" => "osgw"
+              else
+                bin.install "osgw-macos-arm64" => "osgw"
+              end
+            end
+            test do
+              system "#{bin}/osgw", "--help"
+            end
+          end
+          RUBY
+          sed -i '' -e "s/__VERSION__/${VERSION}/g" -e "s/__TAG__/${TAG}/g" \
+            -e "s/__INTEL_SHA__/${INTEL_SHA}/g" -e "s/__ARM_SHA__/${ARM_SHA}/g" osgw.rb
+
+      - name: Push to tap
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [ -n "${{ github.event.inputs.tag }}" ]; then TAG="${{ github.event.inputs.tag }}"; fi
+          VERSION="${TAG#v}"
+          git clone "https://x-access-token:${HOMEBREW_TOKEN}@github.com/dmarakom6/homebrew-oswg.git" tap
+          cp osgw.rb tap/osgw.rb
+          cd tap
+          git config user.name "oswg release bot"
+          git config user.email "dmarakom6@users.noreply.github.com"
+          git add osgw.rb
+          if git diff --cached --quiet; then
+            echo "Formula unchanged; nothing to push."
+          else
+            git commit -m "osgw ${VERSION}"
+            git push origin HEAD
+          fi
+
   publish-pypi:
     name: Publish to PyPI
     needs: build
@@ -105,9 +215,9 @@ jobs:
           packages-dir: dist/
           skip-existing: true
 
-  release:
+release:
     name: Create GitHub Release
-    needs: [build, publish-pypi]
+    needs: [build, deb, publish-pypi]
     if: success() || failure()
     runs-on: ubuntu-latest
     permissions:
@@ -121,13 +231,15 @@ jobs:
       - name: Package binaries
         run: |
           cd artifacts
+          mkdir -p raw
           for dir in oswg-linux-x86_64 oswg-macos-x86_64 oswg-macos-arm64; do
             zip -r "${dir}.zip" "${dir}/"
+            cp "${dir}/oswg" "raw/${dir}"
           done
           cd ..
 
       - name: List packaged artifacts
-        run: ls -la artifacts/*.zip
+        run: ls -la artifacts/*.zip artifacts/raw/ artifacts/oswg-deb/
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -136,6 +248,10 @@ jobs:
             artifacts/oswg-linux-x86_64.zip
             artifacts/oswg-macos-x86_64.zip
             artifacts/oswg-macos-arm64.zip
+            artifacts/raw/oswg-linux-x86_64
+            artifacts/raw/oswg-macos-x86_64
+            artifacts/raw/oswg-macos-arm64
+            artifacts/oswg-deb/oswg_*.deb
           generate_release_notes: false
           draft: false
           prerelease: false

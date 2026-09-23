@@ -43,6 +43,23 @@ oswg setup            # shows what's missing and offers to install it
 oswg setup --check    # just report status
 ```
 
+### Option 3: Homebrew (macOS)
+
+```bash
+brew tap dmarakom6/oswg
+brew install oswg
+```
+
+### Option 4: apt (Debian/Ubuntu)
+
+Download `oswg_<version>_amd64.deb` from the latest [Release](https://github.com/yourusername/oswg/releases) and install it:
+
+```bash
+sudo apt install ./oswg_0.6.0_amd64.deb
+```
+
+The `.deb` installs the `oswg` binary to `/usr/bin/oswg` and registers it with dpkg (`sudo apt remove oswg` uninstalls).
+
 ## Usage
 
 ### CLI Mode

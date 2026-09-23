@@ -1,0 +1,12 @@
+services:
+  oswg:
+    image: ghcr.io/dmarakom6/osgw
+    container_name: oswg
+    ports:
+      - "8000:8000"
+    volumes:
+      - oswg-data:/data
+    restart: unless-stopped
+
+volumes:
+  oswg-data:

@@ -60,6 +60,22 @@ sudo apt install ./oswg_0.6.0_amd64.deb
 
 The `.deb` installs the `oswg` binary to `/usr/bin/oswg` and registers it with dpkg (`sudo apt remove oswg` uninstalls).
 
+### Option 5: Docker (self-hosted UI)
+
+The image bundles Chromium, so JS rendering works out of the box (no `oswg setup`):
+
+```bash
+docker run -d --name oswg -p 8000:8000 -v oswg-data:/data ghcr.io/dmarakom6/osgw
+```
+
+Or with compose:
+
+```bash
+docker compose up -d
+```
+
+Data (jobs, templates, wordlists) persists in the `oswg-data` volume. Note: `oswg test` cracking tools (hashcat/john/…) are not bundled — run those on your host.
+
 ## Usage
 
 ### CLI Mode

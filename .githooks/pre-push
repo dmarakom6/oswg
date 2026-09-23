@@ -1,0 +1,22 @@
+#!/bin/sh
+# Pre-push hook: run the fast checks before a push is allowed.
+# Enable with:  git config core.hooksPath .githooks   (or: make hooks)
+
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+# Prefer the project venv if present (plain `pytest`/`ruff` may be a pyenv shim).
+if [ -x ./venv/bin/ruff ]; then RUFF=./venv/bin/ruff; else RUFF=ruff; fi
+if [ -x ./venv/bin/pytest ]; then PYTEST=./venv/bin/pytest; else PYTEST=pytest; fi
+
+echo "==> ruff"
+"$RUFF" check src/ tests/
+
+echo "==> pytest (unit)"
+"$PYTEST" -q -m "not e2e"
+
+echo "==> svelte-check"
+(cd ui && npm run check)
+
+echo "All checks passed."

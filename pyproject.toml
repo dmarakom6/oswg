@@ -80,6 +80,10 @@ select = ["E", "F", "I", "N", "W"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+addopts = "-m 'not e2e'"
+markers = [
+    "e2e: Playwright browser end-to-end tests (run with `pytest -m e2e`)",
+]
 
 [tool.semantic_release]
 version_variables = [

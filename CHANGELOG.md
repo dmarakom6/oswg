@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v0.8.0 (2026-09-24)
+
+### Bug Fixes
+
+- Keep src/oswg/static dir tracked so ci pip installs work
+  ([`95baca1`](https://github.com/dmarakom6/oswg/commit/95baca193f89619601618291c44c3451997ca4bb))
+
+- Pin help column width in cli tests
+  ([`fbe9db7`](https://github.com/dmarakom6/oswg/commit/fbe9db7c357f952a54db04fd31501385a30ffd86))
+
+- Strip ansi from cli test output so help assertions pass on ci
+  ([`1bb3a17`](https://github.com/dmarakom6/oswg/commit/1bb3a17a329ad1c3b438c2d2e56f67f6341c7e6e))
+
+
 ## v0.7.0 (2026-09-21)
 
 ### Bug Fixes

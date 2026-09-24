@@ -2,6 +2,8 @@
 
 A tool that generates targeted wordlists by scraping websites and applying intelligent mutations. Designed for penetration testers and security researchers.
 
+> Meant to be a modern replacement for CeWL (https://digi.ninja/projects/cewl.php) with additional features like wordlist mutation, AI completions, and a web dashboard. Pronounced "Oh-Sog" (like "oh, soggy").
+
 ## Features
 
 - **Scrape** websites for relevant keywords

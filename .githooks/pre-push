@@ -10,13 +10,26 @@ cd "$(git rev-parse --show-toplevel)"
 if [ -x ./venv/bin/ruff ]; then RUFF=./venv/bin/ruff; else RUFF=ruff; fi
 if [ -x ./venv/bin/pytest ]; then PYTEST=./venv/bin/pytest; else PYTEST=pytest; fi
 
+# The venv and node_modules are built for arm64 on Apple Silicon, but the
+# interpreter is a universal (fat) binary: from a Rosetta (x86_64) shell it
+# would pick the x86_64 slice and fail to load the arm64-only extensions.
+# Force the arm64 slice so the hook works from any shell (no-op on Intel).
+# Note: `uname -m` reports x86_64 under Rosetta, so test the CPU directly.
+if [ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ] && command -v arch >/dev/null 2>&1; then
+	RUFF="arch -arm64 $RUFF"
+	PYTEST="arch -arm64 $PYTEST"
+	NPM="arch -arm64 npm"
+else
+	NPM="npm"
+fi
+
 echo "==> ruff"
-"$RUFF" check src/ tests/
+$RUFF check src/ tests/
 
 echo "==> pytest (unit)"
-"$PYTEST" -q -m "not e2e"
+$PYTEST -q -m "not e2e"
 
 echo "==> svelte-check"
-(cd ui && npm run check)
+(cd ui && $NPM run check)
 
 echo "All checks passed."

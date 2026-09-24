@@ -128,7 +128,7 @@ jobs:
           VERSION="${TAG#v}"
           INTEL_SHA="$(shasum -a 256 bins/oswg-macos-x86_64/oswg | cut -d' ' -f1)"
           ARM_SHA="$(shasum -a 256 bins/oswg-macos-arm64/oswg | cut -d' ' -f1)"
-          cat > osgw.rb <<'RUBY'
+          cat > oswg.rb <<'RUBY'
           class Oswg < Formula
             desc "Oddly Specific Wordlist Generator"
             homepage "https://github.com/dmarakom6/oswg"
@@ -136,27 +136,30 @@ jobs:
             license "MIT"
             on_macos do
               if Hardware::CPU.intel?
-                url "https://github.com/dmarakom6/oswg/releases/download/__TAG__/osgw-macos-x86_64"
+                url "https://github.com/dmarakom6/oswg/releases/download/__TAG__/oswg-macos-x86_64"
                 sha256 "__INTEL_SHA__"
               else
-                url "https://github.com/dmarakom6/oswg/releases/download/__TAG__/osgw-macos-arm64"
+                url "https://github.com/dmarakom6/oswg/releases/download/__TAG__/oswg-macos-arm64"
                 sha256 "__ARM_SHA__"
               end
             end
             def install
               if Hardware::CPU.intel?
-                bin.install "osgw-macos-x86_64" => "osgw"
+                bin.install "oswg-macos-x86_64" => "oswg"
               else
-                bin.install "osgw-macos-arm64" => "osgw"
+                bin.install "oswg-macos-arm64" => "oswg"
               end
             end
             test do
-              system "#{bin}/osgw", "--help"
+              system "#{bin}/oswg", "--help"
             end
           end
           RUBY
-          sed -i '' -e "s/__VERSION__/${VERSION}/g" -e "s/__TAG__/${TAG}/g" \
-            -e "s/__INTEL_SHA__/${INTEL_SHA}/g" -e "s/__ARM_SHA__/${ARM_SHA}/g" osgw.rb
+          sed -e "s/__VERSION__/${VERSION}/g" \
+            -e "s/__TAG__/${TAG}/g" \
+            -e "s/__INTEL_SHA__/${INTEL_SHA}/g" \
+            -e "s/__ARM_SHA__/${ARM_SHA}/g" oswg.rb > oswg.rb.tmp
+          mv oswg.rb.tmp oswg.rb
 
       - name: Push to tap
         run: |
@@ -164,15 +167,15 @@ jobs:
           if [ -n "${{ github.event.inputs.tag }}" ]; then TAG="${{ github.event.inputs.tag }}"; fi
           VERSION="${TAG#v}"
           git clone "https://x-access-token:${HOMEBREW_TOKEN}@github.com/dmarakom6/homebrew-oswg.git" tap
-          cp osgw.rb tap/osgw.rb
+          cp oswg.rb tap/oswg.rb
           cd tap
           git config user.name "oswg release bot"
           git config user.email "dmarakom6@users.noreply.github.com"
-          git add osgw.rb
+          git add oswg.rb
           if git diff --cached --quiet; then
             echo "Formula unchanged; nothing to push."
           else
-            git commit -m "osgw ${VERSION}"
+            git commit -m "oswg ${VERSION}"
             git push origin HEAD
           fi
 
@@ -251,7 +254,7 @@ jobs:
           packages-dir: dist/
           skip-existing: true
 
-release:
+  release:
     name: Create GitHub Release
     needs: [build, deb, publish-pypi]
     if: success() || failure()
@@ -280,6 +283,9 @@ release:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
+          # On a tag push this resolves to the pushed tag; on workflow_dispatch
+          # it targets the tag passed as input (needed for backfilling).
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: |
             artifacts/oswg-linux-x86_64.zip
             artifacts/oswg-macos-x86_64.zip

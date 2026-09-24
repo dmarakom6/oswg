@@ -166,7 +166,7 @@ def test_cli_help_lists_random_combine():
 
     runner = CliRunner()
     for command in ("generate", "mutate"):
-        result = runner.invoke(app, [command, "--help"])
+        result = runner.invoke(app, [command, "--help"], env={"COLUMNS": "120"})
         assert result.exit_code == 0, result.output
         assert "--random-combine" in result.output
         assert "--combine-count" in result.output

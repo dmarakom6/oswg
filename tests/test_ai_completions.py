@@ -294,7 +294,7 @@ def test_cli_help_lists_ai_flags():
 
     from oswg.cli import app
 
-    result = CliRunner().invoke(app, ["generate", "--help"])
+    result = CliRunner().invoke(app, ["generate", "--help"], env={"COLUMNS": "120"})
     assert result.exit_code == 0, result.output
     assert "--ai-completions" in result.output
     assert "--ai-provider" in result.output

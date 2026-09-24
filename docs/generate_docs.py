@@ -46,14 +46,19 @@ PDF_BACKENDS = (
     ("pylatex", "pylatex"),
 )
 
-# Colors (RGB) used across both documents - clean navy/blue palette.
-ACCENT = (24, 34, 60)        # deep navy
-ACCENT_BLUE = (46, 96, 154)  # medium blue
-INK = (40, 44, 52)           # body text
-GRAY = (120, 124, 130)       # muted text
-CODE_BG = (244, 245, 247)    # code block background
-CODE_BORDER = (216, 219, 224)
-TABLE_ALT = (243, 245, 248)  # alternating table row
+# Colors (RGB) matching OSWG's UI light theme (ui/src/routes/layout.css).
+ACCENT = (99, 166, 122)        # --primary  #63A67A
+ACCENT_DARK = (74, 128, 96)    # darker green for emphasis
+ACCENT_SOFT = (231, 242, 235)  # light green tint for command boxes
+INK = (26, 26, 26)             # --foreground #1A1A1A
+GRAY = (102, 102, 102)         # --muted-foreground #666666
+CODE_BG = (240, 240, 240)      # --muted #F0F0F0
+CODE_BORDER = (224, 224, 224)  # --border #E0E0E0
+TABLE_ALT = (240, 240, 240)    # --muted #F0F0F0
+PAGE_BG = (250, 250, 250)      # --background #FAFAFA
+WARNING = (217, 119, 6)        # --warning #D97706
+NOTE_BG = (255, 247, 237)      # light warning tint for note boxes
+WHITE = (255, 255, 255)
 
 
 def _backend_available() -> str | None:
@@ -131,7 +136,7 @@ class _PdfDoc:
             "Oddly Specific Wordlist Generator",
             align="R",
         )
-        self.pdf.set_draw_color(220, 223, 228)
+        self.pdf.set_draw_color(*CODE_BORDER)
         self.pdf.set_line_width(0.3)
         self.pdf.line(
             self.pdf.l_margin, 17.5, self.pdf.w - self.pdf.r_margin, 17.5
@@ -143,7 +148,7 @@ class _PdfDoc:
         self.pdf.set_y(-15)
         self.pdf.set_font("Helvetica", "", 8)
         self.pdf.set_text_color(*GRAY)
-        self.pdf.set_draw_color(210, 213, 218)
+        self.pdf.set_draw_color(*CODE_BORDER)
         self.pdf.set_line_width(0.3)
         self.pdf.line(
             self.pdf.l_margin,
@@ -179,46 +184,45 @@ class _PdfDoc:
     ) -> None:
         p = self.pdf
         p.add_page()
-        # Navy panel across the top.
+        # Page background + a green accent bar across the top.
+        p.set_fill_color(*PAGE_BG)
+        p.rect(0, 0, p.w, p.h, "F")
         p.set_fill_color(*ACCENT)
-        p.rect(0, 0, p.w, 92, "F")
-        # Accent strip under the panel.
-        p.set_fill_color(*ACCENT_BLUE)
-        p.rect(0, 92, p.w, 2.4, "F")
+        p.rect(0, 0, p.w, 6, "F")
         # Project name.
         p.set_xy(p.l_margin, 26)
-        p.set_text_color(255, 255, 255)
+        p.set_text_color(*INK)
         p.set_font("Helvetica", "B", 33)
         p.cell(0, 14, project)
         # Subtitle.
         p.set_xy(p.l_margin, 45)
         p.set_font("Helvetica", "", 13)
-        p.set_text_color(192, 202, 222)
+        p.set_text_color(*GRAY)
         p.cell(0, 8, subtitle)
-        # Version badge on the navy panel.
+        # Version badge.
         badge_w, badge_h = 64, 10
         bx, by = p.w - p.r_margin - badge_w, 46
-        p.set_fill_color(*ACCENT_BLUE)
+        p.set_fill_color(*ACCENT)
         p.rect(bx, by, badge_w, badge_h, "F")
         p.set_xy(bx, by)
         p.set_font("Helvetica", "B", 11.5)
-        p.set_text_color(255, 255, 255)
+        p.set_text_color(WHITE)
         p.cell(badge_w, badge_h, f"Version {self.version}", align="C")
         # Document kind.
         p.set_xy(p.l_margin, 120)
-        p.set_text_color(*ACCENT)
+        p.set_text_color(*ACCENT_DARK)
         p.set_font("Helvetica", "B", 21)
         p.cell(0, 10, doc_kind)
         # Short rule under the kind.
-        p.set_draw_color(*ACCENT_BLUE)
+        p.set_draw_color(*ACCENT)
         p.set_line_width(0.8)
         p.line(p.l_margin, 134, p.l_margin + 60, 134)
         p.set_line_width(0.2)
         # Metadata box.
         box_w = p.w - p.l_margin - p.r_margin
         box_h = 11 + len(meta_lines) * 7
-        p.set_draw_color(210, 213, 218)
-        p.set_fill_color(247, 248, 250)
+        p.set_draw_color(*CODE_BORDER)
+        p.set_fill_color(WHITE)
         p.rect(p.l_margin, 150, box_w, box_h, "DF")
         p.set_font("Helvetica", "", 9.5)
         p.set_text_color(*INK)
@@ -243,7 +247,7 @@ class _PdfDoc:
         p.set_text_color(*ACCENT)
         p.cell(0, 8, f"{label}  {title}", new_x="LMARGIN", new_y="NEXT")
         y = p.get_y()
-        p.set_draw_color(*ACCENT_BLUE)
+        p.set_draw_color(*ACCENT)
         p.set_line_width(0.7)
         p.line(p.l_margin, y + 1, p.l_margin + 46, y + 1)
         p.set_line_width(0.2)
@@ -292,11 +296,11 @@ class _PdfDoc:
         box_h = len(lines) * line_h + 4
         self._ensure_space(box_h + 6)
         y0 = p.get_y()
-        p.set_fill_color(230, 236, 245)
-        p.set_draw_color(*ACCENT_BLUE)
+        p.set_fill_color(*ACCENT_SOFT)
+        p.set_draw_color(*ACCENT)
         p.rect(p.l_margin, y0, box_w, box_h, "DF")
         p.set_font("Courier", "B", 9.5)
-        p.set_text_color(*ACCENT)
+        p.set_text_color(*ACCENT_DARK)
         yy = y0 + 2
         for line in lines:
             p.set_xy(p.l_margin + 3, yy)
@@ -385,38 +389,78 @@ class _PdfDoc:
         p.set_y(yy + 2)
 
     def make_table(
-        self,
-        headers: list[str],
-        rows: list[list[str]],
-        col_widths: list[float] | None = None,
-        size: float = 9,
-    ) -> None:
-        p = self.pdf
-        p.set_x(p.l_margin)
-        FPDF, FontFace = _import_fpdf()
-        p.set_font("Helvetica", "", size)
-        heading_face = FontFace(
-            emphasis="BOLD",
-            color=(255, 255, 255),
-            fill_color=ACCENT,
-            size_pt=size,
-        )
-        kwargs = {
-            "text_align": "LEFT",
-            "line_height": 5.2,
-            "padding": 1.5,
-            "headings_style": heading_face,
-            "cell_fill_color": TABLE_ALT,
-            "cell_fill_mode": "ROWS",
-        }
-        if col_widths:
-            kwargs["col_widths"] = col_widths
-        with p.table(**kwargs) as table:
-            for row in (headers, *rows):
-                tr = table.row()
-                for cell in row:
-                    tr.cell(str(cell))
-        p.ln(2)
+            self,
+            headers: list[str],
+            rows: list[list[str]],
+            col_widths: list[float] | None = None,
+            size: float = 9,
+        ) -> None:
+            """Hand-rolled table (no fpdf2 `table()` API, which overlaps rows on page splits)."""
+            p = self.pdf
+            p.set_x(p.l_margin)
+            line_h = 5.0
+            pad = 1.6
+            box_w = p.w - p.l_margin - p.r_margin
+            ncols = len(headers)
+            cw = list(col_widths) if col_widths else [1.0] * ncols
+            total = sum(cw)
+            cw = [w / total * box_w for w in cw]
+
+            def wrap(text: str, width: float) -> list[str]:
+                p.set_font("Helvetica", "", size)
+                avail = max(10.0, width - 2 * pad)
+                out: list[str] = []
+                for raw in str(text).split("\n"):
+                    cur = ""
+                    for word in raw.split(" "):
+                        if not cur:
+                            cur = word
+                        elif p.get_string_width((cur + " " + word).strip()) <= avail:
+                            cur = (cur + " " + word).strip()
+                        else:
+                            out.append(cur)
+                            cur = word
+                        while p.get_string_width(cur) > avail and len(cur) > 1:
+                            i = len(cur) - 1
+                            while i > 1 and p.get_string_width(cur[:i]) > avail:
+                                i -= 1
+                            out.append(cur[:i])
+                            cur = cur[i:]
+                    if cur:
+                        out.append(cur)
+                return out or [""]
+
+            def row_height(cells: list[str]) -> float:
+                h = 2 * pad
+                for i, c in enumerate(cells):
+                    h = max(h, len(wrap(c, cw[i])) * line_h + 2 * pad)
+                return h
+
+            def draw_row(cells: list[str], fill, bold: bool, text_color, size_pt: float) -> None:
+                y0 = p.get_y()
+                rh = row_height(cells)
+                if y0 + rh > p.h - 20 and rh < p.h - 44:
+                    p.add_page()
+                    y0 = p.get_y()
+                    draw_row(headers, ACCENT, True, WHITE, size)
+                    y0 = p.get_y()
+                p.set_fill_color(*fill)
+                p.rect(p.l_margin, y0, box_w, rh, "F")
+                x = p.l_margin
+                p.set_font("Helvetica", "B" if bold else "", size_pt)
+                p.set_text_color(*text_color)
+                for i, c in enumerate(cells):
+                    for j, ln in enumerate(wrap(c, cw[i])):
+                        p.set_xy(x + pad, y0 + pad + j * line_h)
+                        p.cell(cw[i] - 2 * pad, line_h, ln)
+                    x += cw[i]
+                p.set_y(y0 + rh)
+                p.set_text_color(*INK)
+
+            draw_row(headers, ACCENT, True, WHITE, size)
+            for idx, row in enumerate(rows):
+                draw_row(row, TABLE_ALT if idx % 2 == 1 else WHITE, False, INK, size)
+            p.ln(2)
 
     def note(self, text: str) -> None:
         p = self.pdf
@@ -426,8 +470,8 @@ class _PdfDoc:
         box_w = p.w - p.l_margin - p.r_margin
         lines = text.split("\n")
         box_h = 8 + len(lines) * 5.2
-        p.set_fill_color(250, 247, 240)
-        p.set_draw_color(222, 208, 180)
+        p.set_fill_color(*NOTE_BG)
+        p.set_draw_color(*WARNING)
         p.rect(p.l_margin, y0, box_w, box_h, "DF")
         p.set_font("Helvetica", "", 9.5)
         p.set_text_color(*INK)

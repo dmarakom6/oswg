@@ -1,7 +1,22 @@
 """Tests for the --random-combine feature (random word-pair combinations)."""
 
+import re
+
 from oswg.core.models import GenerationConfig
 from oswg.core.mutations import MutationEngine
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Strip ANSI styles from captured CLI output.
+
+    GitHub Actions sets GITHUB_ACTIONS, which makes typer force the rich
+    terminal on, so option names are emitted as separately-styled spans and
+    the raw substring is broken.
+    """
+    return _ANSI_RE.sub("", text)
+
 
 _JOINERS = {"-", "_", ".", " "}
 _LEET_ALPHABET = {"4", "@", "3", "1", "!", "0", "5", "$", "7", "9", "8"}
@@ -156,7 +171,7 @@ def test_cli_mutate_random_combine():
         ],
     )
     assert result.exit_code == 0, result.output
-    assert "unique mutations" in result.output
+    assert "unique mutations" in _plain(result.output)
 
 
 def test_cli_help_lists_random_combine():
@@ -168,6 +183,7 @@ def test_cli_help_lists_random_combine():
     for command in ("generate", "mutate"):
         result = runner.invoke(app, [command, "--help"], env={"COLUMNS": "120"})
         assert result.exit_code == 0, result.output
-        assert "--random-combine" in result.output
-        assert "--combine-count" in result.output
-        assert "--combine-seed" in result.output
+        output = _plain(result.output)
+        assert "--random-combine" in output
+        assert "--combine-count" in output
+        assert "--combine-seed" in output

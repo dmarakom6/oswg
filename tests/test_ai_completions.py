@@ -17,6 +17,18 @@ from oswg.core.ai import (
 from oswg.core.generator import WordlistGenerator
 from oswg.core.models import GenerationConfig
 
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Strip ANSI styles from captured CLI output.
+
+    GitHub Actions sets GITHUB_ACTIONS, which makes typer force the rich
+    terminal on, so option names are emitted as separately-styled spans
+    (``-`` + ``-ai`` + ``-completions``) and the raw substring is broken.
+    """
+    return _ANSI_RE.sub("", text)
+
 
 def _completion_response(content: str) -> httpx.Response:
     return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
@@ -296,10 +308,11 @@ def test_cli_help_lists_ai_flags():
 
     result = CliRunner().invoke(app, ["generate", "--help"], env={"COLUMNS": "120"})
     assert result.exit_code == 0, result.output
-    assert "--ai-completions" in result.output
-    assert "--ai-provider" in result.output
-    assert "--ai-max-words" in result.output
-    assert "--ai-words-per-word" in result.output
+    output = _plain(result.output)
+    assert "--ai-completions" in output
+    assert "--ai-provider" in output
+    assert "--ai-max-words" in output
+    assert "--ai-words-per-word" in output
 
 
 def test_generate_request_validates_ai_provider():

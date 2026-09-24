@@ -121,54 +121,37 @@ class _PdfDoc:
     def _header(self) -> None:
         if self.pdf.page_no() == 1:
             return
-        self.pdf.set_y(9)
-        self.pdf.set_font("Helvetica", "", 8)
-        self.pdf.set_text_color(*GRAY)
-        self.pdf.cell(
-            self.pdf.w / 2,
-            6,
-            f"OSWG v{self.version}  |  {self.doc_title}",
-            align="L",
-        )
-        self.pdf.cell(
-            self.pdf.w / 2 - self.pdf.r_margin,
-            6,
-            "Oddly Specific Wordlist Generator",
-            align="R",
-        )
-        self.pdf.set_draw_color(*CODE_BORDER)
-        self.pdf.set_line_width(0.3)
-        self.pdf.line(
-            self.pdf.l_margin, 17.5, self.pdf.w - self.pdf.r_margin, 17.5
-        )
-        self.pdf.set_line_width(0.2)
+        p = self.pdf
+        content_w = p.w - p.l_margin - p.r_margin
+        half = content_w / 2
+        p.set_y(9)
+        p.set_font("Helvetica", "", 8)
+        p.set_text_color(*GRAY)
+        p.set_x(p.l_margin)
+        p.cell(half, 6, f"OSWG v{self.version}  |  {self.doc_title}", align="L")
+        p.set_x(p.l_margin + half)
+        p.cell(half, 6, "Oddly Specific Wordlist Generator", align="R")
+        p.set_draw_color(*CODE_BORDER)
+        p.set_line_width(0.3)
+        p.line(p.l_margin, 17.5, p.w - p.r_margin, 17.5)
+        p.set_line_width(0.2)
 
     def _footer(self) -> None:
         # Version is embedded in the footer on every page, including page 1.
-        self.pdf.set_y(-15)
-        self.pdf.set_font("Helvetica", "", 8)
-        self.pdf.set_text_color(*GRAY)
-        self.pdf.set_draw_color(*CODE_BORDER)
-        self.pdf.set_line_width(0.3)
-        self.pdf.line(
-            self.pdf.l_margin,
-            self.pdf.h - 18,
-            self.pdf.w - self.pdf.r_margin,
-            self.pdf.h - 18,
-        )
-        self.pdf.set_line_width(0.2)
-        self.pdf.cell(
-            self.pdf.w / 2,
-            8,
-            f"OSWG v{self.version}  |  {self.footer_label}",
-            align="L",
-        )
-        self.pdf.cell(
-            self.pdf.w / 2 - self.pdf.r_margin,
-            8,
-            f"Page {self.pdf.page_no()} / {{nb}}",
-            align="R",
-        )
+        p = self.pdf
+        content_w = p.w - p.l_margin - p.r_margin
+        half = content_w / 2
+        p.set_y(-15)
+        p.set_font("Helvetica", "", 8)
+        p.set_text_color(*GRAY)
+        p.set_draw_color(*CODE_BORDER)
+        p.set_line_width(0.3)
+        p.line(p.l_margin, p.h - 18, p.w - p.r_margin, p.h - 18)
+        p.set_line_width(0.2)
+        p.set_x(p.l_margin)
+        p.cell(half, 8, f"OSWG v{self.version}  |  {self.footer_label}", align="L")
+        p.set_x(p.l_margin + half)
+        p.cell(half, 8, f"Page {p.page_no()} / {{nb}}", align="R")
 
     # -- layout helpers ----------------------------------------------------
     def _ensure_space(self, needed_mm: float) -> None:
@@ -323,7 +306,10 @@ class _PdfDoc:
         p.set_font("Helvetica", "", size)
         p.set_text_color(*INK)
         self._write_rich(text, size)
-        p.ln(1.5)
+        # write() leaves y at the TOP of the last written line, so advance a
+        # full line first (otherwise the next block overlaps it), then add gap.
+        p.ln(5.2)
+        p.ln(1.8)
 
     def _write_rich(self, text: str, size: float) -> None:
         p = self.pdf
@@ -344,17 +330,16 @@ class _PdfDoc:
 
     def bullets(self, items: list[str], size: float = 10.5) -> None:
         p = self.pdf
-        p.set_x(p.l_margin)
-        p.set_font("Helvetica", "", size)
-        p.set_text_color(*INK)
         bullet_w = 6
-        body_w = p.w - p.l_margin - p.r_margin - bullet_w
         for item in items:
             self._ensure_space(12)
             p.set_x(p.l_margin)
-            p.cell(bullet_w, 5.2, "-", new_x="RIGHT")
-            p.multi_cell(body_w, 5.2, item, align="L")
-        p.ln(1)
+            p.set_font("Helvetica", "", size)
+            p.set_text_color(*INK)
+            p.cell(bullet_w, 5.2, "-")
+            self._write_rich(item, size)
+            p.ln(5.2)
+            p.ln(1.2)
 
     def code_block(self, text: str, size: float = 9) -> None:
         p = self.pdf
@@ -461,6 +446,31 @@ class _PdfDoc:
             for idx, row in enumerate(rows):
                 draw_row(row, TABLE_ALT if idx % 2 == 1 else WHITE, False, INK, size)
             p.ln(2)
+
+    def diagram(self, path: Path, caption: str | None = None) -> None:
+        """Embed a (PNG) diagram scaled to the content width."""
+        import struct
+
+        p = self.pdf
+        with open(path, "rb") as fh:
+            head = fh.read(33)
+        w_px, h_px = struct.unpack(">II", head[16:24])
+        width = p.w - p.l_margin - p.r_margin
+        height = width * h_px / w_px
+        max_h = p.h - 20 - 18 - 30
+        if height > max_h:
+            height = max_h
+            width = height * w_px / h_px
+        self._ensure_space(height + 6)
+        y = p.get_y()
+        p.image(str(path), x=p.l_margin, y=y, w=width, h=height)
+        p.set_y(y + height + 1)
+        if caption:
+            p.set_font("Helvetica", "I", 8.5)
+            p.set_text_color(*GRAY)
+            p.cell(0, 5, caption)
+            p.set_text_color(*INK)
+        p.ln(2)
 
     def note(self, text: str) -> None:
         p = self.pdf
@@ -981,6 +991,19 @@ def _build_developer_guide(version: str, out_path: Path) -> None:
         "|-- pyproject.toml        packaging, ruff, pytest configuration\n"
         "`-- .github/workflows/    ci.yml, release.yml, release-binaries.yml"
     )
+
+    doc.subsection("1.2  Architecture diagram")
+    doc.rich_paragraph(
+        "The diagram below maps every module to its role: entry points and CLI commands, "
+        "the local FastAPI server and its routers, the research pipeline (crawler, "
+        "extractors, generator, mutations, AI), the job/storage layer, and the dashboard "
+        "and delivery path."
+    )
+    arch_png = DOCS_DIR / "architecture.png"
+    if arch_png.exists():
+        doc.diagram(arch_png, caption="Source: docs/architecture.mmd - regenerate with python3 docs/render_architecture.py")
+    else:
+        doc.note("Architecture diagram not found. Run: python3 docs/render_architecture.py")
 
     # 2. Development setup --------------------------------------------------
     doc.section("2", "Development setup")

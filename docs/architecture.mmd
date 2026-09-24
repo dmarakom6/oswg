@@ -1,0 +1,76 @@
+flowchart TD
+
+subgraph group_entry["Entry & modes"]
+  node_package["Package entry<br/>Python entry point<br/>[__main__.py]"]
+  node_cli["CLI commands<br/>Python CLI<br/>[cli.py]"]
+  node_launcher["UI launcher<br/>mode launcher<br/>[launcher.py]"]
+end
+
+
+subgraph group_api["Local server & API"]
+  node_server{{"Local API server<br/>FastAPI app<br/>[server.py]"}}
+  node_workflow_routes["Workflow routes<br/>REST/WebSocket routers<br/>[generate.py]"]
+  node_jobs_routes["Jobs & system routes<br/>REST/WebSocket routers<br/>[jobs.py]"]
+end
+
+
+subgraph group_core["Research pipeline"]
+  node_scraper["Crawler & extraction<br/>scrape engine<br/>[scraper.py]"]
+  node_http_state["HTTP auth & session<br/>request state<br/>[http_auth.py]"]
+  node_identity_extractors["Email & username extraction<br/>target extractors<br/>[emails.py]"]
+  node_generator["Wordlist generator<br/>core orchestration<br/>[generator.py]"]
+  node_mutation_rules["Mutation rules<br/>transform engine<br/>[mutations.py]"]
+  node_wordlist_inputs["Wordlist inputs & filters<br/>composition layer<br/>[wordlists.py]"]
+  node_ai["AI completion<br/>optional enrichment<br/>[ai.py]"]
+end
+
+
+subgraph group_storage["Jobs & local storage"]
+  node_job_manager["Job manager & progress<br/>async jobs<br/>[job_manager.py]"]
+  node_database[("Local metadata database<br/>persistence<br/>[database.py]")]
+  node_artifacts["Artifact manager<br/>file lifecycle<br/>[file_manager.py]"]
+end
+
+
+subgraph group_ui["Dashboard & delivery"]
+  node_dashboard["Svelte dashboard<br/>SvelteKit UI<br/>[+page.svelte]"]
+  node_ui_api["API client contract<br/>TypeScript client<br/>[client.ts]"]
+  node_ui_jobs["Job WebSocket store<br/>client job state<br/>[job-ws.ts]"]
+  node_binary_build["Standalone binary build<br/>packaging<br/>[build_binary.py]"]
+end
+
+
+node_package -->|"invokes"| node_cli
+node_cli -->|"scrape"| node_scraper
+node_cli -->|"generate / mutate"| node_generator
+node_package -->|"launches UI mode"| node_launcher
+node_launcher -->|"starts"| node_server
+node_server -->|"mounts"| node_workflow_routes
+node_server -->|"mounts"| node_jobs_routes
+node_workflow_routes -->|"submits work"| node_job_manager
+node_jobs_routes -->|"job status"| node_job_manager
+node_scraper -->|"authenticated fetches"| node_http_state
+node_scraper -->|"extracts identities"| node_identity_extractors
+node_scraper -->|"candidate terms"| node_generator
+node_generator -->|"applies variants"| node_mutation_rules
+node_generator -->|"composes & filters"| node_wordlist_inputs
+node_generator -.->|"optional completion"| node_ai
+node_job_manager -->|"persists metadata"| node_database
+node_job_manager -->|"writes outputs"| node_artifacts
+node_dashboard -->|"uses"| node_ui_api
+node_ui_api -->|"local API"| node_server
+node_dashboard -->|"displays jobs"| node_ui_jobs
+node_ui_jobs -->|"WebSocket progress"| node_jobs_routes
+node_binary_build -->|"bundles"| node_package
+
+classDef toneBlue fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#172554
+classDef toneAmber fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f
+classDef toneMint fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
+classDef toneRose fill:#ffe4e6,stroke:#e11d48,stroke-width:1.5px,color:#881337
+classDef toneIndigo fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81
+
+class node_package,node_cli,node_launcher toneBlue
+class node_server,node_workflow_routes,node_jobs_routes toneAmber
+class node_scraper,node_http_state,node_identity_extractors,node_generator,node_mutation_rules,node_wordlist_inputs,node_ai toneMint
+class node_job_manager,node_database,node_artifacts toneRose
+class node_dashboard,node_ui_api,node_ui_jobs,node_binary_build toneIndigo

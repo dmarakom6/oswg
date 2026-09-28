@@ -262,9 +262,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download all artifacts
+      - name: Download binary artifacts
         uses: actions/download-artifact@v4
         with:
+          # Only our own artifacts: downloading *all* also pulls the buildx
+          # cache artifact (…dockerbuild), which fails to download and
+          # aborts the release before any asset is attached.
+          pattern: oswg-*
           path: artifacts
 
       - name: Package binaries

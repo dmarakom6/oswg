@@ -69,6 +69,11 @@ oswg = "oswg.cli:app"
 [tool.hatch.build.targets.wheel]
 packages = ["src/oswg"]
 force-include = { "src/oswg/static" = "oswg/static" }
+# .gitkeep is tracked so a fresh checkout keeps src/oswg/static/ (which
+# force-include needs to exist). It is also part of the `packages` selection,
+# so without this exclusion hatchling tries to add the same wheel path twice
+# and fails with "A second file is being added to the wheel archive".
+exclude = ["src/oswg/static/.gitkeep"]
 
 [tool.ruff]
 target-version = "py310"

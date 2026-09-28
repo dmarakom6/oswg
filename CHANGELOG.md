@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.8.3 (2026-09-28)
+
+### Bug Fixes
+
+- Ship standalone onefile binaries and a real Intel macOS build
+  ([`21f050a`](https://github.com/dmarakom6/oswg/commit/21f050a50955220ca2c73edba28593c8099c1c69))
+
+
 ## v0.8.2 (2026-09-28)
 
 ### Bug Fixes

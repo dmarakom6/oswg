@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v0.8.1 (2026-09-28)
+
+### Bug Fixes
+
+- Stop duplicate wheel path and unblock release asset upload
+  ([`343e715`](https://github.com/dmarakom6/oswg/commit/343e71513b635fe6114b5a913c1d3d6ddbbb3903))
+
+### Continuous Integration
+
+- Repair release workflow so binaries publish again
+  ([`936a635`](https://github.com/dmarakom6/oswg/commit/936a635afe52320a39b0771ca3aad09105bfb96f))
+
+
 ## v0.8.0 (2026-09-24)
 
 ### Bug Fixes

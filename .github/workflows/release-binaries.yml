@@ -21,7 +21,7 @@ jobs:
             target: linux-x86_64
             artifact_name: oswg-linux-x86_64
             binary_name: oswg
-          - os: macos-latest
+          - os: macos-15-intel    # Intel runner: macos-latest is arm64
             target: macos-x86_64
             artifact_name: oswg-macos-x86_64
             binary_name: oswg
@@ -57,8 +57,13 @@ jobs:
           pip install .
           python build_binary.py binary
 
-      - name: Rename binary for platform
-        run: mv dist/oswg-bin dist/${{ matrix.artifact_name }}
+      - name: Package binary for platform
+        # onefile build: a single self-contained executable. Wrap it in a
+        # directory named after the artifact so every consumer (deb, homebrew,
+        # release packaging) keeps seeing <artifact>/oswg.
+        run: |
+          mkdir -p dist/${{ matrix.artifact_name }}
+          mv dist/oswg dist/${{ matrix.artifact_name }}/oswg
 
       - name: Upload binary
         uses: actions/upload-artifact@v4

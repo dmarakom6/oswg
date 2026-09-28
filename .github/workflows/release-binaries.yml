@@ -212,8 +212,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/dmarakom6/osgw:${{ env.VERSION }}
-            ghcr.io/dmarakom6/osgw:latest
+            ghcr.io/dmarakom6/oswg:${{ env.VERSION }}
+            ghcr.io/dmarakom6/oswg:latest
 
   publish-pypi:
     name: Publish to PyPI

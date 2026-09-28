@@ -1,6 +1,6 @@
 services:
   oswg:
-    image: ghcr.io/dmarakom6/osgw
+    image: ghcr.io/dmarakom6/oswg
     container_name: oswg
     ports:
       - "8000:8000"

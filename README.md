@@ -67,7 +67,7 @@ The `.deb` installs the `oswg` binary to `/usr/bin/oswg` and registers it with d
 The image bundles Chromium, so JS rendering works out of the box (no `oswg setup`):
 
 ```bash
-docker run -d --name oswg -p 8000:8000 -v oswg-data:/data ghcr.io/dmarakom6/osgw
+docker run -d --name oswg -p 8000:8000 -v oswg-data:/data ghcr.io/dmarakom6/oswg
 ```
 
 Or with compose:

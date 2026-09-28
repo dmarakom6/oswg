@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.8.2 (2026-09-28)
+
+### Bug Fixes
+
+- Publish the container image as ghcr.io/dmarakom6/oswg
+  ([`ec25060`](https://github.com/dmarakom6/oswg/commit/ec25060e3b737539ee3fe6674aae29d27694fc05))
+
+
 ## v0.8.1 (2026-09-28)
 
 ### Bug Fixes
